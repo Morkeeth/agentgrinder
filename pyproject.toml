@@ -1,0 +1,18 @@
+[project]
+name = "agentgrinder"
+version = "0.1.0"
+description = "AGENT GRINDER — a private coach for your agent coding sessions. Reads your local transcripts, metrics only, nothing leaves your machine."
+readme = "README.md"
+requires-python = ">=3.9"      # measured, not assumed: every command runs under macOS system python 3.9.6
+license = {text = "MIT"}
+authors = [{name = "Oscar Morke"}]
+
+[project.scripts]
+agentgrinder = "agentgrinder.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["agentgrinder"]

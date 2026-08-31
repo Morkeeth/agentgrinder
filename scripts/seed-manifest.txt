@@ -1,0 +1,21 @@
+# Public seed manifest — Option A clean repo
+# Lines starting with ! are EXCLUDE globs (fnmatch). Everything else tracked is included
+# unless excluded here.
+
+# private archive only
+!NIGHTRUN*
+!PRIVACY*
+!docs/VERIFICATION*
+!docs/SEED-AUDIT*
+
+# dev scratch + duplicate shots
+!scratchpad/**
+
+# packaging artefact
+!agentgrinder.egg-info/**
+
+# non-public fleet shots (real repo names incl. cv-forge) — ship --public variant only
+!docs/shots/nightrun-card-dark.png
+!docs/shots/nightrun-card-light.png
+!docs/shots/nightrun-card-phone-dark.png
+!docs/shots/nightrun-card-phone-light.png

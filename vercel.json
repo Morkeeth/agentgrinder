@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "cleanUrls": true,
+  "outputDirectory": "site",
+  "rewrites": [
+    { "source": "/.well-known/:path*", "destination": "/.well-known/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

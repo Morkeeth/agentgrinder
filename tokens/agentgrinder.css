@@ -1,0 +1,23 @@
+/* Agentgrinder design tokens v1 — see docs/brand/BRANDBOOK-AGENTGRINDER.md */
+:root {
+  --ag-bg: oklch(0.14 0.01 260);
+  --ag-surface: oklch(0.19 0.012 260);
+  --ag-line: oklch(0.28 0.01 260);
+  --ag-ink: oklch(0.94 0.01 260);
+  --ag-muted: oklch(0.62 0.02 260);
+  --ag-spark: oklch(0.68 0.19 45);
+  --ag-spark-dim: oklch(0.68 0.19 45 / 0.28);
+  --ag-radius-card: 14px;
+  --ag-font-display: "IBM Plex Sans", system-ui, sans-serif;
+  --ag-font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+[data-theme="light"] {
+  --ag-bg: #eceef2;
+  --ag-surface: #ffffff;
+  --ag-line: #e6e8ec;
+  --ag-ink: #14171f;
+  --ag-muted: #69707d;
+  --ag-spark: #e84e0e;
+  --ag-spark-dim: oklch(0.55 0.19 45 / 0.22);
+}

@@ -1,0 +1,340 @@
+#!/usr/bin/env python3
+"""AGENT GRINDER — local MCP server. A2A agent onboarding + metrics preview.
+
+Local tools: ZERO network (wifi-off safe).
+Fetch tools: read public grinds only — metrics, no prompt text.
+
+Add to Claude Code (~/.claude.json) or Cursor (.cursor/mcp.json):
+  { "mcpServers": { "agentgrinder": { "command": "python3",
+      "args": ["-m", "agentgrinder.mcp_server"], "cwd": "/path/to/aistrava" } } }
+"""
+from __future__ import annotations
+
+import json
+import sys
+
+from . import ingest
+from .a2a import export_grind, onboarding_text
+from .push import import_url
+
+PROTO = "2024-11-05"
+
+SAFE_FIELDS = [
+    "harness", "project", "started", "duration_s", "turns_typed",
+    "tool_calls", "files_touched", "commits", "rhythm",
+]
+
+TOOLS = [
+    {
+        "name": "a2a_onboard",
+        "description": "Agent Grinder A2A onboarding — your role, rules, and tool list. Read this first.",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "list_sessions",
+        "description": "List recent local agent sessions (Claude Code + Cursor). Local only.",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "preview_run",
+        "description": "Metrics-only preview of latest session. Nothing is sent. Local only.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "harness": {"type": "string", "enum": ["claude", "cursor"]},
+            },
+        },
+    },
+    {
+        "name": "a2a_export_grind",
+        "description": "Export latest sitting as A2A v0.1 JSON (metrics only). Local only.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "harness": {"type": "string", "enum": ["claude", "cursor"]},
+                "athlete_handle": {"type": "string", "description": "GitHub handle if known"},
+            },
+        },
+    },
+    {
+        "name": "a2a_propose_publish",
+        "description": "Build a publish URL for your HUMAN to approve. You must not open it yourself — hand them the URL.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "harness": {"type": "string", "enum": ["claude", "cursor"]},
+                "web_base": {"type": "string", "description": "e.g. https://agentgrinder.vercel.app"},
+            },
+        },
+    },
+    {
+        "name": "a2a_fetch_feed",
+        "description": "Read public grinds from the network (metrics only). Requires network.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "limit": {"type": "integer", "minimum": 1, "maximum": 50},
+            },
+        },
+    },
+    {
+        "name": "a2a_fetch_athlete",
+        "description": "Read a public athlete's recent grinds by GitHub handle. Requires network.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "handle": {"type": "string"},
+                "limit": {"type": "integer", "minimum": 1, "maximum": 50},
+            },
+            "required": ["handle"],
+        },
+    },
+    {
+        "name": "a2a_flex",
+        "description": "Compare your real runs across agents on this machine (Claude vs Cursor). Local only.",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "a2a_roast",
+        "description": "Roast the latest grind shape — multi-line, numbers only. Local only.",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
+    {
+        "name": "a2a_rig_preview",
+        "description": "Preview your local rig (MCP/skill counts). Names only if human opted in elsewhere.",
+        "inputSchema": {"type": "object", "properties": {"share_names": {"type": "boolean"}}},
+    },
+    {
+        "name": "a2a_propose_ack",
+        "description": "Propose an ACK for a public grind — returns a URL for your HUMAN to confirm. You cannot ACK yourself.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "run_id": {"type": "string"},
+                "reason": {
+                    "type": "string",
+                    "enum": ["shipped", "focus", "pace", "rig", "comeback", "handoff"],
+                },
+                "web_base": {"type": "string"},
+            },
+            "required": ["run_id"],
+        },
+    },
+]
+
+
+def _safe(run: dict) -> dict:
+    return {k: run.get(k) for k in SAFE_FIELDS}
+
+
+def _load_run(harness: str = "claude") -> tuple[dict, str]:
+    if harness == "cursor":
+        path = ingest.latest_cursor_session()
+        if not path:
+            raise FileNotFoundError("no Cursor session")
+        return ingest.parse_cursor_session(path), path
+    path = ingest.latest_session()
+    if not path:
+        raise FileNotFoundError("no Claude Code session")
+    return ingest.parse_session(path), path
+
+
+def list_sessions() -> str:
+    out = []
+    c = ingest.latest_session()
+    if c:
+        out.append(f"Claude Code (latest): {c}")
+    cu = ingest.latest_cursor_session()
+    if cu:
+        out.append(f"Cursor (latest): {cu}")
+    return "\n".join(out) or "No local sessions under ~/.claude/projects or ~/.cursor/projects."
+
+
+def preview_run(harness: str = "claude") -> str:
+    run, _ = _load_run(harness)
+    safe = _safe(run)
+    return (
+        "PREVIEW — exactly what publishing would send. Numbers only.\n\n"
+        + json.dumps(safe, indent=2)
+        + "\n\nTitle/project are NOT included — human types those at publish."
+    )
+
+
+def a2a_export(harness: str = "claude", athlete_handle: str = "you") -> str:
+    run, path = _load_run(harness)
+    run["rig"] = ingest.detect_rig()
+    doc = export_grind(
+        run,
+        athlete_handle=athlete_handle,
+        session_path=path,
+        ingest="native-cursor-jsonl" if harness == "cursor" else "native-claude-jsonl",
+    )
+    return json.dumps(doc, indent=2)
+
+
+def a2a_propose(harness: str = "claude", web_base: str | None = None) -> str:
+    run, _ = _load_run(harness)
+    run["rig"] = ingest.detect_rig()
+    url = import_url(run, web_base)
+    return (
+        "PROPOSE PUBLISH — give this URL to your human. Do NOT publish without their click.\n\n"
+        f"{url}\n\n"
+        "They sign in with GitHub, review the metrics receipt, choose visibility, then publish."
+    )
+
+
+def a2a_feed(limit: int = 10) -> str:
+    from .a2a_client import format_feed, public_feed
+    return format_feed(public_feed(limit))
+
+
+def a2a_athlete(handle: str, limit: int = 10) -> str:
+    from .a2a_client import athlete_feed, format_feed
+    rows = athlete_feed(handle, limit)
+    if not rows:
+        return f"No public grinds for @{handle}."
+    lines = [f"# @{handle} — public grinds\n"]
+    for r in rows:
+        mins = round((r.get("duration_s") or 0) / 60)
+        lines.append(
+            f"- {r.get('title') or r.get('project')} · {r.get('prompts')} prompts · "
+            f"{mins}m · id={r.get('id')}"
+        )
+    return "\n".join(lines)
+
+
+def a2a_flex() -> str:
+    from .flex import format_flex, local_flex
+    return format_flex(local_flex())
+
+
+def a2a_roast() -> str:
+    from .flex import latest_any
+    from .ingest import parse_codex_session, parse_cursor_session, parse_session
+    from .meme import format_roast
+    from .solo import latest_grind, parse_solo
+    picked = latest_any()
+    if not picked:
+        return "no local session found"
+    harness, path = picked
+    if harness == "cursor":
+        run = parse_cursor_session(path)
+    elif harness == "codex":
+        run = parse_codex_session(path)
+    else:
+        found = latest_grind()
+        run = parse_solo(path, pick=found[1]) if found else parse_session(path)
+    return format_roast(run)
+
+
+def a2a_rig_preview(share_names: bool = False) -> str:
+    from .ingest import detect_rig
+    rig = detect_rig()
+    lines = [
+        "# Your rig (local)",
+        f"MCPs: {rig.get('mcps', 0)}",
+        f"Skills: {rig.get('skills', 0)}",
+    ]
+    if share_names and rig.get("mcp_names"):
+        lines.append("Names: " + ", ".join(rig["mcp_names"]))
+    else:
+        lines.append("Names: hidden (human must opt in to share)")
+    return "\n".join(lines)
+
+
+def a2a_propose_ack(run_id: str, reason: str = "shipped", web_base: str | None = None) -> str:
+    from .ack import REASONS, ack_url
+    r = reason if reason in REASONS else "shipped"
+    url = ack_url(run_id, r, web_base)
+    meta = REASONS[r]
+    return (
+        "PROPOSE ACK — give this URL to your human. They must click to confirm.\n"
+        "Agents cannot ACK on their own.\n\n"
+        f"Reason: {meta['label']} — {meta['evidence']}\n"
+        f"{url}\n"
+    )
+
+
+def _handle(req: dict):
+    m, rid = req.get("method"), req.get("id")
+    if m == "initialize":
+        return {
+            "jsonrpc": "2.0",
+            "id": rid,
+            "result": {
+                "protocolVersion": PROTO,
+                "capabilities": {"tools": {}},
+                "serverInfo": {"name": "agentgrinder", "version": "0.2.0-a2a"},
+            },
+        }
+    if m == "tools/list":
+        return {"jsonrpc": "2.0", "id": rid, "result": {"tools": TOOLS}}
+    if m == "tools/call":
+        pr = req.get("params", {})
+        name = pr.get("name")
+        args = pr.get("arguments", {}) or {}
+        try:
+            if name == "a2a_onboard":
+                text = onboarding_text()
+            elif name == "list_sessions":
+                text = list_sessions()
+            elif name == "preview_run":
+                text = preview_run(args.get("harness", "claude"))
+            elif name == "a2a_export_grind":
+                text = a2a_export(
+                    args.get("harness", "claude"),
+                    args.get("athlete_handle", "you"),
+                )
+            elif name == "a2a_propose_publish":
+                text = a2a_propose(args.get("harness", "claude"), args.get("web_base"))
+            elif name == "a2a_fetch_feed":
+                text = a2a_feed(int(args.get("limit", 10)))
+            elif name == "a2a_fetch_athlete":
+                text = a2a_athlete(args.get("handle", ""), int(args.get("limit", 10)))
+            elif name == "a2a_flex":
+                text = a2a_flex()
+            elif name == "a2a_roast":
+                text = a2a_roast()
+            elif name == "a2a_rig_preview":
+                text = a2a_rig_preview(bool(args.get("share_names")))
+            elif name == "a2a_propose_ack":
+                text = a2a_propose_ack(
+                    args.get("run_id", ""),
+                    args.get("reason", "shipped"),
+                    args.get("web_base"),
+                )
+            else:
+                text = f"Unknown tool: {name}"
+        except Exception as e:
+            text = f"error: {type(e).__name__}: {e}"
+        return {
+            "jsonrpc": "2.0",
+            "id": rid,
+            "result": {"content": [{"type": "text", "text": text}]},
+        }
+    if m and m.startswith("notifications/"):
+        return None
+    return {
+        "jsonrpc": "2.0",
+        "id": rid,
+        "error": {"code": -32601, "message": f"method not found: {m}"},
+    }
+
+
+def main():
+    for line in sys.stdin:
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            req = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        resp = _handle(req)
+        if resp is not None:
+            sys.stdout.write(json.dumps(resp) + "\n")
+            sys.stdout.flush()
+
+
+if __name__ == "__main__":
+    main()

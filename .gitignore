@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+card.html
+.DS_Store
+.vercel
+.env*
+scratchpad/RED-before.html
+scratchpad/RED-after.html
+scratchpad/six.json

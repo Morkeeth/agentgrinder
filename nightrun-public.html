@@ -1,0 +1,1248 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Handed off 23:48 · 7h 52m with nobody at the keyboard — AGENT GRINDER</title>
+<style>
+  :root{
+    --bg:#f2f1ed; --card:#fffefb; --ink:#15181c; --muted:#6b7280; --faint:#a8adb6;
+    --line:#e3e2dc; --accent:#fc5200; --ship:#15181c; --grid:#eceae3;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --bg:#0b0d10; --card:#12151a; --ink:#eef1f5; --muted:#8b95a3; --faint:#5a636f;
+    --line:#1e232b; --accent:#ff6a2b; --ship:#eef1f5; --grid:#171b21;
+  }}
+  :root[data-theme="dark"]{
+    --bg:#0b0d10; --card:#12151a; --ink:#eef1f5; --muted:#8b95a3; --faint:#5a636f;
+    --line:#1e232b; --accent:#ff6a2b; --ship:#eef1f5; --grid:#171b21;
+  }
+  *{box-sizing:border-box}
+  html,body{max-width:100%;overflow-x:hidden}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.5 "Archivo",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    display:flex;justify-content:center;padding:26px 14px}
+  .card{width:100%;min-width:0;max-width:1040px;background:var(--card);border:1px solid var(--line);
+    border-radius:6px;overflow:hidden}
+  .scroller{overflow-x:auto;-webkit-overflow-scrolling:touch;min-width:0;max-width:100%}
+  .mapwrap{min-width:0;max-width:100%}
+  section,.honest,.foot,.top{min-width:0}
+  .top{display:flex;align-items:center;gap:12px;padding:20px 22px 14px}
+  .av{width:40px;height:40px;border-radius:3px;background:var(--accent);color:#fff;
+    display:grid;place-items:center;font-weight:800;font-size:17px}
+  .who b{font-weight:700;letter-spacing:-.01em}
+  .who small{color:var(--muted);display:block;font-size:12.5px;overflow-wrap:anywhere;
+    font-family:"Space Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+  .handoff{overflow-wrap:anywhere}
+  .brand{margin-left:auto;font-weight:800;letter-spacing:.14em;color:var(--faint);font-size:11px}
+  h1{margin:0;padding:0 22px 2px;font-size:21px;font-weight:700;letter-spacing:-.015em}
+  .sub{padding:2px 22px 16px;color:var(--muted);font-size:13px;overflow-wrap:anywhere;
+    font-family:"Space Mono",ui-monospace,Menlo,monospace}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  /* a grid item's default min-width is min-content, so one long mono source line under a stat
+     pushed the whole card wider than a 390px screen and clipped the wordmark clean off. */
+  .stat{background:var(--card);padding:15px 18px;min-width:0;overflow-wrap:anywhere}
+  .stat .v{font-size:25px;font-weight:700;letter-spacing:-.02em;
+    font-family:"Space Mono",ui-monospace,Menlo,monospace}
+  .stat .k{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.09em;margin-top:2px}
+  .stat .src{font-size:10.5px;color:var(--faint);margin-top:5px;
+    font-family:"Space Mono",ui-monospace,Menlo,monospace}
+  .handoff{margin:16px 22px 0;padding:12px 15px;border-left:3px solid var(--accent);
+    background:var(--bg);font-size:13.5px;line-height:1.6;color:var(--muted)}
+  .handoff b{color:var(--ink);font-family:"Space Mono",ui-monospace,Menlo,monospace;font-weight:700}
+  .maphead{display:flex;align-items:baseline;gap:14px;padding:18px 22px 0}
+  .maphead h2{margin:0;font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted)}
+  .maphead .note{font-size:11.5px;color:var(--faint);
+    font-family:"Space Mono",ui-monospace,Menlo,monospace}
+  .mapwrap{padding:6px 22px 4px;overflow-x:auto}
+  svg.routemap{display:block;width:100%;min-width:660px;height:auto}
+  svg.routemap.phone{min-width:0}
+  .mapwrap.phonewrap{display:none;overflow:visible}
+  .grid{stroke:var(--grid);stroke-width:1}
+  .band{fill:var(--bg);opacity:.62}
+  .wave{stroke:var(--accent);stroke-width:1;opacity:.16}
+  .wl{fill:var(--faint);font:9.5px "Space Mono",ui-monospace,Menlo,monospace;letter-spacing:.02em}
+  .crail{stroke:var(--line);stroke-width:1;opacity:.75}
+  .rtag{fill:var(--ink);font:700 11.5px "Space Mono",ui-monospace,Menlo,monospace}
+  .rnote{fill:var(--faint);font-weight:400}
+  .lcode{fill:var(--accent);font:700 10px "Space Mono",ui-monospace,Menlo,monospace}
+  .gl{fill:var(--faint);font:10px "Space Mono",ui-monospace,Menlo,monospace}
+  .rlabel{fill:var(--muted);font:11.5px "Space Mono",ui-monospace,Menlo,monospace}
+  .rlabel.recon{fill:var(--faint);font-style:italic}
+  .rlabel2{fill:var(--muted);font:11px "Space Mono",ui-monospace,Menlo,monospace}
+  .brk{fill:none;stroke:var(--line);stroke-width:1.2}
+  .trunk{stroke:var(--ink);stroke-width:1.6}
+  .trunk.gone{stroke:var(--faint);stroke-width:1.2;stroke-dasharray:2 5}
+  .hline{stroke:var(--accent);stroke-width:1.1;stroke-dasharray:3 4;opacity:.7}
+  .hlabel{fill:var(--accent);font:700 11px "Space Mono",ui-monospace,Menlo,monospace;
+    letter-spacing:.04em}
+  .tick{stroke:var(--ink);stroke-width:1.7;opacity:.8}
+  .tlabel{fill:var(--ink);font:700 13px "Space Mono",ui-monospace,Menlo,monospace}
+  .fork{fill:none;stroke:var(--accent);stroke-width:1.1;opacity:.34}
+  .hfork{fill:none;stroke:var(--ink);stroke-width:1;opacity:.22}
+  .seg.human{stroke:var(--ink);opacity:.55}
+  .ltag.human{fill:var(--faint)}
+  .seg{stroke:var(--accent);stroke-linecap:round;opacity:.92}
+  .ltag{fill:var(--muted);font:10px "Space Mono",ui-monospace,Menlo,monospace}
+  .cap.ship{fill:var(--accent)}
+  .cap.spur{fill:var(--card);stroke:var(--accent);stroke-width:1.4;opacity:.8}
+  .profill{fill:var(--accent);opacity:.13}
+  .profline{fill:none;stroke:var(--accent);stroke-width:1.8;stroke-linejoin:round}
+  .base{stroke:var(--line);stroke-width:1}
+  .plabel{fill:var(--muted);font:11px "Space Mono",ui-monospace,Menlo,monospace}
+  .pmax{fill:var(--faint);font:10px "Space Mono",ui-monospace,Menlo,monospace}
+  .rail{stroke:var(--line);stroke-width:1}
+  .flag{stroke:var(--ship);stroke-width:1.7;opacity:.85}
+  .legend{display:flex;flex-wrap:wrap;gap:16px;padding:4px 22px 16px;font-size:11.5px;
+    color:var(--muted);font-family:"Space Mono",ui-monospace,Menlo,monospace}
+  .legend i{display:inline-block;vertical-align:middle;margin-right:6px;font-style:normal}
+  .cav{font-weight:400;color:var(--faint);text-transform:none;letter-spacing:0;font-size:11px;
+    font-family:"Space Mono",ui-monospace,Menlo,monospace}
+  .sw{width:22px;height:0;border-top:3px solid var(--accent);display:inline-block;vertical-align:middle}
+  .sh{width:22px;height:0;border-top:3px solid var(--ink);opacity:.55;display:inline-block;vertical-align:middle}
+  .sf{width:2px;height:13px;background:var(--ship);display:inline-block;vertical-align:middle}
+  .sd{width:8px;height:8px;border:1.5px solid var(--accent);border-radius:50%;display:inline-block;
+    vertical-align:middle;background:var(--card)}
+  .st{width:2px;height:13px;background:var(--ink);display:inline-block;vertical-align:middle}
+  .sv{width:0;height:13px;border-left:1px solid var(--accent);opacity:.5;display:inline-block;
+    vertical-align:middle}
+  section{border-top:1px solid var(--line);padding:16px 22px}
+  section h3{margin:0 0 10px;font-size:10.5px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted)}
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{border:1px solid var(--line);border-radius:3px;padding:4px 9px;font-size:12px;
+    font-family:"Space Mono",ui-monospace,Menlo,monospace;color:var(--muted)}
+  .chip b{color:var(--ink);margin-left:7px}
+  .chip.untracked b{color:var(--faint)}
+  .chip.quiet{opacity:.5}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;
+    font-family:"Space Mono",ui-monospace,Menlo,monospace}
+  td{padding:5px 8px 5px 0;border-bottom:1px solid var(--line);white-space:nowrap}
+  td.l{white-space:normal;color:var(--ink);font-family:"Archivo",-apple-system,sans-serif;width:99%}
+  td.c{width:38px}
+  td.c.w{color:var(--faint);font-weight:400;
+    font-family:"Space Mono",ui-monospace,Menlo,monospace}
+  td.l b{color:var(--accent);font-family:"Space Mono",ui-monospace,Menlo,monospace;
+    font-weight:700;margin-right:2px}
+  td.m{color:var(--muted);text-align:right}
+  td.d{color:var(--faint);padding-left:12px}
+  th{padding:0 8px 6px 0;border-bottom:1px solid var(--line);font-size:10px;font-weight:600;
+    text-transform:uppercase;letter-spacing:.09em;color:var(--faint);text-align:left;white-space:nowrap}
+  th.m{text-align:right} th.d{padding-left:12px}
+  .honest{background:var(--bg);border-top:1px solid var(--line);padding:15px 22px;
+    font-size:12px;color:var(--muted);line-height:1.65}
+  .honest b{color:var(--ink);font-family:"Space Mono",ui-monospace,Menlo,monospace;font-weight:700}
+  .honest .mono{font-family:"Space Mono",ui-monospace,Menlo,monospace}
+  ul.tally{margin:8px 0 8px;padding-left:0;list-style:none}
+  ul.tally li{padding:2px 0 2px 14px;border-left:2px solid var(--line);margin-bottom:3px}
+  .repro{display:block;margin-top:9px;color:var(--faint);font-size:11px;
+    font-family:"Space Mono",ui-monospace,Menlo,monospace;word-break:break-all}
+  .foot{display:flex;align-items:center;gap:8px;padding:13px 22px;border-top:1px solid var(--line);
+    color:var(--muted);font-size:12.5px}
+  .foot .tag{margin-left:auto;font-family:"Space Mono",ui-monospace,Menlo,monospace;color:var(--faint)}
+  @media (max-width:760px){
+    .gl{font-size:15px} .rlabel{font-size:16px} .rlabel2{font-size:15px}
+    .tlabel{font-size:18px} .ltag{font-size:14px} .plabel{font-size:15px}
+    .pmax{font-size:14px} .hlabel{font-size:16px}
+    #mapwrap{display:none}
+    .mapwrap.phonewrap{display:block}
+    /* the phone layout does not draw the wave rules -- two more text layers than 360 units
+       holds -- so the legend stops explaining a mark that is not on this drawing. The waves
+       are still counted in the caption above it and in the Lanes table's WAVE column. */
+    .legend .wideonly{display:none}
+    svg.routemap.phone .rtag{font-size:10px}
+    svg.routemap.phone .ltag{font-size:9.5px}
+    svg.routemap.phone .rnote{font-size:9px}
+    svg.routemap.phone .tlabel{font-size:11px}
+    svg.routemap.phone .hlabel{font-size:9.5px}
+    svg.routemap.phone .gl{font-size:9px}
+    svg.routemap.phone .plabel{font-size:9.5px}
+    svg.routemap.phone .pmax{font-size:9px}
+  }
+  @media (max-width:640px){
+    /* the header row overflowed the viewport: a nowrap mono date plus the wordmark measured
+       ~392px inside a 390px screen, which clipped the wordmark off the card entirely */
+    .av{flex:0 0 auto;width:34px;height:34px;font-size:15px}
+    .who{min-width:0} .who small{font-size:10.5px}
+    .brand{flex:0 0 auto;font-size:9.5px;letter-spacing:.1em}
+    .top{gap:9px}
+    .stats{grid-template-columns:repeat(2,1fr)}
+    h1{font-size:18px} .stat .v{font-size:21px}
+    body{padding:12px 8px} .top,.sub,h1,.mapwrap,.maphead,section,.honest,.foot{padding-left:14px;padding-right:14px}
+  }
+</style></head>
+<body>
+  <div class="card">
+    <div class="top">
+      <div class="av">M</div>
+      <div class="who"><b>morkeeth</b><small>Sun 30 Aug 2026 · 21:38 → 07:40</small></div>
+      <div class="brand">AGENT GRINDER</div>
+    </div>
+    <h1>Handed off 23:48 · 7h 52m with nobody at the keyboard</h1>
+    <div class="sub">Claude Code · 4 sessions · 49 agent lanes ·
+      10 of the 16 repositories touched are on the route</div>
+
+    <div class="stats">
+      <div class="stat"><div class="v">40</div><div class="k">Human prompts</div>
+        <div class="src">promptSource typed|queued</div></div>
+      <div class="stat"><div class="v">10h 02m</div><div class="k">Elapsed</div>
+        <div class="src">start → now, run open</div></div>
+      <div class="stat"><div class="v">4,717</div><div class="k">Tool calls</div>
+        <div class="src">118 per human prompt</div></div>
+      <div class="stat"><div class="v">186</div><div class="k">Commits</div>
+        <div class="src">git log --all, window-bounded</div></div>
+    </div>
+
+    <div class="handoff">After <b>23:48</b>, in <b>7h 52m</b>: <b>49</b> lanes opened across <b>15</b> fan-out waves, <b>4,420</b> tool calls, <b>154</b> commits landed — and <b>0</b> prompts typed or queued, in any of the 4 sessions.</div>
+    <div class="maphead"><h2>The session route</h2>
+      <span class="note">one row per destination · 15 fan-out waves ·
+        peak 4 lanes open at once, 23:49 · 12 of 49 lanes touched more than one repository and are drawn at the busiest</span></div>
+    <div class="mapwrap" id="mapwrap" data-focus="0.2863"><svg class="routemap" viewBox="0 0 1000 783" role="img"
+   aria-label="Session route: 49 agent lanes across 10 repositories between 21:38 and 07:40, in 15 fan-out waves, peak 4 lanes open at once">
+  <rect class="band" x="88" y="233.0" width="886" height="35.0"/>
+  <rect class="band" x="88" y="315.0" width="886" height="35.0"/>
+  <rect class="band" x="88" y="397.0" width="886" height="35.0"/>
+  <rect class="band" x="88" y="479.0" width="886" height="35.0"/>
+  <rect class="band" x="88" y="561.0" width="886" height="35.0"/>
+  <line class="grid" x1="127.8" y1="44" x2="127.8" y2="755"/>
+  <text class="gl" x="127.8" y="771" text-anchor="middle">22:00</text>
+  <line class="grid" x1="302.7" y1="44" x2="302.7" y2="755"/>
+  <text class="gl" x="302.7" y="771" text-anchor="middle">00:00</text>
+  <line class="grid" x1="477.7" y1="44" x2="477.7" y2="755"/>
+  <text class="gl" x="477.7" y="771" text-anchor="middle">02:00</text>
+  <line class="grid" x1="652.7" y1="44" x2="652.7" y2="755"/>
+  <text class="gl" x="652.7" y="771" text-anchor="middle">04:00</text>
+  <line class="grid" x1="827.7" y1="44" x2="827.7" y2="755"/>
+  <text class="gl" x="827.7" y="771" text-anchor="middle">06:00</text>
+  <line class="wave" x1="287.0" y1="70" x2="287.0" y2="645"><title>wave 1 · 23:49 · 4 lanes opened</title></line>
+  <text class="wl" x="287.0" y="183" text-anchor="middle">w1·4</text>
+  <line class="wave" x1="374.1" y1="70" x2="374.1" y2="645"><title>wave 2 · 00:48 · 4 lanes opened</title></line>
+  <text class="wl" x="374.1" y="183" text-anchor="middle">w2·4</text>
+  <line class="wave" x1="400.4" y1="70" x2="400.4" y2="645"><title>wave 3 · 01:06 · 4 lanes opened</title></line>
+  <text class="wl" x="400.4" y="183" text-anchor="middle">w3·4</text>
+  <line class="wave" x1="439.8" y1="70" x2="439.8" y2="645"><title>wave 4 · 01:33 · 3 lanes opened</title></line>
+  <text class="wl" x="439.8" y="183" text-anchor="middle">w4·3</text>
+  <line class="wave" x1="515.3" y1="70" x2="515.3" y2="645"><title>wave 5 · 02:25 · 3 lanes opened</title></line>
+  <text class="wl" x="515.3" y="183" text-anchor="middle">w5·3</text>
+  <line class="wave" x1="540.0" y1="70" x2="540.0" y2="645"><title>wave 6 · 02:42 · 4 lanes opened</title></line>
+  <text class="wl" x="540.0" y="183" text-anchor="middle">w6·4</text>
+  <line class="wave" x1="596.6" y1="70" x2="596.6" y2="645"><title>wave 7 · 03:21 · 2 lanes opened</title></line>
+  <text class="wl" x="596.6" y="183" text-anchor="middle">w7·2</text>
+  <line class="wave" x1="637.5" y1="70" x2="637.5" y2="645"><title>wave 8 · 03:49 · 2 lanes opened</title></line>
+  <text class="wl" x="637.5" y="183" text-anchor="middle">w8·2</text>
+  <line class="wave" x1="679.6" y1="70" x2="679.6" y2="645"><title>wave 9 · 04:18 · 4 lanes opened</title></line>
+  <text class="wl" x="679.6" y="183" text-anchor="middle">w9·4</text>
+  <line class="wave" x1="733.6" y1="70" x2="733.6" y2="645"><title>wave 10 · 04:55 · 4 lanes opened</title></line>
+  <text class="wl" x="733.6" y="183" text-anchor="middle">w10·4</text>
+  <line class="wave" x1="781.8" y1="70" x2="781.8" y2="645"><title>wave 11 · 05:28 · 4 lanes opened</title></line>
+  <text class="wl" x="781.8" y="183" text-anchor="middle">w11·4</text>
+  <line class="wave" x1="843.6" y1="70" x2="843.6" y2="645"><title>wave 12 · 06:10 · 4 lanes opened</title></line>
+  <text class="wl" x="843.6" y="183" text-anchor="middle">w12·4</text>
+  <line class="wave" x1="882.0" y1="70" x2="882.0" y2="645"><title>wave 13 · 06:37 · 3 lanes opened</title></line>
+  <text class="wl" x="882.0" y="183" text-anchor="middle">w13·3</text>
+  <line class="wave" x1="920.9" y1="70" x2="920.9" y2="645"><title>wave 14 · 07:03 · 2 lanes opened</title></line>
+  <text class="wl" x="920.9" y="183" text-anchor="middle">w14·2</text>
+  <line class="wave" x1="956.4" y1="70" x2="956.4" y2="645"><title>wave 15 · 07:28 · 2 lanes opened</title></line>
+  <text class="wl" x="956.4" y="183" text-anchor="middle">w15·2</text>
+  <line class="hline" x1="286.3" y1="38" x2="286.3" y2="755"/>
+  <text class="hlabel" x="293.3" y="34" text-anchor="start">handoff 23:48</text>
+  <text class="tlabel" x="82" y="62" text-anchor="end">you</text>
+  <line class="trunk" x1="96" y1="58" x2="286.3" y2="58"/>
+  <line class="trunk gone" x1="286.3" y1="58" x2="974" y2="58"/>
+  <line class="tick" x1="96.0" y1="50" x2="96.0" y2="66"/>
+  <line class="tick" x1="98.9" y1="50" x2="98.9" y2="66"/>
+  <line class="tick" x1="105.1" y1="50" x2="105.1" y2="66"/>
+  <line class="tick" x1="124.3" y1="50" x2="124.3" y2="66"/>
+  <line class="tick" x1="127.6" y1="50" x2="127.6" y2="66"/>
+  <line class="tick" x1="127.9" y1="50" x2="127.9" y2="66"/>
+  <line class="tick" x1="129.2" y1="50" x2="129.2" y2="66"/>
+  <line class="tick" x1="131.4" y1="50" x2="131.4" y2="66"/>
+  <line class="tick" x1="134.5" y1="50" x2="134.5" y2="66"/>
+  <line class="tick" x1="135.7" y1="50" x2="135.7" y2="66"/>
+  <line class="tick" x1="141.2" y1="50" x2="141.2" y2="66"/>
+  <line class="tick" x1="164.5" y1="50" x2="164.5" y2="66"/>
+  <line class="tick" x1="171.6" y1="50" x2="171.6" y2="66"/>
+  <line class="tick" x1="172.0" y1="50" x2="172.0" y2="66"/>
+  <line class="tick" x1="175.2" y1="50" x2="175.2" y2="66"/>
+  <line class="tick" x1="177.5" y1="50" x2="177.5" y2="66"/>
+  <line class="tick" x1="185.9" y1="50" x2="185.9" y2="66"/>
+  <line class="tick" x1="196.1" y1="50" x2="196.1" y2="66"/>
+  <line class="tick" x1="203.6" y1="50" x2="203.6" y2="66"/>
+  <line class="tick" x1="206.9" y1="50" x2="206.9" y2="66"/>
+  <line class="tick" x1="213.6" y1="50" x2="213.6" y2="66"/>
+  <line class="tick" x1="219.5" y1="50" x2="219.5" y2="66"/>
+  <line class="tick" x1="245.3" y1="50" x2="245.3" y2="66"/>
+  <line class="tick" x1="246.1" y1="50" x2="246.1" y2="66"/>
+  <line class="tick" x1="250.4" y1="50" x2="250.4" y2="66"/>
+  <line class="tick" x1="252.8" y1="50" x2="252.8" y2="66"/>
+  <line class="tick" x1="254.2" y1="50" x2="254.2" y2="66"/>
+  <line class="tick" x1="255.3" y1="50" x2="255.3" y2="66"/>
+  <line class="tick" x1="257.4" y1="50" x2="257.4" y2="66"/>
+  <line class="tick" x1="258.3" y1="50" x2="258.3" y2="66"/>
+  <line class="tick" x1="258.6" y1="50" x2="258.6" y2="66"/>
+  <line class="tick" x1="260.4" y1="50" x2="260.4" y2="66"/>
+  <line class="tick" x1="261.6" y1="50" x2="261.6" y2="66"/>
+  <line class="tick" x1="264.5" y1="50" x2="264.5" y2="66"/>
+  <line class="tick" x1="272.0" y1="50" x2="272.0" y2="66"/>
+  <line class="tick" x1="274.0" y1="50" x2="274.0" y2="66"/>
+  <line class="tick" x1="276.0" y1="50" x2="276.0" y2="66"/>
+  <line class="tick" x1="279.4" y1="50" x2="279.4" y2="66"/>
+  <line class="tick" x1="282.1" y1="50" x2="282.1" y2="66"/>
+  <line class="tick" x1="286.3" y1="50" x2="286.3" y2="66"/>
+  <line class="seg human" x1="96.0" y1="88" x2="293.2" y2="88" stroke-width="5.5"><title>your session · 21:38-23:53 · 20 human prompts · 160 tool calls</title></line>
+  <text class="ltag human" x="96.0" y="82">your session · 20 prompts</text>
+  <line class="seg human" x1="98.9" y1="109" x2="248.2" y2="109" stroke-width="4.04"><title>your session · 21:40-23:22 · 7 human prompts · 72 tool calls</title></line>
+  <text class="ltag human" x="98.9" y="104">your session · 7 prompts</text>
+  <line class="seg human" x1="134.5" y1="130" x2="261.1" y2="130" stroke-width="3.46"><title>your session · 22:04-23:31 · 12 human prompts · 43 tool calls</title></line>
+  <text class="ltag human" x="134.5" y="124">your session · 12 prompts</text>
+  <line class="seg human" x1="274.0" y1="151" x2="956.8" y2="151" stroke-width="2.58"><title>your session · 23:40-07:28 · 1 human prompt · 79 tool calls</title></line>
+  <text class="ltag human" x="274.0" y="146">your session · 1 prompt</text>
+  <line class="crail" x1="96" y1="220.0" x2="974" y2="220.0"/>
+  <text class="rtag" x="103.9" y="203">repo 4<tspan class="rnote"> · 36 commits · 9 lanes</tspan></text>
+  <line class="crail" x1="96" y1="261.0" x2="974" y2="261.0"/>
+  <text class="rtag" x="123.3" y="244">repo 9<tspan class="rnote"> · 29 commits · 7 lanes</tspan></text>
+  <line class="crail" x1="96" y1="302.0" x2="974" y2="302.0"/>
+  <text class="rtag" x="137.6" y="285">repo 14<tspan class="rnote"> · 3 commits · 1 lane</tspan></text>
+  <line class="crail" x1="96" y1="343.0" x2="974" y2="343.0"/>
+  <text class="rtag" x="137.6" y="326">repo 16<tspan class="rnote"> · 8 commits · 1 lane</tspan></text>
+  <line class="crail" x1="96" y1="384.0" x2="974" y2="384.0"/>
+  <text class="rtag" x="144.7" y="367">repo 13<tspan class="rnote"> · 29 commits · 6 lanes</tspan></text>
+  <line class="crail" x1="96" y1="425.0" x2="974" y2="425.0"/>
+  <text class="rtag" x="217.9" y="408">repo 8<tspan class="rnote"> · 31 commits · 8 lanes</tspan></text>
+  <line class="crail" x1="96" y1="466.0" x2="974" y2="466.0"/>
+  <text class="rtag" x="286.3" y="449">repo 5<tspan class="rnote"> · 28 commits · 7 lanes</tspan></text>
+  <line class="crail" x1="96" y1="507.0" x2="974" y2="507.0"/>
+  <text class="rtag" x="287.1" y="490">repo 1<tspan class="rnote"> · 5 commits · 4 lanes</tspan></text>
+  <line class="crail" x1="96" y1="548.0" x2="974" y2="548.0"/>
+  <text class="rtag" x="287.1" y="531">repo 7<tspan class="rnote"> · 11 commits · 4 lanes</tspan></text>
+  <line class="crail" x1="96" y1="589.0" x2="974" y2="589.0"/>
+  <text class="rtag" x="374.1" y="572">recon<tspan class="rnote"> · 2 lanes · landed in no repository</tspan></text>
+  <line class="crail" x1="96" y1="630.0" x2="974" y2="630.0"/>
+  <text class="rtag" x="470.3" y="613">repo 10<tspan class="rnote"> · 6 commits · no lane drawn here</tspan></text>
+  <line class="seg" x1="439.8" y1="209" x2="489.9" y2="209" stroke-width="4.83"><title>L6 · 01:33-02:08 · 34m · 104 tool calls · 3.0/min</title></line>
+  <circle class="cap ship" cx="489.9" cy="209" r="3.2"/>
+  <text class="lcode" x="439.8" y="213" text-anchor="end">L6 </text>
+  <line class="seg" x1="515.4" y1="209" x2="528.5" y2="209" stroke-width="5.36"><title>repo 4 · 02:25-02:34 · 9m · 32 tool calls · 3.6/min</title></line>
+  <circle class="cap spur" cx="528.5" cy="209" r="3.2"/>
+  <line class="seg" x1="596.6" y1="209" x2="637.4" y2="209" stroke-width="5.45"><title>repo 4 · 03:21-03:49 · 27m · 103 tool calls · 3.7/min</title></line>
+  <circle class="cap ship" cx="637.4" cy="209" r="3.2"/>
+  <line class="seg" x1="679.7" y1="209" x2="733.6" y2="209" stroke-width="4.39"><title>repo 4 · 04:18-04:55 · 36m · 91 tool calls · 2.5/min</title></line>
+  <circle class="cap ship" cx="733.6" cy="209" r="3.2"/>
+  <line class="seg" x1="733.7" y1="209" x2="770.4" y2="209" stroke-width="6.06"><title>repo 4 · 04:55-05:20 · 25m · 112 tool calls · 4.4/min</title></line>
+  <circle class="cap ship" cx="770.4" cy="209" r="3.2"/>
+  <line class="seg" x1="781.8" y1="209" x2="843.6" y2="209" stroke-width="4.48"><title>repo 4 · 05:28-06:10 · 42m · 108 tool calls · 2.6/min</title></line>
+  <circle class="cap ship" cx="843.6" cy="209" r="3.2"/>
+  <line class="seg" x1="843.6" y1="209" x2="880.2" y2="209" stroke-width="5.45"><title>repo 4 · 06:10-06:35 · 25m · 93 tool calls · 3.7/min</title></line>
+  <circle class="cap ship" cx="880.2" cy="209" r="3.2"/>
+  <line class="seg" x1="920.9" y1="209" x2="937.8" y2="209" stroke-width="6.41"><title>repo 4 · 07:03-07:15 · 11m · 56 tool calls · 4.8/min</title></line>
+  <circle class="cap spur" cx="937.8" cy="209" r="3.2"/>
+  <line class="seg" x1="956.5" y1="209" x2="972.5" y2="209" stroke-width="6.67"><title>repo 4 · 07:28-07:39 · 10m · 56 tool calls · 5.1/min</title></line>
+  <circle class="cap spur" cx="972.5" cy="209" r="3.2"/>
+  <line class="seg" x1="287.0" y1="250" x2="343.5" y2="250" stroke-width="4.92"><title>L1 · 23:49-00:27 · 38m · 119 tool calls · 3.1/min</title></line>
+  <circle class="cap ship" cx="343.5" cy="250" r="3.2"/>
+  <text class="lcode" x="287.0" y="254" text-anchor="end">L1 </text>
+  <line class="seg" x1="374.1" y1="250" x2="396.2" y2="250" stroke-width="6.15"><title>repo 9 · 00:48-01:04 · 15m · 68 tool calls · 4.5/min</title></line>
+  <circle class="cap spur" cx="396.2" cy="250" r="3.2"/>
+  <line class="seg" x1="400.4" y1="250" x2="427.2" y2="250" stroke-width="5.88"><title>repo 9 · 01:06-01:25 · 18m · 77 tool calls · 4.2/min</title></line>
+  <circle class="cap ship" cx="427.2" cy="250" r="3.2"/>
+  <line class="seg" x1="540.0" y1="250" x2="569.8" y2="250" stroke-width="5.36"><title>repo 9 · 02:42-03:03 · 20m · 73 tool calls · 3.6/min</title></line>
+  <circle class="cap ship" cx="569.8" cy="250" r="3.2"/>
+  <line class="seg" x1="679.7" y1="250" x2="731.0" y2="250" stroke-width="5.27"><title>repo 9 · 04:18-04:53 · 35m · 124 tool calls · 3.5/min</title></line>
+  <circle class="cap ship" cx="731.0" cy="250" r="3.2"/>
+  <line class="seg" x1="733.7" y1="250" x2="762.5" y2="250" stroke-width="6.41"><title>repo 9 · 04:55-05:15 · 19m · 95 tool calls · 4.8/min</title></line>
+  <circle class="cap ship" cx="762.5" cy="250" r="3.2"/>
+  <line class="seg" x1="882.0" y1="250" x2="903.6" y2="250" stroke-width="6.15"><title>repo 9 · 06:37-06:52 · 14m · 66 tool calls · 4.5/min</title></line>
+  <circle class="cap ship" cx="903.6" cy="250" r="3.2"/>
+  <line class="seg" x1="637.5" y1="291" x2="676.2" y2="291" stroke-width="5.71"><title>repo 14 · 03:49-04:16 · 26m · 106 tool calls · 4.0/min</title></line>
+  <circle class="cap ship" cx="676.2" cy="291" r="3.2"/>
+  <line class="seg" x1="637.5" y1="332" x2="659.7" y2="332" stroke-width="7.2"><title>repo 16 · 03:49-04:04 · 15m · 87 tool calls · 5.7/min</title></line>
+  <circle class="cap ship" cx="659.7" cy="332" r="3.2"/>
+  <line class="seg" x1="287.1" y1="373" x2="374.1" y2="373" stroke-width="4.39"><title>L3 · 23:49-00:48 · 59m · 152 tool calls · 2.5/min</title></line>
+  <circle class="cap ship" cx="374.1" cy="373" r="3.2"/>
+  <text class="lcode" x="287.1" y="377" text-anchor="end">L3 </text>
+  <line class="seg" x1="374.1" y1="373" x2="384.1" y2="373" stroke-width="6.15"><title>repo 13 · 00:48-00:55 · 6m · 31 tool calls · 4.5/min</title></line>
+  <circle class="cap spur" cx="384.1" cy="373" r="3.2"/>
+  <line class="seg" x1="400.5" y1="373" x2="427.0" y2="373" stroke-width="5.62"><title>repo 13 · 01:07-01:25 · 18m · 70 tool calls · 3.9/min</title></line>
+  <circle class="cap ship" cx="427.0" cy="373" r="3.2"/>
+  <line class="seg" x1="540.0" y1="373" x2="587.0" y2="373" stroke-width="4.74"><title>repo 13 · 02:42-03:14 · 32m · 92 tool calls · 2.9/min</title></line>
+  <circle class="cap ship" cx="587.0" cy="373" r="3.2"/>
+  <line class="seg" x1="781.8" y1="373" x2="828.4" y2="373" stroke-width="5.53"><title>repo 13 · 05:28-06:00 · 31m · 121 tool calls · 3.8/min</title></line>
+  <circle class="cap ship" cx="828.4" cy="373" r="3.2"/>
+  <line class="seg" x1="843.6" y1="373" x2="864.9" y2="373" stroke-width="6.06"><title>repo 13 · 06:10-06:25 · 14m · 65 tool calls · 4.4/min</title></line>
+  <circle class="cap ship" cx="864.9" cy="373" r="3.2"/>
+  <line class="seg" x1="439.8" y1="414" x2="476.9" y2="414" stroke-width="5.71"><title>L7 · 01:33-01:59 · 25m · 101 tool calls · 4.0/min</title></line>
+  <circle class="cap ship" cx="476.9" cy="414" r="3.2"/>
+  <text class="lcode" x="439.8" y="418" text-anchor="end">L7 </text>
+  <line class="seg" x1="515.4" y1="414" x2="532.5" y2="414" stroke-width="5.97"><title>repo 8 · 02:25-02:37 · 11m · 51 tool calls · 4.3/min</title></line>
+  <circle class="cap spur" cx="532.5" cy="414" r="3.2"/>
+  <line class="seg" x1="596.7" y1="414" x2="637.5" y2="414" stroke-width="4.83"><title>repo 8 · 03:21-03:49 · 28m · 83 tool calls · 3.0/min</title></line>
+  <circle class="cap ship" cx="637.5" cy="414" r="3.2"/>
+  <line class="seg" x1="679.7" y1="414" x2="725.3" y2="414" stroke-width="5.8"><title>repo 8 · 04:18-04:49 · 31m · 128 tool calls · 4.1/min</title></line>
+  <circle class="cap ship" cx="725.3" cy="414" r="3.2"/>
+  <line class="seg" x1="733.7" y1="414" x2="753.8" y2="414" stroke-width="5.53"><title>repo 8 · 04:55-05:09 · 13m · 53 tool calls · 3.8/min</title></line>
+  <circle class="cap ship" cx="753.8" cy="414" r="3.2"/>
+  <line class="seg" x1="781.8" y1="414" x2="825.9" y2="414" stroke-width="6.15"><title>repo 8 · 05:28-05:58 · 30m · 137 tool calls · 4.5/min</title></line>
+  <circle class="cap ship" cx="825.9" cy="414" r="3.2"/>
+  <line class="seg" x1="843.6" y1="414" x2="878.2" y2="414" stroke-width="5.8"><title>repo 8 · 06:10-06:34 · 23m · 96 tool calls · 4.1/min</title></line>
+  <circle class="cap ship" cx="878.2" cy="414" r="3.2"/>
+  <line class="seg" x1="921.0" y1="414" x2="953.5" y2="414" stroke-width="6.24"><title>repo 8 · 07:03-07:26 · 22m · 102 tool calls · 4.6/min</title></line>
+  <circle class="cap ship" cx="953.5" cy="414" r="3.2"/>
+  <line class="seg" x1="439.8" y1="455" x2="515.3" y2="455" stroke-width="4.83"><title>L5 · 01:33-02:25 · 51m · 156 tool calls · 3.0/min</title></line>
+  <circle class="cap ship" cx="515.3" cy="455" r="3.2"/>
+  <text class="lcode" x="439.8" y="459" text-anchor="end">L5 </text>
+  <line class="seg" x1="515.3" y1="455" x2="536.4" y2="455" stroke-width="5.8"><title>repo 5 · 02:25-02:40 · 14m · 59 tool calls · 4.1/min</title></line>
+  <circle class="cap spur" cx="536.4" cy="455" r="3.2"/>
+  <line class="seg" x1="679.6" y1="455" x2="723.9" y2="455" stroke-width="5.09"><title>repo 5 · 04:18-04:48 · 30m · 99 tool calls · 3.3/min</title></line>
+  <circle class="cap ship" cx="723.9" cy="455" r="3.2"/>
+  <line class="seg" x1="733.6" y1="455" x2="779.3" y2="455" stroke-width="5.27"><title>repo 5 · 04:55-05:26 · 31m · 111 tool calls · 3.5/min</title></line>
+  <circle class="cap ship" cx="779.3" cy="455" r="3.2"/>
+  <line class="seg" x1="781.8" y1="455" x2="831.0" y2="455" stroke-width="5.18"><title>repo 5 · 05:28-06:02 · 33m · 114 tool calls · 3.4/min</title></line>
+  <circle class="cap ship" cx="831.0" cy="455" r="3.2"/>
+  <line class="seg" x1="843.6" y1="455" x2="880.3" y2="455" stroke-width="5.27"><title>repo 5 · 06:10-06:36 · 25m · 89 tool calls · 3.5/min</title></line>
+  <circle class="cap ship" cx="880.3" cy="455" r="3.2"/>
+  <line class="seg" x1="882.0" y1="455" x2="916.4" y2="455" stroke-width="6.06"><title>repo 5 · 06:37-07:00 · 23m · 104 tool calls · 4.4/min</title></line>
+  <circle class="cap spur" cx="916.4" cy="455" r="3.2"/>
+  <line class="seg" x1="287.1" y1="496" x2="306.6" y2="496" stroke-width="6.06"><title>L2 · 23:49-00:02 · 13m · 59 tool calls · 4.4/min</title></line>
+  <circle class="cap ship" cx="306.6" cy="496" r="3.2"/>
+  <text class="lcode" x="287.1" y="500" text-anchor="end">L2 </text>
+  <line class="seg" x1="374.1" y1="496" x2="392.2" y2="496" stroke-width="6.85"><title>repo 1 · 00:48-01:01 · 12m · 66 tool calls · 5.3/min</title></line>
+  <circle class="cap spur" cx="392.2" cy="496" r="3.2"/>
+  <line class="seg" x1="400.5" y1="496" x2="422.5" y2="496" stroke-width="7.11"><title>repo 1 · 01:07-01:22 · 15m · 85 tool calls · 5.6/min</title></line>
+  <circle class="cap ship" cx="422.5" cy="496" r="3.2"/>
+  <line class="seg" x1="540.0" y1="496" x2="554.7" y2="496" stroke-width="4.22"><title>repo 1 · 02:42-02:52 · 10m · 23 tool calls · 2.3/min</title></line>
+  <circle class="cap ship" cx="554.7" cy="496" r="3.2"/>
+  <line class="seg" x1="287.1" y1="537" x2="353.8" y2="537" stroke-width="4.74"><title>L4 · 23:49-00:35 · 45m · 135 tool calls · 2.9/min</title></line>
+  <circle class="cap ship" cx="353.8" cy="537" r="3.2"/>
+  <text class="lcode" x="287.1" y="541" text-anchor="end">L4 </text>
+  <line class="seg" x1="400.5" y1="537" x2="439.8" y2="537" stroke-width="5.53"><title>repo 7 · 01:07-01:33 · 26m · 102 tool calls · 3.8/min</title></line>
+  <circle class="cap ship" cx="439.8" cy="537" r="3.2"/>
+  <line class="seg" x1="540.0" y1="537" x2="596.6" y2="537" stroke-width="5.53"><title>repo 7 · 02:42-03:21 · 38m · 148 tool calls · 3.8/min</title></line>
+  <circle class="cap ship" cx="596.6" cy="537" r="3.2"/>
+  <line class="seg" x1="882.0" y1="537" x2="904.9" y2="537" stroke-width="5.36"><title>repo 7 · 06:37-06:52 · 15m · 56 tool calls · 3.6/min</title></line>
+  <circle class="cap ship" cx="904.9" cy="537" r="3.2"/>
+  <line class="seg" x1="374.1" y1="578" x2="391.4" y2="578" stroke-width="6.5"><title>lane · 00:48-01:00 · 11m · 58 tool calls · 4.9/min</title></line>
+  <circle class="cap spur" cx="391.4" cy="578" r="3.2"/>
+  <line class="seg" x1="956.4" y1="578" x2="972.3" y2="578" stroke-width="5.97"><title>lane · 07:28-07:39 · 10m · 47 tool calls · 4.3/min</title></line>
+  <circle class="cap spur" cx="972.3" cy="578" r="3.2"/>
+  <line class="flag" x1="103.9" y1="215.0" x2="103.9" y2="225.0"><title>repo 4 · commit 21:43</title></line>
+  <line class="flag" x1="105.6" y1="215.0" x2="105.6" y2="225.0"><title>repo 4 · commit 21:44</title></line>
+  <line class="flag" x1="142.9" y1="215.0" x2="142.9" y2="225.0"><title>repo 4 · commit 22:10</title></line>
+  <line class="flag" x1="144.4" y1="215.0" x2="144.4" y2="225.0"><title>repo 4 · commit 22:11</title></line>
+  <line class="flag" x1="176.8" y1="215.0" x2="176.8" y2="225.0"><title>repo 4 · commit 22:33</title></line>
+  <line class="flag" x1="215.3" y1="215.0" x2="215.3" y2="225.0"><title>repo 4 · commit 23:00</title></line>
+  <line class="flag" x1="221.6" y1="215.0" x2="221.6" y2="225.0"><title>repo 4 · commit 23:04</title></line>
+  <line class="flag" x1="222.9" y1="215.0" x2="222.9" y2="225.0"><title>repo 4 · commit 23:05</title></line>
+  <line class="flag" x1="224.2" y1="215.0" x2="224.2" y2="225.0"><title>repo 4 · commit 23:06</title></line>
+  <line class="flag" x1="226.0" y1="215.0" x2="226.0" y2="225.0"><title>repo 4 · commit 23:07</title></line>
+  <line class="flag" x1="232.1" y1="215.0" x2="232.1" y2="225.0"><title>repo 4 · commit 23:11</title></line>
+  <line class="flag" x1="444.1" y1="215.0" x2="444.1" y2="225.0"><title>repo 4 · commit 01:36</title></line>
+  <line class="flag" x1="469.5" y1="215.0" x2="469.5" y2="225.0"><title>repo 4 · commit 01:54</title></line>
+  <line class="flag" x1="478.5" y1="215.0" x2="478.5" y2="225.0"><title>repo 4 · commit 02:00</title></line>
+  <line class="flag" x1="487.2" y1="215.0" x2="487.2" y2="225.0"><title>repo 4 · commit 02:06</title></line>
+  <line class="flag" x1="488.6" y1="215.0" x2="488.6" y2="225.0"><title>repo 4 · commit 02:07</title></line>
+  <line class="flag" x1="488.8" y1="215.0" x2="488.8" y2="225.0"><title>repo 4 · commit 02:07</title></line>
+  <line class="flag" x1="623.1" y1="215.0" x2="623.1" y2="225.0"><title>repo 4 · commit 03:39</title></line>
+  <line class="flag" x1="630.2" y1="215.0" x2="630.2" y2="225.0"><title>repo 4 · commit 03:44</title></line>
+  <line class="flag" x1="632.6" y1="215.0" x2="632.6" y2="225.0"><title>repo 4 · commit 03:46</title></line>
+  <line class="flag" x1="636.2" y1="215.0" x2="636.2" y2="225.0"><title>repo 4 · commit 03:48</title></line>
+  <line class="flag" x1="716.2" y1="215.0" x2="716.2" y2="225.0"><title>repo 4 · commit 04:43</title></line>
+  <line class="flag" x1="729.5" y1="215.0" x2="729.5" y2="225.0"><title>repo 4 · commit 04:52</title></line>
+  <line class="flag" x1="730.6" y1="215.0" x2="730.6" y2="225.0"><title>repo 4 · commit 04:53</title></line>
+  <line class="flag" x1="768.8" y1="215.0" x2="768.8" y2="225.0"><title>repo 4 · commit 05:19</title></line>
+  <line class="flag" x1="807.8" y1="215.0" x2="807.8" y2="225.0"><title>repo 4 · commit 05:46</title></line>
+  <line class="flag" x1="813.8" y1="215.0" x2="813.8" y2="225.0"><title>repo 4 · commit 05:50</title></line>
+  <line class="flag" x1="819.1" y1="215.0" x2="819.1" y2="225.0"><title>repo 4 · commit 05:54</title></line>
+  <line class="flag" x1="827.2" y1="215.0" x2="827.2" y2="225.0"><title>repo 4 · commit 05:59</title></line>
+  <line class="flag" x1="828.3" y1="215.0" x2="828.3" y2="225.0"><title>repo 4 · commit 06:00</title></line>
+  <line class="flag" x1="832.2" y1="215.0" x2="832.2" y2="225.0"><title>repo 4 · commit 06:03</title></line>
+  <line class="flag" x1="838.7" y1="215.0" x2="838.7" y2="225.0"><title>repo 4 · commit 06:07</title></line>
+  <line class="flag" x1="839.5" y1="215.0" x2="839.5" y2="225.0"><title>repo 4 · commit 06:08</title></line>
+  <line class="flag" x1="841.2" y1="215.0" x2="841.2" y2="225.0"><title>repo 4 · commit 06:09</title></line>
+  <line class="flag" x1="875.1" y1="215.0" x2="875.1" y2="225.0"><title>repo 4 · commit 06:32</title></line>
+  <line class="flag" x1="941.0" y1="215.0" x2="941.0" y2="225.0"><title>repo 4 · commit 07:17</title></line>
+  <line class="flag" x1="123.3" y1="256.0" x2="123.3" y2="266.0"><title>repo 9 · commit 21:56</title></line>
+  <line class="flag" x1="137.6" y1="256.0" x2="137.6" y2="266.0"><title>repo 9 · commit 22:06</title></line>
+  <line class="flag" x1="148.6" y1="256.0" x2="148.6" y2="266.0"><title>repo 9 · commit 22:14</title></line>
+  <line class="flag" x1="198.7" y1="256.0" x2="198.7" y2="266.0"><title>repo 9 · commit 22:48</title></line>
+  <line class="flag" x1="219.7" y1="256.0" x2="219.7" y2="266.0"><title>repo 9 · commit 23:03</title></line>
+  <line class="flag" x1="337.7" y1="256.0" x2="337.7" y2="266.0"><title>repo 9 · commit 00:24</title></line>
+  <line class="flag" x1="337.7" y1="256.0" x2="337.7" y2="266.0"><title>repo 9 · commit 00:24</title></line>
+  <line class="flag" x1="337.7" y1="256.0" x2="337.7" y2="266.0"><title>repo 9 · commit 00:24</title></line>
+  <line class="flag" x1="339.2" y1="256.0" x2="339.2" y2="266.0"><title>repo 9 · commit 00:24</title></line>
+  <line class="flag" x1="341.8" y1="256.0" x2="341.8" y2="266.0"><title>repo 9 · commit 00:26</title></line>
+  <line class="flag" x1="423.1" y1="256.0" x2="423.1" y2="266.0"><title>repo 9 · commit 01:22</title></line>
+  <line class="flag" x1="566.4" y1="256.0" x2="566.4" y2="266.0"><title>repo 9 · commit 03:00</title></line>
+  <line class="flag" x1="713.5" y1="256.0" x2="713.5" y2="266.0"><title>repo 9 · commit 04:41</title></line>
+  <line class="flag" x1="713.9" y1="256.0" x2="713.9" y2="266.0"><title>repo 9 · commit 04:41</title></line>
+  <line class="flag" x1="714.4" y1="256.0" x2="714.4" y2="266.0"><title>repo 9 · commit 04:42</title></line>
+  <line class="flag" x1="718.3" y1="256.0" x2="718.3" y2="266.0"><title>repo 9 · commit 04:45</title></line>
+  <line class="flag" x1="725.6" y1="256.0" x2="725.6" y2="266.0"><title>repo 9 · commit 04:50</title></line>
+  <line class="flag" x1="726.0" y1="256.0" x2="726.0" y2="266.0"><title>repo 9 · commit 04:50</title></line>
+  <line class="flag" x1="726.9" y1="256.0" x2="726.9" y2="266.0"><title>repo 9 · commit 04:50</title></line>
+  <line class="flag" x1="728.9" y1="256.0" x2="728.9" y2="266.0"><title>repo 9 · commit 04:52</title></line>
+  <line class="flag" x1="753.3" y1="256.0" x2="753.3" y2="266.0"><title>repo 9 · commit 05:09</title></line>
+  <line class="flag" x1="755.5" y1="256.0" x2="755.5" y2="266.0"><title>repo 9 · commit 05:10</title></line>
+  <line class="flag" x1="756.4" y1="256.0" x2="756.4" y2="266.0"><title>repo 9 · commit 05:11</title></line>
+  <line class="flag" x1="757.6" y1="256.0" x2="757.6" y2="266.0"><title>repo 9 · commit 05:11</title></line>
+  <line class="flag" x1="760.3" y1="256.0" x2="760.3" y2="266.0"><title>repo 9 · commit 05:13</title></line>
+  <line class="flag" x1="760.5" y1="256.0" x2="760.5" y2="266.0"><title>repo 9 · commit 05:13</title></line>
+  <line class="flag" x1="896.7" y1="256.0" x2="896.7" y2="266.0"><title>repo 9 · commit 06:47</title></line>
+  <line class="flag" x1="901.7" y1="256.0" x2="901.7" y2="266.0"><title>repo 9 · commit 06:50</title></line>
+  <line class="flag" x1="940.2" y1="256.0" x2="940.2" y2="266.0"><title>repo 9 · commit 07:17</title></line>
+  <line class="flag" x1="137.6" y1="297.0" x2="137.6" y2="307.0"><title>repo 14 · commit 22:06</title></line>
+  <line class="flag" x1="670.8" y1="297.0" x2="670.8" y2="307.0"><title>repo 14 · commit 04:12</title></line>
+  <line class="flag" x1="674.8" y1="297.0" x2="674.8" y2="307.0"><title>repo 14 · commit 04:15</title></line>
+  <line class="flag" x1="137.6" y1="338.0" x2="137.6" y2="348.0"><title>repo 16 · commit 22:06</title></line>
+  <line class="flag" x1="142.9" y1="338.0" x2="142.9" y2="348.0"><title>repo 16 · commit 22:10</title></line>
+  <line class="flag" x1="490.9" y1="338.0" x2="490.9" y2="348.0"><title>repo 16 · commit 02:09</title></line>
+  <line class="flag" x1="647.9" y1="338.0" x2="647.9" y2="348.0"><title>repo 16 · commit 03:56</title></line>
+  <line class="flag" x1="650.7" y1="338.0" x2="650.7" y2="348.0"><title>repo 16 · commit 03:58</title></line>
+  <line class="flag" x1="654.3" y1="338.0" x2="654.3" y2="348.0"><title>repo 16 · commit 04:01</title></line>
+  <line class="flag" x1="656.1" y1="338.0" x2="656.1" y2="348.0"><title>repo 16 · commit 04:02</title></line>
+  <line class="flag" x1="658.5" y1="338.0" x2="658.5" y2="348.0"><title>repo 16 · commit 04:03</title></line>
+  <line class="flag" x1="144.7" y1="379.0" x2="144.7" y2="389.0"><title>repo 13 · commit 22:11</title></line>
+  <line class="flag" x1="165.4" y1="379.0" x2="165.4" y2="389.0"><title>repo 13 · commit 22:25</title></line>
+  <line class="flag" x1="251.8" y1="379.0" x2="251.8" y2="389.0"><title>repo 13 · commit 23:25</title></line>
+  <line class="flag" x1="256.1" y1="379.0" x2="256.1" y2="389.0"><title>repo 13 · commit 23:27</title></line>
+  <line class="flag" x1="256.5" y1="379.0" x2="256.5" y2="389.0"><title>repo 13 · commit 23:28</title></line>
+  <line class="flag" x1="257.7" y1="379.0" x2="257.7" y2="389.0"><title>repo 13 · commit 23:29</title></line>
+  <line class="flag" x1="257.9" y1="379.0" x2="257.9" y2="389.0"><title>repo 13 · commit 23:29</title></line>
+  <line class="flag" x1="260.2" y1="379.0" x2="260.2" y2="389.0"><title>repo 13 · commit 23:30</title></line>
+  <line class="flag" x1="280.1" y1="379.0" x2="280.1" y2="389.0"><title>repo 13 · commit 23:44</title></line>
+  <line class="flag" x1="282.1" y1="379.0" x2="282.1" y2="389.0"><title>repo 13 · commit 23:45</title></line>
+  <line class="flag" x1="284.8" y1="379.0" x2="284.8" y2="389.0"><title>repo 13 · commit 23:47</title></line>
+  <line class="flag" x1="286.7" y1="379.0" x2="286.7" y2="389.0"><title>repo 13 · commit 23:49</title></line>
+  <line class="flag" x1="297.1" y1="379.0" x2="297.1" y2="389.0"><title>repo 13 · commit 23:56</title></line>
+  <line class="flag" x1="298.4" y1="379.0" x2="298.4" y2="389.0"><title>repo 13 · commit 23:57</title></line>
+  <line class="flag" x1="319.9" y1="379.0" x2="319.9" y2="389.0"><title>repo 13 · commit 00:11</title></line>
+  <line class="flag" x1="325.7" y1="379.0" x2="325.7" y2="389.0"><title>repo 13 · commit 00:15</title></line>
+  <line class="flag" x1="365.2" y1="379.0" x2="365.2" y2="389.0"><title>repo 13 · commit 00:42</title></line>
+  <line class="flag" x1="366.8" y1="379.0" x2="366.8" y2="389.0"><title>repo 13 · commit 00:43</title></line>
+  <line class="flag" x1="371.4" y1="379.0" x2="371.4" y2="389.0"><title>repo 13 · commit 00:47</title></line>
+  <line class="flag" x1="421.0" y1="379.0" x2="421.0" y2="389.0"><title>repo 13 · commit 01:21</title></line>
+  <line class="flag" x1="425.7" y1="379.0" x2="425.7" y2="389.0"><title>repo 13 · commit 01:24</title></line>
+  <line class="flag" x1="583.5" y1="379.0" x2="583.5" y2="389.0"><title>repo 13 · commit 03:12</title></line>
+  <line class="flag" x1="820.9" y1="379.0" x2="820.9" y2="389.0"><title>repo 13 · commit 05:55</title></line>
+  <line class="flag" x1="822.0" y1="379.0" x2="822.0" y2="389.0"><title>repo 13 · commit 05:56</title></line>
+  <line class="flag" x1="823.1" y1="379.0" x2="823.1" y2="389.0"><title>repo 13 · commit 05:56</title></line>
+  <line class="flag" x1="824.0" y1="379.0" x2="824.0" y2="389.0"><title>repo 13 · commit 05:57</title></line>
+  <line class="flag" x1="827.2" y1="379.0" x2="827.2" y2="389.0"><title>repo 13 · commit 05:59</title></line>
+  <line class="flag" x1="861.0" y1="379.0" x2="861.0" y2="389.0"><title>repo 13 · commit 06:22</title></line>
+  <line class="flag" x1="940.5" y1="379.0" x2="940.5" y2="389.0"><title>repo 13 · commit 07:17</title></line>
+  <line class="flag" x1="217.9" y1="420.0" x2="217.9" y2="430.0"><title>repo 8 · commit 23:01</title></line>
+  <line class="flag" x1="219.7" y1="420.0" x2="219.7" y2="430.0"><title>repo 8 · commit 23:03</title></line>
+  <line class="flag" x1="470.7" y1="420.0" x2="470.7" y2="430.0"><title>repo 8 · commit 01:55</title></line>
+  <line class="flag" x1="471.3" y1="420.0" x2="471.3" y2="430.0"><title>repo 8 · commit 01:55</title></line>
+  <line class="flag" x1="475.8" y1="420.0" x2="475.8" y2="430.0"><title>repo 8 · commit 01:58</title></line>
+  <line class="flag" x1="627.2" y1="420.0" x2="627.2" y2="430.0"><title>repo 8 · commit 03:42</title></line>
+  <line class="flag" x1="629.1" y1="420.0" x2="629.1" y2="430.0"><title>repo 8 · commit 03:43</title></line>
+  <line class="flag" x1="635.4" y1="420.0" x2="635.4" y2="430.0"><title>repo 8 · commit 03:48</title></line>
+  <line class="flag" x1="635.7" y1="420.0" x2="635.7" y2="430.0"><title>repo 8 · commit 03:48</title></line>
+  <line class="flag" x1="709.8" y1="420.0" x2="709.8" y2="430.0"><title>repo 8 · commit 04:39</title></line>
+  <line class="flag" x1="711.9" y1="420.0" x2="711.9" y2="430.0"><title>repo 8 · commit 04:40</title></line>
+  <line class="flag" x1="723.1" y1="420.0" x2="723.1" y2="430.0"><title>repo 8 · commit 04:48</title></line>
+  <line class="flag" x1="723.8" y1="420.0" x2="723.8" y2="430.0"><title>repo 8 · commit 04:48</title></line>
+  <line class="flag" x1="747.8" y1="420.0" x2="747.8" y2="430.0"><title>repo 8 · commit 05:05</title></line>
+  <line class="flag" x1="752.2" y1="420.0" x2="752.2" y2="430.0"><title>repo 8 · commit 05:08</title></line>
+  <line class="flag" x1="816.5" y1="420.0" x2="816.5" y2="430.0"><title>repo 8 · commit 05:52</title></line>
+  <line class="flag" x1="823.1" y1="420.0" x2="823.1" y2="430.0"><title>repo 8 · commit 05:56</title></line>
+  <line class="flag" x1="823.7" y1="420.0" x2="823.7" y2="430.0"><title>repo 8 · commit 05:57</title></line>
+  <line class="flag" x1="868.1" y1="420.0" x2="868.1" y2="430.0"><title>repo 8 · commit 06:27</title></line>
+  <line class="flag" x1="869.4" y1="420.0" x2="869.4" y2="430.0"><title>repo 8 · commit 06:28</title></line>
+  <line class="flag" x1="871.5" y1="420.0" x2="871.5" y2="430.0"><title>repo 8 · commit 06:30</title></line>
+  <line class="flag" x1="875.6" y1="420.0" x2="875.6" y2="430.0"><title>repo 8 · commit 06:32</title></line>
+  <line class="flag" x1="913.7" y1="420.0" x2="913.7" y2="430.0"><title>repo 8 · commit 06:58</title></line>
+  <line class="flag" x1="914.2" y1="420.0" x2="914.2" y2="430.0"><title>repo 8 · commit 06:59</title></line>
+  <line class="flag" x1="914.6" y1="420.0" x2="914.6" y2="430.0"><title>repo 8 · commit 06:59</title></line>
+  <line class="flag" x1="936.1" y1="420.0" x2="936.1" y2="430.0"><title>repo 8 · commit 07:14</title></line>
+  <line class="flag" x1="941.9" y1="420.0" x2="941.9" y2="430.0"><title>repo 8 · commit 07:18</title></line>
+  <line class="flag" x1="942.6" y1="420.0" x2="942.6" y2="430.0"><title>repo 8 · commit 07:18</title></line>
+  <line class="flag" x1="944.0" y1="420.0" x2="944.0" y2="430.0"><title>repo 8 · commit 07:19</title></line>
+  <line class="flag" x1="950.8" y1="420.0" x2="950.8" y2="430.0"><title>repo 8 · commit 07:24</title></line>
+  <line class="flag" x1="951.8" y1="420.0" x2="951.8" y2="430.0"><title>repo 8 · commit 07:25</title></line>
+  <line class="flag" x1="286.3" y1="461.0" x2="286.3" y2="471.0"><title>repo 5 · commit 23:48</title></line>
+  <line class="flag" x1="286.4" y1="461.0" x2="286.4" y2="471.0"><title>repo 5 · commit 23:48</title></line>
+  <line class="flag" x1="294.4" y1="461.0" x2="294.4" y2="471.0"><title>repo 5 · commit 23:54</title></line>
+  <line class="flag" x1="298.1" y1="461.0" x2="298.1" y2="471.0"><title>repo 5 · commit 23:56</title></line>
+  <line class="flag" x1="298.3" y1="461.0" x2="298.3" y2="471.0"><title>repo 5 · commit 23:56</title></line>
+  <line class="flag" x1="298.5" y1="461.0" x2="298.5" y2="471.0"><title>repo 5 · commit 23:57</title></line>
+  <line class="flag" x1="473.8" y1="461.0" x2="473.8" y2="471.0"><title>repo 5 · commit 01:57</title></line>
+  <line class="flag" x1="482.4" y1="461.0" x2="482.4" y2="471.0"><title>repo 5 · commit 02:03</title></line>
+  <line class="flag" x1="495.7" y1="461.0" x2="495.7" y2="471.0"><title>repo 5 · commit 02:12</title></line>
+  <line class="flag" x1="498.7" y1="461.0" x2="498.7" y2="471.0"><title>repo 5 · commit 02:14</title></line>
+  <line class="flag" x1="505.1" y1="461.0" x2="505.1" y2="471.0"><title>repo 5 · commit 02:18</title></line>
+  <line class="flag" x1="506.0" y1="461.0" x2="506.0" y2="471.0"><title>repo 5 · commit 02:19</title></line>
+  <line class="flag" x1="513.7" y1="461.0" x2="513.7" y2="471.0"><title>repo 5 · commit 02:24</title></line>
+  <line class="flag" x1="716.2" y1="461.0" x2="716.2" y2="471.0"><title>repo 5 · commit 04:43</title></line>
+  <line class="flag" x1="722.4" y1="461.0" x2="722.4" y2="471.0"><title>repo 5 · commit 04:47</title></line>
+  <line class="flag" x1="775.2" y1="461.0" x2="775.2" y2="471.0"><title>repo 5 · commit 05:23</title></line>
+  <line class="flag" x1="800.6" y1="461.0" x2="800.6" y2="471.0"><title>repo 5 · commit 05:41</title></line>
+  <line class="flag" x1="805.3" y1="461.0" x2="805.3" y2="471.0"><title>repo 5 · commit 05:44</title></line>
+  <line class="flag" x1="807.1" y1="461.0" x2="807.1" y2="471.0"><title>repo 5 · commit 05:45</title></line>
+  <line class="flag" x1="811.5" y1="461.0" x2="811.5" y2="471.0"><title>repo 5 · commit 05:48</title></line>
+  <line class="flag" x1="825.1" y1="461.0" x2="825.1" y2="471.0"><title>repo 5 · commit 05:58</title></line>
+  <line class="flag" x1="829.5" y1="461.0" x2="829.5" y2="471.0"><title>repo 5 · commit 06:01</title></line>
+  <line class="flag" x1="870.0" y1="461.0" x2="870.0" y2="471.0"><title>repo 5 · commit 06:29</title></line>
+  <line class="flag" x1="872.5" y1="461.0" x2="872.5" y2="471.0"><title>repo 5 · commit 06:30</title></line>
+  <line class="flag" x1="876.6" y1="461.0" x2="876.6" y2="471.0"><title>repo 5 · commit 06:33</title></line>
+  <line class="flag" x1="878.0" y1="461.0" x2="878.0" y2="471.0"><title>repo 5 · commit 06:34</title></line>
+  <line class="flag" x1="878.7" y1="461.0" x2="878.7" y2="471.0"><title>repo 5 · commit 06:34</title></line>
+  <line class="flag" x1="940.7" y1="461.0" x2="940.7" y2="471.0"><title>repo 5 · commit 07:17</title></line>
+  <line class="flag" x1="304.3" y1="502.0" x2="304.3" y2="512.0"><title>repo 1 · commit 00:01</title></line>
+  <line class="flag" x1="305.5" y1="502.0" x2="305.5" y2="512.0"><title>repo 1 · commit 00:01</title></line>
+  <line class="flag" x1="413.6" y1="502.0" x2="413.6" y2="512.0"><title>repo 1 · commit 01:16</title></line>
+  <line class="flag" x1="421.5" y1="502.0" x2="421.5" y2="512.0"><title>repo 1 · commit 01:21</title></line>
+  <line class="flag" x1="553.4" y1="502.0" x2="553.4" y2="512.0"><title>repo 1 · commit 02:51</title></line>
+  <line class="flag" x1="339.1" y1="543.0" x2="339.1" y2="553.0"><title>repo 7 · commit 00:24</title></line>
+  <line class="flag" x1="340.5" y1="543.0" x2="340.5" y2="553.0"><title>repo 7 · commit 00:25</title></line>
+  <line class="flag" x1="350.8" y1="543.0" x2="350.8" y2="553.0"><title>repo 7 · commit 00:32</title></line>
+  <line class="flag" x1="352.0" y1="543.0" x2="352.0" y2="553.0"><title>repo 7 · commit 00:33</title></line>
+  <line class="flag" x1="432.8" y1="543.0" x2="432.8" y2="553.0"><title>repo 7 · commit 01:29</title></line>
+  <line class="flag" x1="434.1" y1="543.0" x2="434.1" y2="553.0"><title>repo 7 · commit 01:30</title></line>
+  <line class="flag" x1="438.5" y1="543.0" x2="438.5" y2="553.0"><title>repo 7 · commit 01:33</title></line>
+  <line class="flag" x1="588.7" y1="543.0" x2="588.7" y2="553.0"><title>repo 7 · commit 03:16</title></line>
+  <line class="flag" x1="595.0" y1="543.0" x2="595.0" y2="553.0"><title>repo 7 · commit 03:20</title></line>
+  <line class="flag" x1="901.0" y1="543.0" x2="901.0" y2="553.0"><title>repo 7 · commit 06:50</title></line>
+  <line class="flag" x1="903.3" y1="543.0" x2="903.3" y2="553.0"><title>repo 7 · commit 06:51</title></line>
+  <line class="flag" x1="470.3" y1="625.0" x2="470.3" y2="635.0"><title>repo 10 · commit 01:54</title></line>
+  <line class="flag" x1="817.0" y1="625.0" x2="817.0" y2="635.0"><title>repo 10 · commit 05:52</title></line>
+  <line class="flag" x1="823.2" y1="625.0" x2="823.2" y2="635.0"><title>repo 10 · commit 05:56</title></line>
+  <line class="flag" x1="868.8" y1="625.0" x2="868.8" y2="635.0"><title>repo 10 · commit 06:28</title></line>
+  <line class="flag" x1="870.6" y1="625.0" x2="870.6" y2="635.0"><title>repo 10 · commit 06:29</title></line>
+  <line class="flag" x1="939.9" y1="625.0" x2="939.9" y2="635.0"><title>repo 10 · commit 07:16</title></line>
+  <polygon class="profill" points="287.0,749 287.0,728.0 287.1,728.0 287.1,686.0 287.1,686.0 287.1,665.0 306.6,665.0 306.6,686.0 343.5,686.0 343.5,707.0 353.8,707.0 353.8,728.0 374.1,728.0 374.1,749.0 374.1,749.0 374.1,728.0 374.1,728.0 374.1,707.0 374.1,707.0 374.1,665.0 384.1,665.0 384.1,686.0 391.4,686.0 391.4,707.0 392.2,707.0 392.2,728.0 396.2,728.0 396.2,749.0 400.4,749.0 400.4,728.0 400.5,728.0 400.5,707.0 400.5,707.0 400.5,665.0 422.5,665.0 422.5,686.0 427.0,686.0 427.0,707.0 427.2,707.0 427.2,728.0 439.8,728.0 439.8,749.0 439.8,749.0 439.8,728.0 439.8,728.0 439.8,707.0 439.8,707.0 439.8,686.0 476.9,686.0 476.9,707.0 489.9,707.0 489.9,728.0 515.3,728.0 515.3,749.0 515.3,749.0 515.3,728.0 515.4,728.0 515.4,707.0 515.4,707.0 515.4,686.0 528.5,686.0 528.5,707.0 532.5,707.0 532.5,728.0 536.4,728.0 536.4,749.0 540.0,749.0 540.0,728.0 540.0,728.0 540.0,707.0 540.0,707.0 540.0,686.0 540.0,686.0 540.0,665.0 554.7,665.0 554.7,686.0 569.8,686.0 569.8,707.0 587.0,707.0 587.0,728.0 596.6,728.0 596.6,749.0 596.6,749.0 596.6,728.0 596.7,728.0 596.7,707.0 637.4,707.0 637.4,728.0 637.5,728.0 637.5,749.0 637.5,749.0 637.5,728.0 637.5,728.0 637.5,707.0 659.7,707.0 659.7,728.0 676.2,728.0 676.2,749.0 679.6,749.0 679.6,728.0 679.7,728.0 679.7,686.0 679.7,686.0 679.7,665.0 723.9,665.0 723.9,686.0 725.3,686.0 725.3,707.0 731.0,707.0 731.0,728.0 733.6,728.0 733.6,749.0 733.6,749.0 733.6,728.0 733.7,728.0 733.7,707.0 733.7,707.0 733.7,665.0 753.8,665.0 753.8,686.0 762.5,686.0 762.5,707.0 770.4,707.0 770.4,728.0 779.3,728.0 779.3,749.0 781.8,749.0 781.8,728.0 781.8,728.0 781.8,686.0 781.8,686.0 781.8,665.0 825.9,665.0 825.9,686.0 828.4,686.0 828.4,707.0 831.0,707.0 831.0,728.0 843.6,728.0 843.6,749.0 843.6,749.0 843.6,728.0 843.6,728.0 843.6,707.0 843.6,707.0 843.6,665.0 864.9,665.0 864.9,686.0 878.2,686.0 878.2,707.0 880.2,707.0 880.2,728.0 880.3,728.0 880.3,749.0 882.0,749.0 882.0,728.0 882.0,728.0 882.0,707.0 882.0,707.0 882.0,686.0 903.6,686.0 903.6,707.0 904.9,707.0 904.9,728.0 916.4,728.0 916.4,749.0 920.9,749.0 920.9,728.0 921.0,728.0 921.0,707.0 937.8,707.0 937.8,728.0 953.5,728.0 953.5,749.0 956.4,749.0 956.4,728.0 956.5,728.0 956.5,707.0 972.3,707.0 972.3,728.0 972.5,728.0 972.5,749.0 974.0,749.0 974.0,749"/>
+  <polyline class="profline" points="287.0,728.0 287.1,728.0 287.1,686.0 287.1,686.0 287.1,665.0 306.6,665.0 306.6,686.0 343.5,686.0 343.5,707.0 353.8,707.0 353.8,728.0 374.1,728.0 374.1,749.0 374.1,749.0 374.1,728.0 374.1,728.0 374.1,707.0 374.1,707.0 374.1,665.0 384.1,665.0 384.1,686.0 391.4,686.0 391.4,707.0 392.2,707.0 392.2,728.0 396.2,728.0 396.2,749.0 400.4,749.0 400.4,728.0 400.5,728.0 400.5,707.0 400.5,707.0 400.5,665.0 422.5,665.0 422.5,686.0 427.0,686.0 427.0,707.0 427.2,707.0 427.2,728.0 439.8,728.0 439.8,749.0 439.8,749.0 439.8,728.0 439.8,728.0 439.8,707.0 439.8,707.0 439.8,686.0 476.9,686.0 476.9,707.0 489.9,707.0 489.9,728.0 515.3,728.0 515.3,749.0 515.3,749.0 515.3,728.0 515.4,728.0 515.4,707.0 515.4,707.0 515.4,686.0 528.5,686.0 528.5,707.0 532.5,707.0 532.5,728.0 536.4,728.0 536.4,749.0 540.0,749.0 540.0,728.0 540.0,728.0 540.0,707.0 540.0,707.0 540.0,686.0 540.0,686.0 540.0,665.0 554.7,665.0 554.7,686.0 569.8,686.0 569.8,707.0 587.0,707.0 587.0,728.0 596.6,728.0 596.6,749.0 596.6,749.0 596.6,728.0 596.7,728.0 596.7,707.0 637.4,707.0 637.4,728.0 637.5,728.0 637.5,749.0 637.5,749.0 637.5,728.0 637.5,728.0 637.5,707.0 659.7,707.0 659.7,728.0 676.2,728.0 676.2,749.0 679.6,749.0 679.6,728.0 679.7,728.0 679.7,686.0 679.7,686.0 679.7,665.0 723.9,665.0 723.9,686.0 725.3,686.0 725.3,707.0 731.0,707.0 731.0,728.0 733.6,728.0 733.6,749.0 733.6,749.0 733.6,728.0 733.7,728.0 733.7,707.0 733.7,707.0 733.7,665.0 753.8,665.0 753.8,686.0 762.5,686.0 762.5,707.0 770.4,707.0 770.4,728.0 779.3,728.0 779.3,749.0 781.8,749.0 781.8,728.0 781.8,728.0 781.8,686.0 781.8,686.0 781.8,665.0 825.9,665.0 825.9,686.0 828.4,686.0 828.4,707.0 831.0,707.0 831.0,728.0 843.6,728.0 843.6,749.0 843.6,749.0 843.6,728.0 843.6,728.0 843.6,707.0 843.6,707.0 843.6,665.0 864.9,665.0 864.9,686.0 878.2,686.0 878.2,707.0 880.2,707.0 880.2,728.0 880.3,728.0 880.3,749.0 882.0,749.0 882.0,728.0 882.0,728.0 882.0,707.0 882.0,707.0 882.0,686.0 903.6,686.0 903.6,707.0 904.9,707.0 904.9,728.0 916.4,728.0 916.4,749.0 920.9,749.0 920.9,728.0 921.0,728.0 921.0,707.0 937.8,707.0 937.8,728.0 953.5,728.0 953.5,749.0 956.4,749.0 956.4,728.0 956.5,728.0 956.5,707.0 972.3,707.0 972.3,728.0 972.5,728.0 972.5,749.0 974.0,749.0"/>
+  <line class="base" x1="96" y1="749" x2="974" y2="749"/>
+  <text class="plabel" x="82" y="668" text-anchor="end">lanes open</text>
+  <text class="pmax" x="82" y="683" text-anchor="end">peak 4</text>
+</svg></div>
+    <div class="mapwrap phonewrap"><svg class="routemap phone" viewBox="0 0 360 629" role="img" aria-hidden="true">
+  <rect class="band" x="4" y="171.0" width="352" height="30.0"/>
+  <rect class="band" x="4" y="241.0" width="352" height="30.0"/>
+  <rect class="band" x="4" y="311.0" width="352" height="30.0"/>
+  <rect class="band" x="4" y="381.0" width="352" height="30.0"/>
+  <rect class="band" x="4" y="451.0" width="352" height="30.0"/>
+  <line class="grid" x1="86.9" y1="32" x2="86.9" y2="610"/>
+  <text class="gl" x="86.9" y="620" text-anchor="middle">00:00</text>
+  <line class="grid" x1="192.1" y1="32" x2="192.1" y2="610"/>
+  <text class="gl" x="192.1" y="620" text-anchor="middle">03:00</text>
+  <line class="grid" x1="297.4" y1="32" x2="297.4" y2="610"/>
+  <text class="gl" x="297.4" y="620" text-anchor="middle">06:00</text>
+  <line class="hline" x1="80.3" y1="26" x2="80.3" y2="610"/>
+  <text class="hlabel" x="85.3" y="23" text-anchor="start">handoff 23:48</text>
+  <text class="tlabel" x="4" y="35">you</text>
+  <line class="trunk" x1="4" y1="42" x2="80.3" y2="42"/>
+  <line class="trunk gone" x1="80.3" y1="42" x2="356" y2="42"/>
+  <line class="tick" x1="4.0" y1="37" x2="4.0" y2="47"/>
+  <line class="tick" x1="5.2" y1="37" x2="5.2" y2="47"/>
+  <line class="tick" x1="7.6" y1="37" x2="7.6" y2="47"/>
+  <line class="tick" x1="15.3" y1="37" x2="15.3" y2="47"/>
+  <line class="tick" x1="16.7" y1="37" x2="16.7" y2="47"/>
+  <line class="tick" x1="16.8" y1="37" x2="16.8" y2="47"/>
+  <line class="tick" x1="17.3" y1="37" x2="17.3" y2="47"/>
+  <line class="tick" x1="18.2" y1="37" x2="18.2" y2="47"/>
+  <line class="tick" x1="19.4" y1="37" x2="19.4" y2="47"/>
+  <line class="tick" x1="19.9" y1="37" x2="19.9" y2="47"/>
+  <line class="tick" x1="22.1" y1="37" x2="22.1" y2="47"/>
+  <line class="tick" x1="31.5" y1="37" x2="31.5" y2="47"/>
+  <line class="tick" x1="34.3" y1="37" x2="34.3" y2="47"/>
+  <line class="tick" x1="34.5" y1="37" x2="34.5" y2="47"/>
+  <line class="tick" x1="35.8" y1="37" x2="35.8" y2="47"/>
+  <line class="tick" x1="36.7" y1="37" x2="36.7" y2="47"/>
+  <line class="tick" x1="40.0" y1="37" x2="40.0" y2="47"/>
+  <line class="tick" x1="44.1" y1="37" x2="44.1" y2="47"/>
+  <line class="tick" x1="47.1" y1="37" x2="47.1" y2="47"/>
+  <line class="tick" x1="48.5" y1="37" x2="48.5" y2="47"/>
+  <line class="tick" x1="51.1" y1="37" x2="51.1" y2="47"/>
+  <line class="tick" x1="53.5" y1="37" x2="53.5" y2="47"/>
+  <line class="tick" x1="63.9" y1="37" x2="63.9" y2="47"/>
+  <line class="tick" x1="64.2" y1="37" x2="64.2" y2="47"/>
+  <line class="tick" x1="65.9" y1="37" x2="65.9" y2="47"/>
+  <line class="tick" x1="66.9" y1="37" x2="66.9" y2="47"/>
+  <line class="tick" x1="67.4" y1="37" x2="67.4" y2="47"/>
+  <line class="tick" x1="67.9" y1="37" x2="67.9" y2="47"/>
+  <line class="tick" x1="68.7" y1="37" x2="68.7" y2="47"/>
+  <line class="tick" x1="69.1" y1="37" x2="69.1" y2="47"/>
+  <line class="tick" x1="69.2" y1="37" x2="69.2" y2="47"/>
+  <line class="tick" x1="69.9" y1="37" x2="69.9" y2="47"/>
+  <line class="tick" x1="70.4" y1="37" x2="70.4" y2="47"/>
+  <line class="tick" x1="71.6" y1="37" x2="71.6" y2="47"/>
+  <line class="tick" x1="74.6" y1="37" x2="74.6" y2="47"/>
+  <line class="tick" x1="75.3" y1="37" x2="75.3" y2="47"/>
+  <line class="tick" x1="76.2" y1="37" x2="76.2" y2="47"/>
+  <line class="tick" x1="77.5" y1="37" x2="77.5" y2="47"/>
+  <line class="tick" x1="78.6" y1="37" x2="78.6" y2="47"/>
+  <line class="tick" x1="80.3" y1="37" x2="80.3" y2="47"/>
+  <text class="ltag human" x="4" y="60">your session<tspan class="rnote"> · 20 prompts</tspan></text>
+  <line class="seg human" x1="4.0" y1="64" x2="83.1" y2="64" stroke-width="5.5"/>
+  <text class="ltag human" x="4" y="76">your session<tspan class="rnote"> · 7 prompts</tspan></text>
+  <line class="seg human" x1="5.2" y1="81" x2="65.0" y2="81" stroke-width="4.04"/>
+  <text class="ltag human" x="4" y="94">your session<tspan class="rnote"> · 12 prompts</tspan></text>
+  <line class="seg human" x1="19.4" y1="98" x2="70.2" y2="98" stroke-width="3.46"/>
+  <text class="ltag human" x="4" y="110">your session<tspan class="rnote"> · 1 prompt</tspan></text>
+  <line class="seg human" x1="75.3" y1="115" x2="349.1" y2="115" stroke-width="2.58"/>
+  <text class="rtag" x="4" y="145">repo 4<tspan class="rnote"> · 36 commits · 9 lanes</tspan></text>
+  <line class="crail" x1="4" y1="159.0" x2="356" y2="159.0"/>
+  <text class="rtag" x="4" y="180">repo 9<tspan class="rnote"> · 29 commits · 7 lanes</tspan></text>
+  <line class="crail" x1="4" y1="194.0" x2="356" y2="194.0"/>
+  <text class="rtag" x="4" y="215">repo 14<tspan class="rnote"> · 3 commits · 1 lane</tspan></text>
+  <line class="crail" x1="4" y1="229.0" x2="356" y2="229.0"/>
+  <text class="rtag" x="4" y="250">repo 16<tspan class="rnote"> · 8 commits · 1 lane</tspan></text>
+  <line class="crail" x1="4" y1="264.0" x2="356" y2="264.0"/>
+  <text class="rtag" x="4" y="285">repo 13<tspan class="rnote"> · 29 commits · 6 lanes</tspan></text>
+  <line class="crail" x1="4" y1="299.0" x2="356" y2="299.0"/>
+  <text class="rtag" x="4" y="320">repo 8<tspan class="rnote"> · 31 commits · 8 lanes</tspan></text>
+  <line class="crail" x1="4" y1="334.0" x2="356" y2="334.0"/>
+  <text class="rtag" x="4" y="355">repo 5<tspan class="rnote"> · 28 commits · 7 lanes</tspan></text>
+  <line class="crail" x1="4" y1="369.0" x2="356" y2="369.0"/>
+  <text class="rtag" x="4" y="390">repo 1<tspan class="rnote"> · 5 commits · 4 lanes</tspan></text>
+  <line class="crail" x1="4" y1="404.0" x2="356" y2="404.0"/>
+  <text class="rtag" x="4" y="425">repo 7<tspan class="rnote"> · 11 commits · 4 lanes</tspan></text>
+  <line class="crail" x1="4" y1="439.0" x2="356" y2="439.0"/>
+  <text class="rtag" x="4" y="460">recon<tspan class="rnote"> · 2 lanes · in no repository</tspan></text>
+  <line class="crail" x1="4" y1="474.0" x2="356" y2="474.0"/>
+  <text class="rtag" x="4" y="495">repo 10<tspan class="rnote"> · 6 commits · no lane drawn here</tspan></text>
+  <line class="crail" x1="4" y1="509.0" x2="356" y2="509.0"/>
+  <line class="seg" x1="141.8" y1="151" x2="161.9" y2="151" stroke-width="4.83"/>
+  <circle class="cap ship" cx="161.9" cy="151" r="2.4"/>
+  <line class="seg" x1="172.1" y1="151" x2="178.1" y2="151" stroke-width="5.36"/>
+  <circle class="cap spur" cx="178.1" cy="151" r="2.4"/>
+  <line class="seg" x1="204.7" y1="151" x2="221.1" y2="151" stroke-width="5.45"/>
+  <circle class="cap ship" cx="221.1" cy="151" r="2.4"/>
+  <line class="seg" x1="238.0" y1="151" x2="259.6" y2="151" stroke-width="4.39"/>
+  <circle class="cap ship" cx="259.6" cy="151" r="2.4"/>
+  <line class="seg" x1="259.6" y1="151" x2="274.4" y2="151" stroke-width="6.06"/>
+  <circle class="cap ship" cx="274.4" cy="151" r="2.4"/>
+  <line class="seg" x1="279.0" y1="151" x2="303.7" y2="151" stroke-width="4.48"/>
+  <circle class="cap ship" cx="303.7" cy="151" r="2.4"/>
+  <line class="seg" x1="303.7" y1="151" x2="318.4" y2="151" stroke-width="5.45"/>
+  <circle class="cap ship" cx="318.4" cy="151" r="2.4"/>
+  <line class="seg" x1="334.7" y1="151" x2="341.5" y2="151" stroke-width="6.41"/>
+  <circle class="cap spur" cx="341.5" cy="151" r="2.4"/>
+  <line class="seg" x1="349.0" y1="151" x2="355.4" y2="151" stroke-width="6.67"/>
+  <circle class="cap spur" cx="355.4" cy="151" r="2.4"/>
+  <line class="seg" x1="80.6" y1="186" x2="103.2" y2="186" stroke-width="4.92"/>
+  <circle class="cap ship" cx="103.2" cy="186" r="2.4"/>
+  <line class="seg" x1="115.5" y1="186" x2="124.3" y2="186" stroke-width="6.15"/>
+  <circle class="cap spur" cx="124.3" cy="186" r="2.4"/>
+  <line class="seg" x1="126.0" y1="186" x2="136.8" y2="186" stroke-width="5.88"/>
+  <circle class="cap ship" cx="136.8" cy="186" r="2.4"/>
+  <line class="seg" x1="182.0" y1="186" x2="193.9" y2="186" stroke-width="5.36"/>
+  <circle class="cap ship" cx="193.9" cy="186" r="2.4"/>
+  <line class="seg" x1="238.0" y1="186" x2="258.6" y2="186" stroke-width="5.27"/>
+  <circle class="cap ship" cx="258.6" cy="186" r="2.4"/>
+  <line class="seg" x1="259.6" y1="186" x2="271.2" y2="186" stroke-width="6.41"/>
+  <circle class="cap ship" cx="271.2" cy="186" r="2.4"/>
+  <line class="seg" x1="319.1" y1="186" x2="327.8" y2="186" stroke-width="6.15"/>
+  <circle class="cap ship" cx="327.8" cy="186" r="2.4"/>
+  <line class="seg" x1="221.1" y1="221" x2="236.6" y2="221" stroke-width="5.71"/>
+  <circle class="cap ship" cx="236.6" cy="221" r="2.4"/>
+  <line class="seg" x1="221.1" y1="256" x2="230.0" y2="256" stroke-width="7.2"/>
+  <circle class="cap ship" cx="230.0" cy="256" r="2.4"/>
+  <line class="seg" x1="80.6" y1="291" x2="115.5" y2="291" stroke-width="4.39"/>
+  <circle class="cap ship" cx="115.5" cy="291" r="2.4"/>
+  <line class="seg" x1="115.5" y1="291" x2="121.5" y2="291" stroke-width="6.15"/>
+  <circle class="cap spur" cx="121.5" cy="291" r="2.4"/>
+  <line class="seg" x1="126.1" y1="291" x2="136.7" y2="291" stroke-width="5.62"/>
+  <circle class="cap ship" cx="136.7" cy="291" r="2.4"/>
+  <line class="seg" x1="182.0" y1="291" x2="200.9" y2="291" stroke-width="4.74"/>
+  <circle class="cap ship" cx="200.9" cy="291" r="2.4"/>
+  <line class="seg" x1="279.0" y1="291" x2="297.6" y2="291" stroke-width="5.53"/>
+  <circle class="cap ship" cx="297.6" cy="291" r="2.4"/>
+  <line class="seg" x1="303.7" y1="291" x2="312.3" y2="291" stroke-width="6.06"/>
+  <circle class="cap ship" cx="312.3" cy="291" r="2.4"/>
+  <line class="seg" x1="141.8" y1="326" x2="156.7" y2="326" stroke-width="5.71"/>
+  <circle class="cap ship" cx="156.7" cy="326" r="2.4"/>
+  <line class="seg" x1="172.1" y1="326" x2="179.0" y2="326" stroke-width="5.97"/>
+  <circle class="cap spur" cx="179.0" cy="326" r="2.4"/>
+  <line class="seg" x1="204.7" y1="326" x2="221.1" y2="326" stroke-width="4.83"/>
+  <circle class="cap ship" cx="221.1" cy="326" r="2.4"/>
+  <line class="seg" x1="238.0" y1="326" x2="256.3" y2="326" stroke-width="5.8"/>
+  <circle class="cap ship" cx="256.3" cy="326" r="2.4"/>
+  <line class="seg" x1="259.6" y1="326" x2="267.7" y2="326" stroke-width="5.53"/>
+  <circle class="cap ship" cx="267.7" cy="326" r="2.4"/>
+  <line class="seg" x1="278.9" y1="326" x2="296.6" y2="326" stroke-width="6.15"/>
+  <circle class="cap ship" cx="296.6" cy="326" r="2.4"/>
+  <line class="seg" x1="303.7" y1="326" x2="317.6" y2="326" stroke-width="5.8"/>
+  <circle class="cap ship" cx="317.6" cy="326" r="2.4"/>
+  <line class="seg" x1="334.7" y1="326" x2="347.8" y2="326" stroke-width="6.24"/>
+  <circle class="cap ship" cx="347.8" cy="326" r="2.4"/>
+  <line class="seg" x1="141.8" y1="361" x2="172.1" y2="361" stroke-width="4.83"/>
+  <circle class="cap ship" cx="172.1" cy="361" r="2.4"/>
+  <line class="seg" x1="172.1" y1="361" x2="180.5" y2="361" stroke-width="5.8"/>
+  <circle class="cap spur" cx="180.5" cy="361" r="2.4"/>
+  <line class="seg" x1="238.0" y1="361" x2="255.7" y2="361" stroke-width="5.09"/>
+  <circle class="cap ship" cx="255.7" cy="361" r="2.4"/>
+  <line class="seg" x1="259.6" y1="361" x2="277.9" y2="361" stroke-width="5.27"/>
+  <circle class="cap ship" cx="277.9" cy="361" r="2.4"/>
+  <line class="seg" x1="279.0" y1="361" x2="298.7" y2="361" stroke-width="5.18"/>
+  <circle class="cap ship" cx="298.7" cy="361" r="2.4"/>
+  <line class="seg" x1="303.7" y1="361" x2="318.4" y2="361" stroke-width="5.27"/>
+  <circle class="cap ship" cx="318.4" cy="361" r="2.4"/>
+  <line class="seg" x1="319.1" y1="361" x2="332.9" y2="361" stroke-width="6.06"/>
+  <circle class="cap spur" cx="332.9" cy="361" r="2.4"/>
+  <line class="seg" x1="80.6" y1="396" x2="88.4" y2="396" stroke-width="6.06"/>
+  <circle class="cap ship" cx="88.4" cy="396" r="2.4"/>
+  <line class="seg" x1="115.5" y1="396" x2="122.8" y2="396" stroke-width="6.85"/>
+  <circle class="cap spur" cx="122.8" cy="396" r="2.4"/>
+  <line class="seg" x1="126.1" y1="396" x2="134.9" y2="396" stroke-width="7.11"/>
+  <circle class="cap ship" cx="134.9" cy="396" r="2.4"/>
+  <line class="seg" x1="182.0" y1="396" x2="188.0" y2="396" stroke-width="4.22"/>
+  <circle class="cap ship" cx="188.0" cy="396" r="2.4"/>
+  <line class="seg" x1="80.6" y1="431" x2="107.4" y2="431" stroke-width="4.74"/>
+  <circle class="cap ship" cx="107.4" cy="431" r="2.4"/>
+  <line class="seg" x1="126.1" y1="431" x2="141.8" y2="431" stroke-width="5.53"/>
+  <circle class="cap ship" cx="141.8" cy="431" r="2.4"/>
+  <line class="seg" x1="182.0" y1="431" x2="204.7" y2="431" stroke-width="5.53"/>
+  <circle class="cap ship" cx="204.7" cy="431" r="2.4"/>
+  <line class="seg" x1="319.1" y1="431" x2="328.3" y2="431" stroke-width="5.36"/>
+  <circle class="cap ship" cx="328.3" cy="431" r="2.4"/>
+  <line class="seg" x1="115.5" y1="466" x2="122.4" y2="466" stroke-width="6.5"/>
+  <circle class="cap spur" cx="122.4" cy="466" r="2.4"/>
+  <line class="seg" x1="349.0" y1="466" x2="355.3" y2="466" stroke-width="5.97"/>
+  <circle class="cap spur" cx="355.3" cy="466" r="2.4"/>
+  <line class="flag" x1="7.2" y1="155.0" x2="7.2" y2="163.0"/>
+  <line class="flag" x1="7.8" y1="155.0" x2="7.8" y2="163.0"/>
+  <line class="flag" x1="22.8" y1="155.0" x2="22.8" y2="163.0"/>
+  <line class="flag" x1="23.4" y1="155.0" x2="23.4" y2="163.0"/>
+  <line class="flag" x1="36.4" y1="155.0" x2="36.4" y2="163.0"/>
+  <line class="flag" x1="51.8" y1="155.0" x2="51.8" y2="163.0"/>
+  <line class="flag" x1="54.3" y1="155.0" x2="54.3" y2="163.0"/>
+  <line class="flag" x1="54.9" y1="155.0" x2="54.9" y2="163.0"/>
+  <line class="flag" x1="55.4" y1="155.0" x2="55.4" y2="163.0"/>
+  <line class="flag" x1="56.1" y1="155.0" x2="56.1" y2="163.0"/>
+  <line class="flag" x1="58.6" y1="155.0" x2="58.6" y2="163.0"/>
+  <line class="flag" x1="143.6" y1="155.0" x2="143.6" y2="163.0"/>
+  <line class="flag" x1="153.8" y1="155.0" x2="153.8" y2="163.0"/>
+  <line class="flag" x1="157.3" y1="155.0" x2="157.3" y2="163.0"/>
+  <line class="flag" x1="160.8" y1="155.0" x2="160.8" y2="163.0"/>
+  <line class="flag" x1="161.4" y1="155.0" x2="161.4" y2="163.0"/>
+  <line class="flag" x1="161.5" y1="155.0" x2="161.5" y2="163.0"/>
+  <line class="flag" x1="215.3" y1="155.0" x2="215.3" y2="163.0"/>
+  <line class="flag" x1="218.2" y1="155.0" x2="218.2" y2="163.0"/>
+  <line class="flag" x1="219.1" y1="155.0" x2="219.1" y2="163.0"/>
+  <line class="flag" x1="220.6" y1="155.0" x2="220.6" y2="163.0"/>
+  <line class="flag" x1="252.6" y1="155.0" x2="252.6" y2="163.0"/>
+  <line class="flag" x1="258.0" y1="155.0" x2="258.0" y2="163.0"/>
+  <line class="flag" x1="258.4" y1="155.0" x2="258.4" y2="163.0"/>
+  <line class="flag" x1="273.7" y1="155.0" x2="273.7" y2="163.0"/>
+  <line class="flag" x1="289.4" y1="155.0" x2="289.4" y2="163.0"/>
+  <line class="flag" x1="291.8" y1="155.0" x2="291.8" y2="163.0"/>
+  <line class="flag" x1="293.9" y1="155.0" x2="293.9" y2="163.0"/>
+  <line class="flag" x1="297.1" y1="155.0" x2="297.1" y2="163.0"/>
+  <line class="flag" x1="297.6" y1="155.0" x2="297.6" y2="163.0"/>
+  <line class="flag" x1="299.1" y1="155.0" x2="299.1" y2="163.0"/>
+  <line class="flag" x1="301.8" y1="155.0" x2="301.8" y2="163.0"/>
+  <line class="flag" x1="302.1" y1="155.0" x2="302.1" y2="163.0"/>
+  <line class="flag" x1="302.8" y1="155.0" x2="302.8" y2="163.0"/>
+  <line class="flag" x1="316.4" y1="155.0" x2="316.4" y2="163.0"/>
+  <line class="flag" x1="342.8" y1="155.0" x2="342.8" y2="163.0"/>
+  <line class="flag" x1="15.0" y1="190.0" x2="15.0" y2="198.0"/>
+  <line class="flag" x1="20.7" y1="190.0" x2="20.7" y2="198.0"/>
+  <line class="flag" x1="25.1" y1="190.0" x2="25.1" y2="198.0"/>
+  <line class="flag" x1="45.2" y1="190.0" x2="45.2" y2="198.0"/>
+  <line class="flag" x1="53.6" y1="190.0" x2="53.6" y2="198.0"/>
+  <line class="flag" x1="100.9" y1="190.0" x2="100.9" y2="198.0"/>
+  <line class="flag" x1="100.9" y1="190.0" x2="100.9" y2="198.0"/>
+  <line class="flag" x1="100.9" y1="190.0" x2="100.9" y2="198.0"/>
+  <line class="flag" x1="101.5" y1="190.0" x2="101.5" y2="198.0"/>
+  <line class="flag" x1="102.6" y1="190.0" x2="102.6" y2="198.0"/>
+  <line class="flag" x1="135.2" y1="190.0" x2="135.2" y2="198.0"/>
+  <line class="flag" x1="192.6" y1="190.0" x2="192.6" y2="198.0"/>
+  <line class="flag" x1="251.6" y1="190.0" x2="251.6" y2="198.0"/>
+  <line class="flag" x1="251.7" y1="190.0" x2="251.7" y2="198.0"/>
+  <line class="flag" x1="251.9" y1="190.0" x2="251.9" y2="198.0"/>
+  <line class="flag" x1="253.5" y1="190.0" x2="253.5" y2="198.0"/>
+  <line class="flag" x1="256.4" y1="190.0" x2="256.4" y2="198.0"/>
+  <line class="flag" x1="256.6" y1="190.0" x2="256.6" y2="198.0"/>
+  <line class="flag" x1="257.0" y1="190.0" x2="257.0" y2="198.0"/>
+  <line class="flag" x1="257.7" y1="190.0" x2="257.7" y2="198.0"/>
+  <line class="flag" x1="267.5" y1="190.0" x2="267.5" y2="198.0"/>
+  <line class="flag" x1="268.4" y1="190.0" x2="268.4" y2="198.0"/>
+  <line class="flag" x1="268.8" y1="190.0" x2="268.8" y2="198.0"/>
+  <line class="flag" x1="269.3" y1="190.0" x2="269.3" y2="198.0"/>
+  <line class="flag" x1="270.3" y1="190.0" x2="270.3" y2="198.0"/>
+  <line class="flag" x1="270.4" y1="190.0" x2="270.4" y2="198.0"/>
+  <line class="flag" x1="325.0" y1="190.0" x2="325.0" y2="198.0"/>
+  <line class="flag" x1="327.0" y1="190.0" x2="327.0" y2="198.0"/>
+  <line class="flag" x1="342.4" y1="190.0" x2="342.4" y2="198.0"/>
+  <line class="flag" x1="20.7" y1="225.0" x2="20.7" y2="233.0"/>
+  <line class="flag" x1="234.5" y1="225.0" x2="234.5" y2="233.0"/>
+  <line class="flag" x1="236.1" y1="225.0" x2="236.1" y2="233.0"/>
+  <line class="flag" x1="20.7" y1="260.0" x2="20.7" y2="268.0"/>
+  <line class="flag" x1="22.8" y1="260.0" x2="22.8" y2="268.0"/>
+  <line class="flag" x1="162.3" y1="260.0" x2="162.3" y2="268.0"/>
+  <line class="flag" x1="225.3" y1="260.0" x2="225.3" y2="268.0"/>
+  <line class="flag" x1="226.4" y1="260.0" x2="226.4" y2="268.0"/>
+  <line class="flag" x1="227.8" y1="260.0" x2="227.8" y2="268.0"/>
+  <line class="flag" x1="228.6" y1="260.0" x2="228.6" y2="268.0"/>
+  <line class="flag" x1="229.5" y1="260.0" x2="229.5" y2="268.0"/>
+  <line class="flag" x1="23.5" y1="295.0" x2="23.5" y2="303.0"/>
+  <line class="flag" x1="31.8" y1="295.0" x2="31.8" y2="303.0"/>
+  <line class="flag" x1="66.4" y1="295.0" x2="66.4" y2="303.0"/>
+  <line class="flag" x1="68.2" y1="295.0" x2="68.2" y2="303.0"/>
+  <line class="flag" x1="68.3" y1="295.0" x2="68.3" y2="303.0"/>
+  <line class="flag" x1="68.8" y1="295.0" x2="68.8" y2="303.0"/>
+  <line class="flag" x1="68.9" y1="295.0" x2="68.9" y2="303.0"/>
+  <line class="flag" x1="69.8" y1="295.0" x2="69.8" y2="303.0"/>
+  <line class="flag" x1="77.8" y1="295.0" x2="77.8" y2="303.0"/>
+  <line class="flag" x1="78.6" y1="295.0" x2="78.6" y2="303.0"/>
+  <line class="flag" x1="79.7" y1="295.0" x2="79.7" y2="303.0"/>
+  <line class="flag" x1="80.5" y1="295.0" x2="80.5" y2="303.0"/>
+  <line class="flag" x1="84.6" y1="295.0" x2="84.6" y2="303.0"/>
+  <line class="flag" x1="85.1" y1="295.0" x2="85.1" y2="303.0"/>
+  <line class="flag" x1="93.7" y1="295.0" x2="93.7" y2="303.0"/>
+  <line class="flag" x1="96.1" y1="295.0" x2="96.1" y2="303.0"/>
+  <line class="flag" x1="111.9" y1="295.0" x2="111.9" y2="303.0"/>
+  <line class="flag" x1="112.6" y1="295.0" x2="112.6" y2="303.0"/>
+  <line class="flag" x1="114.4" y1="295.0" x2="114.4" y2="303.0"/>
+  <line class="flag" x1="134.3" y1="295.0" x2="134.3" y2="303.0"/>
+  <line class="flag" x1="136.2" y1="295.0" x2="136.2" y2="303.0"/>
+  <line class="flag" x1="199.5" y1="295.0" x2="199.5" y2="303.0"/>
+  <line class="flag" x1="294.6" y1="295.0" x2="294.6" y2="303.0"/>
+  <line class="flag" x1="295.1" y1="295.0" x2="295.1" y2="303.0"/>
+  <line class="flag" x1="295.5" y1="295.0" x2="295.5" y2="303.0"/>
+  <line class="flag" x1="295.8" y1="295.0" x2="295.8" y2="303.0"/>
+  <line class="flag" x1="297.1" y1="295.0" x2="297.1" y2="303.0"/>
+  <line class="flag" x1="310.7" y1="295.0" x2="310.7" y2="303.0"/>
+  <line class="flag" x1="342.6" y1="295.0" x2="342.6" y2="303.0"/>
+  <line class="flag" x1="52.9" y1="330.0" x2="52.9" y2="338.0"/>
+  <line class="flag" x1="53.6" y1="330.0" x2="53.6" y2="338.0"/>
+  <line class="flag" x1="154.2" y1="330.0" x2="154.2" y2="338.0"/>
+  <line class="flag" x1="154.4" y1="330.0" x2="154.4" y2="338.0"/>
+  <line class="flag" x1="156.3" y1="330.0" x2="156.3" y2="338.0"/>
+  <line class="flag" x1="217.0" y1="330.0" x2="217.0" y2="338.0"/>
+  <line class="flag" x1="217.7" y1="330.0" x2="217.7" y2="338.0"/>
+  <line class="flag" x1="220.2" y1="330.0" x2="220.2" y2="338.0"/>
+  <line class="flag" x1="220.4" y1="330.0" x2="220.4" y2="338.0"/>
+  <line class="flag" x1="250.1" y1="330.0" x2="250.1" y2="338.0"/>
+  <line class="flag" x1="250.9" y1="330.0" x2="250.9" y2="338.0"/>
+  <line class="flag" x1="255.4" y1="330.0" x2="255.4" y2="338.0"/>
+  <line class="flag" x1="255.7" y1="330.0" x2="255.7" y2="338.0"/>
+  <line class="flag" x1="265.3" y1="330.0" x2="265.3" y2="338.0"/>
+  <line class="flag" x1="267.1" y1="330.0" x2="267.1" y2="338.0"/>
+  <line class="flag" x1="292.9" y1="330.0" x2="292.9" y2="338.0"/>
+  <line class="flag" x1="295.5" y1="330.0" x2="295.5" y2="338.0"/>
+  <line class="flag" x1="295.7" y1="330.0" x2="295.7" y2="338.0"/>
+  <line class="flag" x1="313.6" y1="330.0" x2="313.6" y2="338.0"/>
+  <line class="flag" x1="314.1" y1="330.0" x2="314.1" y2="338.0"/>
+  <line class="flag" x1="314.9" y1="330.0" x2="314.9" y2="338.0"/>
+  <line class="flag" x1="316.5" y1="330.0" x2="316.5" y2="338.0"/>
+  <line class="flag" x1="331.8" y1="330.0" x2="331.8" y2="338.0"/>
+  <line class="flag" x1="332.0" y1="330.0" x2="332.0" y2="338.0"/>
+  <line class="flag" x1="332.2" y1="330.0" x2="332.2" y2="338.0"/>
+  <line class="flag" x1="340.8" y1="330.0" x2="340.8" y2="338.0"/>
+  <line class="flag" x1="343.1" y1="330.0" x2="343.1" y2="338.0"/>
+  <line class="flag" x1="343.4" y1="330.0" x2="343.4" y2="338.0"/>
+  <line class="flag" x1="344.0" y1="330.0" x2="344.0" y2="338.0"/>
+  <line class="flag" x1="346.7" y1="330.0" x2="346.7" y2="338.0"/>
+  <line class="flag" x1="347.1" y1="330.0" x2="347.1" y2="338.0"/>
+  <line class="flag" x1="80.3" y1="365.0" x2="80.3" y2="373.0"/>
+  <line class="flag" x1="80.3" y1="365.0" x2="80.3" y2="373.0"/>
+  <line class="flag" x1="83.6" y1="365.0" x2="83.6" y2="373.0"/>
+  <line class="flag" x1="85.0" y1="365.0" x2="85.0" y2="373.0"/>
+  <line class="flag" x1="85.1" y1="365.0" x2="85.1" y2="373.0"/>
+  <line class="flag" x1="85.2" y1="365.0" x2="85.2" y2="373.0"/>
+  <line class="flag" x1="155.5" y1="365.0" x2="155.5" y2="373.0"/>
+  <line class="flag" x1="158.9" y1="365.0" x2="158.9" y2="373.0"/>
+  <line class="flag" x1="164.2" y1="365.0" x2="164.2" y2="373.0"/>
+  <line class="flag" x1="165.4" y1="365.0" x2="165.4" y2="373.0"/>
+  <line class="flag" x1="168.0" y1="365.0" x2="168.0" y2="373.0"/>
+  <line class="flag" x1="168.4" y1="365.0" x2="168.4" y2="373.0"/>
+  <line class="flag" x1="171.5" y1="365.0" x2="171.5" y2="373.0"/>
+  <line class="flag" x1="252.7" y1="365.0" x2="252.7" y2="373.0"/>
+  <line class="flag" x1="255.2" y1="365.0" x2="255.2" y2="373.0"/>
+  <line class="flag" x1="276.3" y1="365.0" x2="276.3" y2="373.0"/>
+  <line class="flag" x1="286.5" y1="365.0" x2="286.5" y2="373.0"/>
+  <line class="flag" x1="288.4" y1="365.0" x2="288.4" y2="373.0"/>
+  <line class="flag" x1="289.1" y1="365.0" x2="289.1" y2="373.0"/>
+  <line class="flag" x1="290.8" y1="365.0" x2="290.8" y2="373.0"/>
+  <line class="flag" x1="296.3" y1="365.0" x2="296.3" y2="373.0"/>
+  <line class="flag" x1="298.1" y1="365.0" x2="298.1" y2="373.0"/>
+  <line class="flag" x1="314.3" y1="365.0" x2="314.3" y2="373.0"/>
+  <line class="flag" x1="315.3" y1="365.0" x2="315.3" y2="373.0"/>
+  <line class="flag" x1="316.9" y1="365.0" x2="316.9" y2="373.0"/>
+  <line class="flag" x1="317.5" y1="365.0" x2="317.5" y2="373.0"/>
+  <line class="flag" x1="317.8" y1="365.0" x2="317.8" y2="373.0"/>
+  <line class="flag" x1="342.7" y1="365.0" x2="342.7" y2="373.0"/>
+  <line class="flag" x1="87.5" y1="400.0" x2="87.5" y2="408.0"/>
+  <line class="flag" x1="88.0" y1="400.0" x2="88.0" y2="408.0"/>
+  <line class="flag" x1="131.3" y1="400.0" x2="131.3" y2="408.0"/>
+  <line class="flag" x1="134.5" y1="400.0" x2="134.5" y2="408.0"/>
+  <line class="flag" x1="187.4" y1="400.0" x2="187.4" y2="408.0"/>
+  <line class="flag" x1="101.5" y1="435.0" x2="101.5" y2="443.0"/>
+  <line class="flag" x1="102.0" y1="435.0" x2="102.0" y2="443.0"/>
+  <line class="flag" x1="106.1" y1="435.0" x2="106.1" y2="443.0"/>
+  <line class="flag" x1="106.6" y1="435.0" x2="106.6" y2="443.0"/>
+  <line class="flag" x1="139.0" y1="435.0" x2="139.0" y2="443.0"/>
+  <line class="flag" x1="139.5" y1="435.0" x2="139.5" y2="443.0"/>
+  <line class="flag" x1="141.3" y1="435.0" x2="141.3" y2="443.0"/>
+  <line class="flag" x1="201.5" y1="435.0" x2="201.5" y2="443.0"/>
+  <line class="flag" x1="204.0" y1="435.0" x2="204.0" y2="443.0"/>
+  <line class="flag" x1="326.7" y1="435.0" x2="326.7" y2="443.0"/>
+  <line class="flag" x1="327.7" y1="435.0" x2="327.7" y2="443.0"/>
+  <line class="flag" x1="154.1" y1="505.0" x2="154.1" y2="513.0"/>
+  <line class="flag" x1="293.1" y1="505.0" x2="293.1" y2="513.0"/>
+  <line class="flag" x1="295.6" y1="505.0" x2="295.6" y2="513.0"/>
+  <line class="flag" x1="313.8" y1="505.0" x2="313.8" y2="513.0"/>
+  <line class="flag" x1="314.5" y1="505.0" x2="314.5" y2="513.0"/>
+  <line class="flag" x1="342.3" y1="505.0" x2="342.3" y2="513.0"/>
+  <polygon class="profill" points="80.6,605 80.6,592.5 80.6,592.5 80.6,567.5 80.6,567.5 80.6,555.0 88.4,555.0 88.4,567.5 103.2,567.5 103.2,580.0 107.4,580.0 107.4,592.5 115.5,592.5 115.5,605.0 115.5,605.0 115.5,592.5 115.5,592.5 115.5,580.0 115.5,580.0 115.5,555.0 119.5,555.0 119.5,567.5 122.4,567.5 122.4,580.0 122.8,580.0 122.8,592.5 124.3,592.5 124.3,605.0 126.0,605.0 126.0,592.5 126.1,592.5 126.1,580.0 126.1,580.0 126.1,555.0 134.9,555.0 134.9,567.5 136.7,567.5 136.7,580.0 136.8,580.0 136.8,592.5 141.8,592.5 141.8,605.0 141.8,605.0 141.8,592.5 141.8,592.5 141.8,580.0 141.8,580.0 141.8,567.5 156.7,567.5 156.7,580.0 161.9,580.0 161.9,592.5 172.1,592.5 172.1,605.0 172.1,605.0 172.1,592.5 172.1,592.5 172.1,580.0 172.1,580.0 172.1,567.5 177.4,567.5 177.4,580.0 179.0,580.0 179.0,592.5 180.5,592.5 180.5,605.0 182.0,605.0 182.0,592.5 182.0,592.5 182.0,580.0 182.0,580.0 182.0,567.5 182.0,567.5 182.0,555.0 187.9,555.0 187.9,567.5 193.9,567.5 193.9,580.0 200.9,580.0 200.9,592.5 204.7,592.5 204.7,605.0 204.7,605.0 204.7,592.5 204.7,592.5 204.7,580.0 221.1,580.0 221.1,592.5 221.1,592.5 221.1,605.0 221.1,605.0 221.1,592.5 221.1,592.5 221.1,580.0 230.0,580.0 230.0,592.5 236.6,592.5 236.6,605.0 238.0,605.0 238.0,592.5 238.0,592.5 238.0,567.5 238.0,567.5 238.0,555.0 255.7,555.0 255.7,567.5 256.3,567.5 256.3,580.0 258.6,580.0 258.6,592.5 259.6,592.5 259.6,605.0 259.6,605.0 259.6,592.5 259.6,592.5 259.6,580.0 259.6,580.0 259.6,555.0 267.7,555.0 267.7,567.5 271.2,567.5 271.2,580.0 274.4,580.0 274.4,592.5 277.9,592.5 277.9,605.0 278.9,605.0 278.9,592.5 279.0,592.5 279.0,567.5 279.0,567.5 279.0,555.0 296.6,555.0 296.6,567.5 297.6,567.5 297.6,580.0 298.7,580.0 298.7,592.5 303.7,592.5 303.7,605.0 303.7,605.0 303.7,592.5 303.7,592.5 303.7,580.0 303.7,580.0 303.7,555.0 312.3,555.0 312.3,567.5 317.6,567.5 317.6,580.0 318.4,580.0 318.4,592.5 318.4,592.5 318.4,605.0 319.1,605.0 319.1,592.5 319.1,592.5 319.1,580.0 319.1,580.0 319.1,567.5 327.8,567.5 327.8,580.0 328.3,580.0 328.3,592.5 332.9,592.5 332.9,605.0 334.7,605.0 334.7,592.5 334.7,592.5 334.7,580.0 341.5,580.0 341.5,592.5 347.8,592.5 347.8,605.0 349.0,605.0 349.0,592.5 349.0,592.5 349.0,580.0 355.3,580.0 355.3,592.5 355.4,592.5 355.4,605.0 356.0,605.0 356.0,605"/>
+  <polyline class="profline" points="80.6,592.5 80.6,592.5 80.6,567.5 80.6,567.5 80.6,555.0 88.4,555.0 88.4,567.5 103.2,567.5 103.2,580.0 107.4,580.0 107.4,592.5 115.5,592.5 115.5,605.0 115.5,605.0 115.5,592.5 115.5,592.5 115.5,580.0 115.5,580.0 115.5,555.0 119.5,555.0 119.5,567.5 122.4,567.5 122.4,580.0 122.8,580.0 122.8,592.5 124.3,592.5 124.3,605.0 126.0,605.0 126.0,592.5 126.1,592.5 126.1,580.0 126.1,580.0 126.1,555.0 134.9,555.0 134.9,567.5 136.7,567.5 136.7,580.0 136.8,580.0 136.8,592.5 141.8,592.5 141.8,605.0 141.8,605.0 141.8,592.5 141.8,592.5 141.8,580.0 141.8,580.0 141.8,567.5 156.7,567.5 156.7,580.0 161.9,580.0 161.9,592.5 172.1,592.5 172.1,605.0 172.1,605.0 172.1,592.5 172.1,592.5 172.1,580.0 172.1,580.0 172.1,567.5 177.4,567.5 177.4,580.0 179.0,580.0 179.0,592.5 180.5,592.5 180.5,605.0 182.0,605.0 182.0,592.5 182.0,592.5 182.0,580.0 182.0,580.0 182.0,567.5 182.0,567.5 182.0,555.0 187.9,555.0 187.9,567.5 193.9,567.5 193.9,580.0 200.9,580.0 200.9,592.5 204.7,592.5 204.7,605.0 204.7,605.0 204.7,592.5 204.7,592.5 204.7,580.0 221.1,580.0 221.1,592.5 221.1,592.5 221.1,605.0 221.1,605.0 221.1,592.5 221.1,592.5 221.1,580.0 230.0,580.0 230.0,592.5 236.6,592.5 236.6,605.0 238.0,605.0 238.0,592.5 238.0,592.5 238.0,567.5 238.0,567.5 238.0,555.0 255.7,555.0 255.7,567.5 256.3,567.5 256.3,580.0 258.6,580.0 258.6,592.5 259.6,592.5 259.6,605.0 259.6,605.0 259.6,592.5 259.6,592.5 259.6,580.0 259.6,580.0 259.6,555.0 267.7,555.0 267.7,567.5 271.2,567.5 271.2,580.0 274.4,580.0 274.4,592.5 277.9,592.5 277.9,605.0 278.9,605.0 278.9,592.5 279.0,592.5 279.0,567.5 279.0,567.5 279.0,555.0 296.6,555.0 296.6,567.5 297.6,567.5 297.6,580.0 298.7,580.0 298.7,592.5 303.7,592.5 303.7,605.0 303.7,605.0 303.7,592.5 303.7,592.5 303.7,580.0 303.7,580.0 303.7,555.0 312.3,555.0 312.3,567.5 317.6,567.5 317.6,580.0 318.4,580.0 318.4,592.5 318.4,592.5 318.4,605.0 319.1,605.0 319.1,592.5 319.1,592.5 319.1,580.0 319.1,580.0 319.1,567.5 327.8,567.5 327.8,580.0 328.3,580.0 328.3,592.5 332.9,592.5 332.9,605.0 334.7,605.0 334.7,592.5 334.7,592.5 334.7,580.0 341.5,580.0 341.5,592.5 347.8,592.5 347.8,605.0 349.0,605.0 349.0,592.5 349.0,592.5 349.0,580.0 355.3,580.0 355.3,592.5 355.4,592.5 355.4,605.0 356.0,605.0"/>
+  <line class="base" x1="4" y1="605" x2="356" y2="605"/>
+  <text class="plabel" x="4" y="544">lanes open<tspan class="pmax"> · peak 4</tspan></text>
+</svg></div>
+    <div class="legend">
+      <span><i class="st"></i>prompt a person typed</span>
+      <span><i class="sh"></i>you at the keyboard</span>
+      <span><i class="sw"></i>agent lane · thickness = tool calls/min</span>
+      <span><i class="sd"></i>lane closed with no commit in its repo</span>
+      <span><i class="sf"></i>commit, on the repo git logged it in — never on a lane</span>
+      <span class="wideonly"><i class="sv"></i>fan-out wave · wN·k = k lanes opened at once</span>
+    </div>
+
+    <section><h3>Destinations · commits in window (git-verified)</h3>
+      <div class="chips"><span class="chip">repo 4<b>36</b></span><span class="chip">repo 8<b>31</b></span><span class="chip">repo 13<b>29</b></span><span class="chip">repo 9<b>29</b></span><span class="chip">repo 5<b>28</b></span><span class="chip">repo 7<b>11</b></span><span class="chip">repo 16<b>8</b></span><span class="chip">repo 10<b>6</b></span><span class="chip">repo 1<b>5</b></span><span class="chip">repo 14<b>3</b></span><span class="chip quiet">repo 11<b>0</b></span><span class="chip quiet">repo 12<b>0</b></span><span class="chip quiet untracked">repo 15<b>—</b></span><span class="chip quiet">repo 2<b>0</b></span><span class="chip quiet">repo 3<b>0</b></span><span class="chip quiet">repo 6<b>0</b></span></div></section>
+
+    <section><h3>Lanes <span class="cav">· Destination is the repository most of the lane's
+      edits landed in, not the only one it opened</span></h3><div class="scroller"><table>
+      <thead><tr><th class="c">Wave</th><th class="l">Lane</th><th class="m">Start</th><th class="m">Open</th>
+        <th class="m">Tools</th><th class="m">/min</th><th class="d">Destination</th></tr></thead>
+      <tbody><tr><td class="c w">w1</td>
+        <td class="l">L1</td>
+        <td class="m">23:49</td><td class="m">38m</td>
+        <td class="m">119</td><td class="m">3.1</td>
+        <td class="d">repo 9</td></tr><tr><td class="c w">w1</td>
+        <td class="l">L2</td>
+        <td class="m">23:49</td><td class="m">13m</td>
+        <td class="m">59</td><td class="m">4.4</td>
+        <td class="d">repo 1</td></tr><tr><td class="c w">w1</td>
+        <td class="l">L3</td>
+        <td class="m">23:49</td><td class="m">59m</td>
+        <td class="m">152</td><td class="m">2.5</td>
+        <td class="d">repo 13</td></tr><tr><td class="c w">w1</td>
+        <td class="l">L4</td>
+        <td class="m">23:49</td><td class="m">45m</td>
+        <td class="m">135</td><td class="m">2.9</td>
+        <td class="d">repo 7</td></tr><tr><td class="c w">w2</td>
+        <td class="l">repo 9</td>
+        <td class="m">00:48</td><td class="m">15m</td>
+        <td class="m">68</td><td class="m">4.5</td>
+        <td class="d">repo 9</td></tr><tr><td class="c w">w2</td>
+        <td class="l">repo 1</td>
+        <td class="m">00:48</td><td class="m">12m</td>
+        <td class="m">66</td><td class="m">5.3</td>
+        <td class="d">repo 1</td></tr><tr><td class="c w">w2</td>
+        <td class="l">lane</td>
+        <td class="m">00:48</td><td class="m">11m</td>
+        <td class="m">58</td><td class="m">4.9</td>
+        <td class="d">—</td></tr><tr><td class="c w">w2</td>
+        <td class="l">repo 13</td>
+        <td class="m">00:48</td><td class="m">6m</td>
+        <td class="m">31</td><td class="m">4.5</td>
+        <td class="d">repo 13</td></tr><tr><td class="c w">w3</td>
+        <td class="l">repo 9</td>
+        <td class="m">01:06</td><td class="m">18m</td>
+        <td class="m">77</td><td class="m">4.2</td>
+        <td class="d">repo 9</td></tr><tr><td class="c w">w3</td>
+        <td class="l">repo 13</td>
+        <td class="m">01:07</td><td class="m">18m</td>
+        <td class="m">70</td><td class="m">3.9</td>
+        <td class="d">repo 13</td></tr><tr><td class="c w">w3</td>
+        <td class="l">repo 1</td>
+        <td class="m">01:07</td><td class="m">15m</td>
+        <td class="m">85</td><td class="m">5.6</td>
+        <td class="d">repo 1</td></tr><tr><td class="c w">w3</td>
+        <td class="l">repo 7</td>
+        <td class="m">01:07</td><td class="m">26m</td>
+        <td class="m">102</td><td class="m">3.8</td>
+        <td class="d">repo 7</td></tr><tr><td class="c w">w4</td>
+        <td class="l">L5</td>
+        <td class="m">01:33</td><td class="m">51m</td>
+        <td class="m">156</td><td class="m">3.0</td>
+        <td class="d">repo 5</td></tr><tr><td class="c w">w4</td>
+        <td class="l">L6</td>
+        <td class="m">01:33</td><td class="m">34m</td>
+        <td class="m">104</td><td class="m">3.0</td>
+        <td class="d">repo 4</td></tr><tr><td class="c w">w4</td>
+        <td class="l">L7</td>
+        <td class="m">01:33</td><td class="m">25m</td>
+        <td class="m">101</td><td class="m">4.0</td>
+        <td class="d">repo 8</td></tr><tr><td class="c w">w5</td>
+        <td class="l">repo 5</td>
+        <td class="m">02:25</td><td class="m">14m</td>
+        <td class="m">59</td><td class="m">4.1</td>
+        <td class="d">repo 5</td></tr><tr><td class="c w">w5</td>
+        <td class="l">repo 4</td>
+        <td class="m">02:25</td><td class="m">9m</td>
+        <td class="m">32</td><td class="m">3.6</td>
+        <td class="d">repo 4</td></tr><tr><td class="c w">w5</td>
+        <td class="l">repo 8</td>
+        <td class="m">02:25</td><td class="m">11m</td>
+        <td class="m">51</td><td class="m">4.3</td>
+        <td class="d">repo 8</td></tr><tr><td class="c w">w6</td>
+        <td class="l">repo 9</td>
+        <td class="m">02:42</td><td class="m">20m</td>
+        <td class="m">73</td><td class="m">3.6</td>
+        <td class="d">repo 9</td></tr><tr><td class="c w">w6</td>
+        <td class="l">repo 13</td>
+        <td class="m">02:42</td><td class="m">32m</td>
+        <td class="m">92</td><td class="m">2.9</td>
+        <td class="d">repo 13</td></tr><tr><td class="c w">w6</td>
+        <td class="l">repo 7</td>
+        <td class="m">02:42</td><td class="m">38m</td>
+        <td class="m">148</td><td class="m">3.8</td>
+        <td class="d">repo 7</td></tr><tr><td class="c w">w6</td>
+        <td class="l">repo 1</td>
+        <td class="m">02:42</td><td class="m">10m</td>
+        <td class="m">23</td><td class="m">2.3</td>
+        <td class="d">repo 1</td></tr><tr><td class="c w">w7</td>
+        <td class="l">repo 4</td>
+        <td class="m">03:21</td><td class="m">27m</td>
+        <td class="m">103</td><td class="m">3.7</td>
+        <td class="d">repo 4</td></tr><tr><td class="c w">w7</td>
+        <td class="l">repo 8</td>
+        <td class="m">03:21</td><td class="m">28m</td>
+        <td class="m">83</td><td class="m">3.0</td>
+        <td class="d">repo 8</td></tr><tr><td class="c w">w8</td>
+        <td class="l">repo 16</td>
+        <td class="m">03:49</td><td class="m">15m</td>
+        <td class="m">87</td><td class="m">5.7</td>
+        <td class="d">repo 16</td></tr><tr><td class="c w">w8</td>
+        <td class="l">repo 14</td>
+        <td class="m">03:49</td><td class="m">26m</td>
+        <td class="m">106</td><td class="m">4.0</td>
+        <td class="d">repo 14</td></tr><tr><td class="c w">w9</td>
+        <td class="l">repo 5</td>
+        <td class="m">04:18</td><td class="m">30m</td>
+        <td class="m">99</td><td class="m">3.3</td>
+        <td class="d">repo 5</td></tr><tr><td class="c w">w9</td>
+        <td class="l">repo 9</td>
+        <td class="m">04:18</td><td class="m">35m</td>
+        <td class="m">124</td><td class="m">3.5</td>
+        <td class="d">repo 9</td></tr><tr><td class="c w">w9</td>
+        <td class="l">repo 4</td>
+        <td class="m">04:18</td><td class="m">36m</td>
+        <td class="m">91</td><td class="m">2.5</td>
+        <td class="d">repo 4</td></tr><tr><td class="c w">w9</td>
+        <td class="l">repo 8</td>
+        <td class="m">04:18</td><td class="m">31m</td>
+        <td class="m">128</td><td class="m">4.1</td>
+        <td class="d">repo 8</td></tr><tr><td class="c w">w10</td>
+        <td class="l">repo 5</td>
+        <td class="m">04:55</td><td class="m">31m</td>
+        <td class="m">111</td><td class="m">3.5</td>
+        <td class="d">repo 5</td></tr><tr><td class="c w">w10</td>
+        <td class="l">repo 4</td>
+        <td class="m">04:55</td><td class="m">25m</td>
+        <td class="m">112</td><td class="m">4.4</td>
+        <td class="d">repo 4</td></tr><tr><td class="c w">w10</td>
+        <td class="l">repo 9</td>
+        <td class="m">04:55</td><td class="m">19m</td>
+        <td class="m">95</td><td class="m">4.8</td>
+        <td class="d">repo 9</td></tr><tr><td class="c w">w10</td>
+        <td class="l">repo 8</td>
+        <td class="m">04:55</td><td class="m">13m</td>
+        <td class="m">53</td><td class="m">3.8</td>
+        <td class="d">repo 8</td></tr><tr><td class="c w">w11</td>
+        <td class="l">repo 8</td>
+        <td class="m">05:28</td><td class="m">30m</td>
+        <td class="m">137</td><td class="m">4.5</td>
+        <td class="d">repo 8</td></tr><tr><td class="c w">w11</td>
+        <td class="l">repo 5</td>
+        <td class="m">05:28</td><td class="m">33m</td>
+        <td class="m">114</td><td class="m">3.4</td>
+        <td class="d">repo 5</td></tr><tr><td class="c w">w11</td>
+        <td class="l">repo 13</td>
+        <td class="m">05:28</td><td class="m">31m</td>
+        <td class="m">121</td><td class="m">3.8</td>
+        <td class="d">repo 13</td></tr><tr><td class="c w">w11</td>
+        <td class="l">repo 4</td>
+        <td class="m">05:28</td><td class="m">42m</td>
+        <td class="m">108</td><td class="m">2.6</td>
+        <td class="d">repo 4</td></tr><tr><td class="c w">w12</td>
+        <td class="l">repo 8</td>
+        <td class="m">06:10</td><td class="m">23m</td>
+        <td class="m">96</td><td class="m">4.1</td>
+        <td class="d">repo 8</td></tr><tr><td class="c w">w12</td>
+        <td class="l">repo 5</td>
+        <td class="m">06:10</td><td class="m">25m</td>
+        <td class="m">89</td><td class="m">3.5</td>
+        <td class="d">repo 5</td></tr><tr><td class="c w">w12</td>
+        <td class="l">repo 13</td>
+        <td class="m">06:10</td><td class="m">14m</td>
+        <td class="m">65</td><td class="m">4.4</td>
+        <td class="d">repo 13</td></tr><tr><td class="c w">w12</td>
+        <td class="l">repo 4</td>
+        <td class="m">06:10</td><td class="m">25m</td>
+        <td class="m">93</td><td class="m">3.7</td>
+        <td class="d">repo 4</td></tr><tr><td class="c w">w13</td>
+        <td class="l">repo 5</td>
+        <td class="m">06:37</td><td class="m">23m</td>
+        <td class="m">104</td><td class="m">4.4</td>
+        <td class="d">repo 5</td></tr><tr><td class="c w">w13</td>
+        <td class="l">repo 9</td>
+        <td class="m">06:37</td><td class="m">14m</td>
+        <td class="m">66</td><td class="m">4.5</td>
+        <td class="d">repo 9</td></tr><tr><td class="c w">w13</td>
+        <td class="l">repo 7</td>
+        <td class="m">06:37</td><td class="m">15m</td>
+        <td class="m">56</td><td class="m">3.6</td>
+        <td class="d">repo 7</td></tr><tr><td class="c w">w14</td>
+        <td class="l">repo 4</td>
+        <td class="m">07:03</td><td class="m">11m</td>
+        <td class="m">56</td><td class="m">4.8</td>
+        <td class="d">repo 4</td></tr><tr><td class="c w">w14</td>
+        <td class="l">repo 8</td>
+        <td class="m">07:03</td><td class="m">22m</td>
+        <td class="m">102</td><td class="m">4.6</td>
+        <td class="d">repo 8</td></tr><tr><td class="c w">w15</td>
+        <td class="l">lane</td>
+        <td class="m">07:28</td><td class="m">10m</td>
+        <td class="m">47</td><td class="m">4.3</td>
+        <td class="d">—</td></tr><tr><td class="c w">w15</td>
+        <td class="l">repo 4</td>
+        <td class="m">07:28</td><td class="m">10m</td>
+        <td class="m">56</td><td class="m">5.1</td>
+        <td class="d">repo 4</td></tr></tbody></table></div></section>
+
+    <div class="honest">
+      <b>Authorship.</b> These transcripts hold <b>4,903</b> records of
+      <b>type:&#8203;user</b>. <b>40</b> of them (0.8%) were typed by a person —
+      the gate is <span class="mono">promptSource</span> <b>typed</b> or <b>queued</b>, dropping
+      injected and sidechain records, which is Transcripto's measured signal, not a rule invented
+      here. The other <b>4,863</b> were sorted by what the record actually contains:
+      <ul class="tally">
+        <li><b>4,717</b> tool results — a tool's output returning to the agent
+          that called it, written by the harness</li>
+        <li><b>87</b> injected context — skill bodies, pasted-image notices</li>
+        <li><b>49</b> prompts the orchestrator wrote to its own subagents —
+          the lane briefs and the steering sent mid-run. Asked without the sidechain rule, so the
+          answer is measured rather than circular: <b>0</b>
+          records in all 49 lane transcripts carried a keystroke's
+          <span class="mono">promptSource</span>.</li>
+        <li><b>10</b> harness envelopes — slash-command expansions, task
+          notifications, interrupts</li>
+      </ul>
+      Disjoint, and they add up — the only way you can check them:
+      <b>40 + 4,717 + 87 + 49 + 10
+      = 4,903</b>. A counter that trusted <b>type:&#8203;user</b> would have printed
+      <b>4,903 prompts</b> where this card prints <b>40</b>.
+      <span class="repro">python3 -m agentgrinder authorship --since 2026-08-30T12:00:00+02:00</span>
+      Commits exclude repo 15 (no git work tree).
+    </div>
+
+    <div class="foot"><span>Grind in public. Ship with proof.</span>
+      <span class="tag">38/49 lanes had a commit land while open · 7 named lanes</span></div>
+  </div>
+<script>
+  // A wide route on a narrow screen opens on its own left edge — which, on a night run, is the
+  // quiet hours before the fleet starts. Open it on the handoff instead: the part worth seeing.
+  (function () {
+    var w = document.getElementById("mapwrap");
+    if (!w) return;
+    var f = parseFloat(w.getAttribute("data-focus"));
+    if (!(f > 0)) return;
+    var over = w.scrollWidth - w.clientWidth;
+    if (over > 8) w.scrollLeft = Math.max(0, f * w.scrollWidth - w.clientWidth * 0.42);
+  })();
+</script>
+</body></html>

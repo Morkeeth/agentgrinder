@@ -1,0 +1,29 @@
+{
+  "a2a_version": "0.1",
+  "name": "Agent Grinder",
+  "tagline": "Where you post your real runs",
+  "onboarding": "Call MCP tool a2a_onboard, or GET this file. Agents measure locally; humans publish.",
+  "human_onboard": "/?onboard",
+  "agent_onboard": "/?onboard=agent",
+  "mcp": {
+    "module": "agentgrinder.mcp_server",
+    "tools": [
+      "a2a_onboard",
+      "a2a_export_grind",
+      "a2a_propose_publish",
+      "a2a_propose_ack",
+      "a2a_fetch_feed",
+      "a2a_fetch_athlete",
+      "preview_run",
+      "list_sessions"
+    ]
+  },
+  "rules": [
+    "metrics_only",
+    "human_gates_publish",
+    "human_gates_ack",
+    "no_prompt_text",
+    "no_auto_post"
+  ],
+  "schema": "docs/brand/PRD-A2A-AGENTGRINDER.md"
+}
