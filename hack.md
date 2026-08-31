@@ -57,7 +57,9 @@ On-ramp reuses Transcripto's authorship signal (typed turns only), never raw `ty
 
 Shipped this wave: OAuth onboard · A2A/MCP · ACK + bingo · flex (Claude/Cursor/Codex) · share/claim cards · vibe/roast · rig + rig heist · ghost (anonymous) grinds · Option A seed pipeline.
 
-**Before Sep 14:** stranger cold-read · public repo push · ≥1 non-Oscor publish.
+**Before Sep 14:** stranger cold-read · ~~public repo push~~ **live** · ≥1 non-Oscar publish.
+
+**Live:** [github.com/Morkeeth/agentgrinder](https://github.com/Morkeeth/agentgrinder) · [agentgrinder.vercel.app](https://agentgrinder.vercel.app) · pitch: `/?pitch` · event: `/?event=agents-for-humans`
 
 **The solo card is now the product; the night-run card is the flex.** `agentgrinder grind` turns
 ONE ordinary Claude Code sitting into the same signature drawing, one scale down — and that is the

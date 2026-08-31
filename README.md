@@ -9,9 +9,11 @@ from real work, never invented.
 ## Start here — one command, no account, nothing to configure
 
 ```bash
-cd aistrava                          # the checkout; there is no published remote yet
+git clone https://github.com/Morkeeth/agentgrinder.git && cd agentgrinder
 python3 -m agentgrinder grind        # your most recent session -> grind.html
 ```
+
+**Web:** [agentgrinder.vercel.app](https://agentgrinder.vercel.app)
 
 No install, no dependencies, no key, no server. If you would rather have it on your `$PATH`:
 
