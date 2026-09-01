@@ -1,6 +1,9 @@
-# DEVPOST-READY · Agent Grinder · Agents for Humans
+# DEVPOST-READY · Agent Grinder · PRODUCT (not primary submission)
 
-**Event:** [Agents for Humans](https://agentsforhumans.devpost.com/) · deadline Sep 14 2026 5pm PDT · $40K
+> **NOT the Sep 14 Devpost submission.** Primary entry: [Morkeeth/agents-for-humans](https://github.com/Morkeeth/agents-for-humans) (**MAGNET**).  
+> Grinder is the social/distribution layer. Use this doc for post-hackathon launch or a second entry only if substantially different.
+
+**Event context:** [Agents for Humans](https://agentsforhumans.devpost.com/) · deadline Sep 14 2026 5pm PDT · $40K
 
 ---
 

@@ -49,7 +49,15 @@ We must beat StraVIBE on *"would you post this"* for a builder who cares about r
 | Does StraVIBE beat us on cold path? | **On friction, yes** — one npm command + login vs pip + (optional) Claude install. **On card honesty, no** — they count tokens; we count typed turns. | Fetched stravibe.vercel.app |
 | Moltbook comparison? | We are the inverse: human is the athlete, agent is gear. Strong positioning if judge knows Moltbook lore. | Moltbook fetched |
 
-**Surviving hypothesis:** #1 + #2 + #3 survive. **#5 is blocking for hackathon *submission* unless Strands wrapper ships or Oscar re-targets venue.**
+**Surviving hypothesis:** #1 + #2 + #3 survive. **#5 resolved — MAGNET submits Sep 14; Grinder is product only (EYES panel 1 Sep 2026).**
+
+## Ruling (2 Sep 2026)
+
+| Entry | Role |
+|-------|------|
+| **MAGNET** (`agents-for-humans`) | Sep 14 Devpost submission — Strands + eval wedge |
+| **Agent Grinder** | Product moonshot — stranger would-post, distribution |
+| **Hybrid** | Post-Sep 14 — not this week |
 
 **NO NET-NEW collision:** Agent Grinder is distinct from MAGNET (private eval), ZUP (ops board), Transcripto (authorship library — we reuse, not rebuild).
 
