@@ -3,29 +3,54 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+SAMPLE="samples/sample_run.json"
+if python3 -c "from agentgrinder.flex import latest_any; raise SystemExit(0 if latest_any() else 1)" 2>/dev/null; then
+  SAMPLE_MODE=0
+else
+  SAMPLE_MODE=1
+  echo "(no local agent sessions — steps 2-5 use bundled sample)"
+  echo ""
+fi
+
 echo ""
 echo "=== AGENT GRINDER pitch demo ==="
 echo ""
 
 echo "1/6 flex — your agents on this machine"
-python3 -m agentgrinder flex
+python3 -m agentgrinder flex || true
 echo ""
 
 echo "2/6 vibe — meme label (no streaks)"
-python3 -m agentgrinder vibe
+if [ "$SAMPLE_MODE" = 1 ]; then
+  python3 -m agentgrinder vibe "$SAMPLE"
+else
+  python3 -m agentgrinder vibe
+fi
 echo ""
 
 echo "3/6 roast — honest shape clowning"
-python3 -m agentgrinder roast
+if [ "$SAMPLE_MODE" = 1 ]; then
+  python3 -m agentgrinder roast "$SAMPLE"
+else
+  python3 -m agentgrinder roast
+fi
 echo ""
 
-echo "4/6 grind card — latest session (opens browser)"
-python3 -m agentgrinder grind --harness auto --no-rank -o /tmp/pitch-grind.html
+echo "4/6 grind card — latest session"
+if [ "$SAMPLE_MODE" = 1 ]; then
+  python3 -m agentgrinder card "$SAMPLE" --no-open -o /tmp/pitch-grind.html
+else
+  python3 -m agentgrinder grind --harness auto --no-rank --no-open -o /tmp/pitch-grind.html
+fi
 echo "   -> /tmp/pitch-grind.html"
 echo ""
 
 echo "5/6 share card — claim-your-handle + vibe + roast"
-python3 -m agentgrinder share --harness auto --vibe --roast --no-open -o /tmp/pitch-share.html
+if [ "$SAMPLE_MODE" = 1 ]; then
+  python3 -m agentgrinder share "$SAMPLE" --vibe --roast --no-open -o /tmp/pitch-share.html
+else
+  python3 -m agentgrinder share --harness auto --vibe --roast --no-open -o /tmp/pitch-share.html
+fi
 echo "   -> /tmp/pitch-share.html"
 echo ""
 
