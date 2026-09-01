@@ -41,4 +41,4 @@ Night run: ambitious-plan / whole-night scope for Agent Grinder Sep 14 readiness
 5. **OAuth publish path not tested** — `agentgrinder login` / `grind --push` need Oscar Supabase credentials; not run on cloud agent.
 6. **`_NIGHT-SCOPE.md` / `_HACK-CONTRACT.md` not found** at `~/CODE/zup/docs/cloud-prompts/` on this VM — used inline prompt contract instead.
 7. **StraVIBE beats us on install friction** — npm one-liner + auto-sync vs pip + optional Claude install; honesty axis unproven against real users tonight.
-8. **Cold clone from GitHub not re-verified post-push** — local copy test used; GitHub clone verification pending after `git push`.
+8. **GitHub clone verified post-push** — `git clone https://github.com/Morkeeth/agentgrinder.git` + pitch-demo → exit 0 at commit `e680bac`.

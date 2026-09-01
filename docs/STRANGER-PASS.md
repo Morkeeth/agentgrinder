@@ -11,22 +11,13 @@ Cold-clone simulation — no Oscar credentials, no `~/.claude`, no Supabase keys
 
 ```bash
 tmpdir=$(mktemp -d) && cd "$tmpdir"
-cp -a /path/to/agentgrinder .   # simulates clone; after push use: git clone https://github.com/Morkeeth/agentgrinder.git
-cd agentgrinder
-pip install -e . -q
-python3 -m agentgrinder demo --no-open
-bash scripts/pitch-demo.sh
-```
-
-After `cursor/ambitious-grinder-9484` merges to main, replace copy with:
-
-```bash
-tmpdir=$(mktemp -d) && cd "$tmpdir"
 git clone https://github.com/Morkeeth/agentgrinder.git && cd agentgrinder
 pip install -e . -q
 python3 -m agentgrinder demo --no-open
 bash scripts/pitch-demo.sh
 ```
+
+**Verified on GitHub main** commit `e680bac` (2026-09-02).
 
 ---
 
