@@ -60,5 +60,12 @@
     "tests",
     "docs",
     "submission"
-  ]
+  ],
+  "claims": 9,
+  "claims_verified": 6,
+  "artifacts_produced": 4,
+  "artifacts_promised": null,
+  "corrections": null,
+  "reach": null,
+  "_five_numbers_note": "sample fixture: claims/claims_verified/artifacts_produced are illustrative; a real run gets them from ingest.py (v0 rule in claims.py). corrections/promised/reach are None until Transcripto/ZUP/reach sources exist."
 }

@@ -22,7 +22,9 @@ def _render(run: dict, out: Path, open_it: bool) -> None:
     # terminal summary (Oscar reads the terminal too)
     print(f"\n  {a.athlete} · {a.title}")
     print(f"  {a.harness} · {a.project} · {a.date_str}")
-    print(f"  {a.distance:>14} | {a.moving_time:>9} | {a.pace}")
+    print(f"\n  VERIFIED PER TURN  {a.headline}    {a.headline_formula}")
+    print("  " + " · ".join(f"{c.label} {c.value}" + (" (cost)" if c.cost else "") for c in a.five))
+    print(f"\n  cost: {a.distance} | {a.moving_time} | {a.pace}")
     print(f"  effort {a.effort} · {a.segments} · {a.commits} commits · {a.prompts_per_hour}"
           + ("  ★ focus PB" if a.focus_pb else ""))
     print(f"\n  card -> {out}\n")
