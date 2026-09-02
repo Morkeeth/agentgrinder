@@ -8,6 +8,13 @@ canonical source retires is the same class of defect as a card printing a number
 contradicts, so the solo path -- the front door -- uses the canonical words: the command is
 `agentgrinder grind` (`run` still works), and the drawing is THE GRIND TRACE.
 
+THE NUMBER AT THE TOP IS VERIFIED PER TURN, never the prompt count. Prompts are the cost of a
+grind (the denominator); a card whose first big number is "47 prompts" crowns the person who
+typed the most (METR 2025: developers believed +20%, measured -19%). The Strava-shaped numbers --
+prompts, moving time, pace, commits -- are all still here, grouped under COST. Where the run has
+no verified-claims count (an old `--json` dump), the headline is an em-dash whose tooltip names
+what is missing, not a zero. `metrics.headline_of` is the one definition every surface reads.
+
 Every sentence here names what it counted and over which population, or prints an em-dash.
 """
 from __future__ import annotations
@@ -17,6 +24,8 @@ from datetime import datetime
 
 from .authorship import CATEGORIES, COMMAND
 from . import privacy
+from .metrics import HEADLINE_TIP, headline_of
+from .render import _five_row
 from .soloroute import render_route_svg, render_phone_svg, _esc, span_minutes
 
 
@@ -108,13 +117,19 @@ def headline(run: dict) -> tuple[str, str]:
                 f'grind, and <b>{never}</b> of the <b>{run["files_edited"]}</b> files it changed '
                 f'{"is" if never == 1 else "are"} in none of them, nor in any commit since.')
 
+    # The plain fallbacks lead with the OUTCOME. Until 3 Sep they read "47 prompts → 3 commits",
+    # "47 prompts, 12 files changed", "47 prompts on proj": the largest text on the card opened
+    # with the cost. The prompt count is on the card, under COST, where a denominator belongs.
     if run["commits"]:
-        return (f'{_n(typed, "prompt")} → {_n(run["commits"], "commit")} on {proj}', "")
+        return (f'{_n(run["commits"], "commit")} landed on {proj}',
+                f'From <b>{typed}</b> typed prompt{"" if typed == 1 else "s"} in <b>{wall_m}</b> minutes.')
     if run["files_edited"]:
-        return (f'{_n(typed, "prompt")}, {_n(run["files_edited"], "file")} changed in {proj}', "")
+        return (f'{_n(run["files_edited"], "file")} changed in {proj}, no commit yet',
+                f'From <b>{typed}</b> typed prompt{"" if typed == 1 else "s"} in <b>{wall_m}</b> minutes.')
     if run["files_touched"]:
         return (f'A reading grind — {run["files_touched"]} files opened, none changed', "")
-    return (f'{_n(typed, "prompt")} on {proj}', "")
+    return (f'A grind on {proj} — no files opened, nothing committed',
+            f'<b>{typed}</b> typed prompt{"" if typed == 1 else "s"} in <b>{wall_m}</b> minutes.')
 
 
 def render_solo_card(run: dict, title: str | None = None, ranks: dict | None = None) -> str:
@@ -144,6 +159,8 @@ def render_solo_card(run: dict, title: str | None = None, ranks: dict | None = N
                 f'<span class="mono">agentgrinder history</span>.</span></div>')
     h_title, callout = headline(run)
     h_title = title or h_title
+    hl = headline_of(run)          # verified per turn, or a dash that names what is missing
+    five = _five_row(hl.five)
     pace = (run["duration_s"] / run["turns_typed"]) if run["turns_typed"] else None
     per_prompt = (run["tool_calls"] / run["turns_typed"]) if run["turns_typed"] else None
     sit = run["sitting"]
@@ -269,8 +286,24 @@ def render_solo_card(run: dict, title: str | None = None, ranks: dict | None = N
   .callout{{margin:14px 22px 0;padding:12px 15px;border-left:3px solid var(--accent);
     background:var(--bg);font-size:13.5px;line-height:1.62;color:var(--muted)}}
   .callout b{{color:var(--ink);font-family:"Space Mono",ui-monospace,Menlo,monospace;font-weight:700}}
+  .hl{{display:flex;align-items:baseline;gap:14px;padding:14px 22px 10px;cursor:help}}
+  .hl .n{{font:800 46px/1 "Space Mono",ui-monospace,Menlo,monospace;letter-spacing:-.04em;color:var(--accent)}}
+  .hl .lbl{{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em}}
+  .hl .f{{display:block;font-size:12px;color:var(--faint);text-transform:none;letter-spacing:0;
+    font-family:"Space Mono",ui-monospace,Menlo,monospace}}
+  .fiverow{{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--line);
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line)}}
+  .five{{background:var(--card);padding:10px 8px 9px;text-align:center;cursor:help}}
+  .five .v{{font:700 15px/1.2 "Space Mono",ui-monospace,Menlo,monospace;letter-spacing:-.01em;white-space:nowrap}}
+  .five .k{{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;
+    margin-top:3px;line-height:1.25}}
+  .five[data-missing] .v{{color:var(--muted);font-weight:400}}
+  .five.cost .v{{color:var(--muted)}}
+  .costtag{{font-style:normal;display:inline-block;margin-left:4px;padding:0 4px;border-radius:4px;
+    background:var(--line);color:var(--muted);font-size:9px;letter-spacing:.04em}}
+  .grp{{padding:12px 22px 0;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.14em}}
   .stats{{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
-    border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-top:16px}}
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-top:8px}}
   .stat{{background:var(--card);padding:14px 18px}}
   .stat .v{{font:700 25px/1.1 "Space Mono",ui-monospace,Menlo,monospace;letter-spacing:-.02em}}
   .stat .k{{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:4px}}
@@ -366,6 +399,8 @@ def render_solo_card(run: dict, title: str | None = None, ranks: dict | None = N
     .brand{{flex:0 0 auto;font-size:9.5px;letter-spacing:.1em}}
     .top{{gap:9px}}
     .stats{{grid-template-columns:repeat(2,1fr)}}
+    .fiverow{{grid-template-columns:repeat(2,1fr)}} .five:nth-child(5){{grid-column:span 2}}
+    .hl{{padding-left:14px;padding-right:14px}} .hl .n{{font-size:36px}} .grp{{padding-left:14px}}
     h1{{font-size:20px}} .stat .v{{font-size:21px}}
     .top,.sub,h1,.mapwrap,.maphead,.legend,.honest,.foot,.callout,.dead{{padding-left:14px;padding-right:14px}}
     .callout,.dead{{margin-left:14px;margin-right:14px;padding-left:12px;padding-right:12px}}
@@ -385,8 +420,15 @@ def render_solo_card(run: dict, title: str | None = None, ranks: dict | None = N
     {f'<div class="callout">{callout}</div>' if callout else ''}
     {prog}
 
+    <div class="hl" title="{_esc(HEADLINE_TIP)} · {_esc(hl.formula)}">
+      <div class="n">{hl.text}</div>
+      <div class="lbl">verified per turn<span class="f">{_esc(hl.formula)}</span></div>
+    </div>
+    <div class="fiverow">{five}</div>
+
+    <div class="grp">Cost — what the grind spent</div>
     <div class="stats">
-      <div class="stat"><div class="v">{run["turns_typed"]}</div><div class="k">Prompts</div>
+      <div class="stat"><div class="v">{run["turns_typed"]}</div><div class="k">Prompts · cost</div>
         <div class="src">promptSource typed|queued</div></div>
       <div class="stat"><div class="v">{_dur(run["duration_s"])}</div><div class="k">Moving time</div>
         <div class="src">gaps capped at 20m</div></div>

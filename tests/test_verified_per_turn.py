@@ -120,3 +120,127 @@ def test_parse_session_counts_claims_and_produced(tmp_path):
     assert r["artifacts_promised"] is None and r["corrections"] is None and r["reach"] is None
     a = build_activity(r)
     assert a.headline == f"{(1 + 1) / 2:.2f}"
+
+
+# ---- 3 Sep: the other three surfaces never headline prompts either -----------------------------
+# The demo card flipped on 2 Sep; `grind` (solocard.py), the web app (site/index.html) and the
+# profile (profile.py / render_profile) still put the prompt count first. These pin the flip on
+# each, with the same predicate: the first big number is verified per turn (or a dash that names
+# what is missing), and the word "Prompts" only appears under COST.
+
+import re
+
+from agentgrinder.profile import totals_of
+from agentgrinder.render import render_profile
+from agentgrinder.solo import parse_solo
+from agentgrinder.solocard import headline, render_solo_card
+
+REPO = os.path.join(os.path.dirname(__file__), "..")
+
+
+def _solo_jsonl(tmp_path):
+    """A two-turn sitting in a directory with no git work tree: one Write that lands on disk,
+    one claim with a passing result in its turn, one claim with none."""
+    made = tmp_path / "out.md"; made.write_text("x")
+    cwd = str(tmp_path)
+    lines = [
+        _rec("user", "please fix it", ts="2026-09-03T10:00:00Z", cwd=cwd, promptSource="typed"),
+        _rec("assistant", [{"type": "tool_use", "name": "Write", "input": {"file_path": str(made)}}],
+             ts="2026-09-03T10:00:10Z", cwd=cwd),
+        _rec("user", [{"type": "tool_result", "content": "3 passed in 0.2s"}], ts="2026-09-03T10:00:20Z", cwd=cwd),
+        _rec("assistant", [{"type": "text", "text": "Suite passes, fixed."}], ts="2026-09-03T10:00:30Z", cwd=cwd),
+        _rec("user", "and the other thing", ts="2026-09-03T10:04:00Z", cwd=cwd, promptSource="typed"),
+        _rec("assistant", [{"type": "tool_use", "name": "Read", "input": {"file_path": str(made)}}],
+             ts="2026-09-03T10:04:10Z", cwd=cwd),
+        _rec("assistant", [{"type": "text", "text": "Done."}], ts="2026-09-03T10:05:00Z", cwd=cwd),
+    ]
+    p = tmp_path / "s.jsonl"
+    p.write_text("\n".join(json.dumps(x) for x in lines) + "\n")
+    return str(p)
+
+
+def test_grind_card_headlines_verified_per_turn_not_prompts(tmp_path):
+    run = parse_solo(_solo_jsonl(tmp_path), athlete="t")
+    # the five parts travel in the run dict as counts, same window as everything else
+    assert run["turns_typed"] == 2
+    assert (run["claims"], run["claims_verified"]) == (2, 1)
+    assert run["artifacts_produced"] == 1
+    assert run["corrections"] is None and run["artifacts_promised"] is None and run["reach"] is None
+
+    html = render_solo_card(run)
+    # the number at the top is verified per turn = (1 + 1) ÷ 2
+    hl = html.index('class="hl"')
+    assert '<div class="n">1.00</div>' in html
+    assert "(1 verified + 1 artifacts) ÷ 2 typed turns" in html
+    # the five row sits under it; typed turns is labelled cost
+    assert hl < html.index('class="fiverow"') < html.index("Cost — what the grind spent") < html.index('class="stats"')
+    assert ">typed turns<i class=\"costtag\">cost</i>" in html
+    # prompts survive, but only as cost: the old first-cell label is gone
+    assert '<div class="k">Prompts</div>' not in html
+    assert '<div class="k">Prompts · cost</div>' in html
+    # the h1 (the largest text on the card) does not open with the prompt count either
+    h1 = re.search(r"<h1>(.*?)<", html).group(1)
+    assert not re.match(r"\d+ prompts?\b(?! →)", h1), h1   # "1 prompt → 104 tool calls" is leverage, allowed
+
+
+def test_grind_headline_ladder_fallbacks_lead_with_the_outcome():
+    base = dict(stretch=None, project="p", turns_typed=12, started="2026-09-03T10:00:00",
+                ended="2026-09-03T10:30:00", ship_states={"never": 0}, tool_calls=20,
+                files_edited=0, files_touched=0, commits=0)
+    assert headline({**base, "commits": 3})[0] == "3 commits landed on p"
+    assert headline({**base, "files_edited": 2, "files_touched": 2})[0] == "2 files changed in p, no commit yet"
+    assert headline({**base, "files_touched": 4})[0].startswith("A reading grind")
+    assert not headline(base)[0].startswith("12 prompts")
+    for k in ("commits", "files_edited", "files_touched"):
+        assert not re.match(r"\d+ prompts?\b(?! →)", headline({**base, k: 3})[0])
+
+
+def test_grind_card_with_no_claim_counts_prints_a_dash_never_a_zero(tmp_path):
+    # an older `--json` dump has no claims_verified: the headline is a dash naming the gap
+    run = parse_solo(_solo_jsonl(tmp_path), athlete="t")
+    for k in ("claims", "claims_verified", "artifacts_produced"):
+        run.pop(k)
+    html = render_solo_card(run)
+    assert '<div class="n">—</div>' in html
+    assert "needs verified claims, artifacts produced" in html
+    assert "0.00" not in html.split('class="fiverow"')[0]
+
+
+def test_web_app_never_headlines_prompts():
+    src = open(os.path.join(REPO, "site", "index.html"), encoding="utf-8").read()
+    # the share card hero used to be `heroN:r.prompts` (the inversion); now verified per turn
+    assert "heroN:r.prompts" not in src
+    assert "heroK:'prompts typed'" not in src and "heroK:'prompts'" not in src
+    assert "heroN:vptText(r), heroK:'verified per turn'" in src
+    # the run card: headline block, five row, then prompts under COST — in that order
+    card = src[src.index("function runCard("):src.index("function wireKudos(")]
+    assert card.index("${vptHtml(r)}") < card.index("${fiveRow(r)}") < card.index("cost — what the grind spent") < card.index("${r.prompts??'-'}")
+    assert '<div class="k">prompts</div>' not in card
+    assert '<div class="k">prompts · cost</div>' in card
+    # the profile totals lead with verified per turn; prompts is labelled cost
+    prof = src[src.index("async function viewProfile("):src.index("async function refreshAuth(")]
+    assert prof.index("verified per turn") < prof.index("prompts · cost")
+    assert '<div class="k">prompts</div>' not in prof
+    # a missing part is a dash with the owner in the tooltip, never a 0
+    assert "if(v==null||a==null||!p) return null;" in src
+    assert "not stored by the web app yet" in src
+
+
+def test_profile_headlines_verified_per_turn_and_leaves_missing_runs_out():
+    full = {"turns_typed": 47, "claims": 9, "claims_verified": 6, "artifacts_produced": 4, "commits": 3,
+            "harness": "Claude Code"}
+    partial = {"turns_typed": 100, "commits": 1, "harness": "Claude Code"}   # no claim counts: left OUT
+    t = totals_of([full, partial])
+    assert t["verified_per_turn"] == "0.21" and t["vpt_runs_missing"] == 1
+    assert t["prompts"] == 147                                                # cost still totals every run
+    assert "over 1 of 2 runs" in t["vpt_formula"]
+    assert totals_of([partial])["verified_per_turn"] == "—"
+    assert "needs" in totals_of([partial])["vpt_formula"]
+
+    gh = {"login": "x", "name": "X", "bio": "", "public_repos": 1, "recent_commits": 0, "recent_repos": []}
+    html = render_profile({"gh": gh, "activities": [build_activity(full)], "totals": t})
+    first_cell = html[html.index('<div class="stats">'):].split("</div></div>")[0]
+    assert "Verified per turn" in first_cell and "0.21" in first_cell
+    assert '<div class="k">Prompts</div>' not in html
+    assert "Cost — 147 prompts typed across 2 runs" in html
+    assert "0.21 verified/turn" in html and "47 prompts · cost" in html

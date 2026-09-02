@@ -65,8 +65,45 @@ rejection when the result also fails, the same-human-turn window, and a syntheti
 under `__main__` — `python3 tests/test_redact_no_whitelist.py` still prints `ok=8 fail=0`.
 
 ## Not done / out of scope, flagged
-- `agentgrinder/solocard.py` (the `grind` card most users generate) and `site/methodology.html`
-  (`heroN: r.prompts`) still headline prompts — the same inversion, not touched here.
-- `render_profile` still shows a "Prompts" total; untouched, reads the same `Activity` fields.
+- ~~`agentgrinder/solocard.py` (the `grind` card most users generate) and `site/methodology.html`
+  (`heroN: r.prompts`) still headline prompts — the same inversion, not touched here.~~
+  **Flipped 3 Sep** (same branch). Correction: `heroN: r.prompts` was in `site/index.html:861`,
+  not methodology.html (which carries no numbers). See "3 Sep addendum" below.
+- ~~`render_profile` still shows a "Prompts" total; untouched, reads the same `Activity` fields.~~
+  **Flipped 3 Sep.**
 - Correction rate, promised, reach print `—`: no classifier, no ZUP read, no reach probe was built.
 - No lift experiment (the spec's "done when a lift number exists") — every card is still a claim.
+
+## 3 Sep addendum — the other three surfaces (Fable, same branch)
+
+One definition now: `metrics.headline_of(run)` / `metrics.five_cells(run)`; every surface reads it.
+
+| Surface | Before | After |
+|---|---|---|
+| `grind` card (`solocard.py`) | first stat cell **Prompts** (`47`); h1 fallbacks "N prompts → M commits on X", "N prompts, M files changed in X", "N prompts on X" | `.hl` block **verified per turn** (or `—` + "needs …" tooltip) → five-number row (typed turns tagged `cost`) → **COST — what the grind spent**: Prompts · cost, moving time, pace, commits; h1 fallbacks lead with the outcome ("3 commits landed on X", "2 files changed in X, no commit yet"). Rung 2 "1 prompt → 104 tool calls" kept: a leverage sentence. Terminal summary prints the same order. |
+| web app (`site/index.html`) | run card first stat `prompts`; share card `heroN: r.prompts` / "prompts typed"; profile totals `runs · prompts · hours · commits`; claim placeholder "prompts" | `vptHtml(r)` + `fiveRow(r)` + "cost — what the grind spent" on the run card; share hero = verified per turn (tooltip = formula), prompts moved into the stats strip as cost; profile totals lead with Σ verified per turn over runs that carry all three parts (`vptTotals`, a run missing a part is left out, never 0); import preview lists verified claims / artifacts produced |
+| profile (`profile.py` → `render_profile`) | totals `Runs · Prompts · Run commits · Repos` | `Verified per turn · Runs · Run commits · Repos` + "Cost — N prompts typed across M runs"; each run row leads with `0.21 verified/turn`, `47 prompts · cost` beside it. `totals_of(runs)` is pure (tested without the network). |
+
+`solo.parse_solo` now carries `claims`, `claims_verified`, `artifacts_produced` (v0 rule replayed over
+the SAME sitting window as every other count; `corrections` / `artifacts_promised` / `reach` are
+`None`). `push.export_run` sends the three counts.
+
+**Not stored by the web app.** The Supabase `runs` table (read 3 Sep via list_tables) has columns
+`prompts, tool_calls, files_touched, commits, rhythm, route, tool_mix` and none for the five numbers.
+No migration was applied (no deploy on this lane), so every published run reads `—` with a tooltip
+that says so and names the owner. The insert stays column-safe; the import preview shows the counts
+and says they are not saved yet.
+
+Sample fixture: `athlete`/`title`/`project` are now neutral (`sample-grinder` / `sample-project`);
+numbers untouched. `profile.html` (tracked, generated earlier) still carries the old names and the old
+"Prompts" total — it is a rendered artefact, not regenerated here (needs a real GitHub user).
+`docs/STRANGER-PASS.md` quotes the old demo output verbatim; stale, left as the record of that pass.
+
+Rendered and looked at (light, 1100px): grind card on a real 1-turn lane sitting reads
+**6.00 verified per turn — (6 verified + 0 artifacts) ÷ 1**, with `6/6 · 100%` beside it: the v0
+over-count on a one-brief lane session, exactly the ceiling the 2 Sep probe predicted. Demo card
+0.21, profile 0.21. `privacycheck` on all three → 3 clean, 0 leaking.
+
+Tests: `python3 -m pytest -q tests/` → **18 passed** (13 + 5: grind card via a synthetic `.jsonl`
+through `parse_solo`, the h1 ladder fallbacks, the dash on a dump without claim counts, the web
+app's source, the profile totals + render).

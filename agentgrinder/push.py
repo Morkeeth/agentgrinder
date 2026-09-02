@@ -21,6 +21,11 @@ def export_run(run: dict) -> dict:
         "tool_calls": run.get("tool_calls"),
         "files_touched": run.get("files_touched"),
         "commits": run.get("commits"),
+        # the five-number parts (counts only). The web app previews them; it cannot store them
+        # until its runs table has the columns (site/index.html importRun).
+        "claims": run.get("claims"),
+        "claims_verified": run.get("claims_verified"),
+        "artifacts_produced": run.get("artifacts_produced"),
         "started": run.get("started"),
         "rhythm": rhythm,
         "route": run.get("route"),

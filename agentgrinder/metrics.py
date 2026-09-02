@@ -44,7 +44,7 @@ def _fmt_pace(sec_per: float | None) -> str:
 # dash names the source, so a "—" is a pointer, never a shrug.
 SOURCES = {
     "typed_turns": "Transcripto export-run (authorship.py, vendored: typed OR queued, drops isMeta/isSidechain/tool_result)",
-    "verified_share": "Helicon witness (claim-witness log); local v0 = ingest.py claim rule",
+    "verified_share": "Helicon witness (claim-witness log); local v0 = claims.py rule, which OVER-COUNTS (a ceiling)",
     "correction_rate": "Transcripto export-run (coach classifier, inverse class — not built yet)",
     "produced_over_promised": "produced = Edit/Write paths that exist at close (local v0); promised = ZUP artifact-detect",
     "reach": "git remotes + gh + the launch log — did the output cross to a person who is not the author",
@@ -102,6 +102,63 @@ class Activity:
     headline_formula: str = ""                 # "(6 verified + 4 artifacts) ÷ 47 typed turns"
     five: list = field(default_factory=list)   # five Cell rows, in the metric spec's order
 
+HEADLINE_TIP = ("verified per turn = (verified claims + artifacts produced) ÷ typed turns. "
+                "Local v0: claims.py rule + Edit/Write paths on disk — it over-counts, read it as a "
+                "ceiling until Helicon witness replaces it")
+
+
+@dataclass
+class Headline:
+    """The card's one big number, and the five cells that sit under it. ONE definition,
+    used by every surface (demo card, grind card, profile, terminal), so they cannot disagree."""
+    text: str                  # "0.21" or "—"
+    value: float | None
+    formula: str               # "(6 verified + 4 artifacts) ÷ 47 typed turns" / "needs …"
+    five: list                 # five Cell rows, in the metric spec's order
+
+
+def five_cells(run: dict) -> list[Cell]:
+    turns = run.get("turns_typed")
+    claims = run.get("claims")
+    verified = run.get("claims_verified")
+    corrections = run.get("corrections")
+    produced = run.get("artifacts_produced")
+    promised = run.get("artifacts_promised")
+    reach = run.get("reach")
+    share = _ratio(verified, claims)   # None when no claims were made
+    corr = _ratio(corrections, turns)
+
+    def _n(v):
+        return "—" if v is None else str(v)
+
+    return [
+        Cell("typed turns", _n(turns), SOURCES["typed_turns"], cost=True),
+        Cell("verified claims",
+             f"{verified}/{claims} · {share:.0%}" if share is not None else
+             (f"{verified}/{claims}" if verified is not None and claims is not None else "—"),
+             SOURCES["verified_share"]),
+        Cell("correction rate", f"{corr:.0%}" if corr is not None else "—", SOURCES["correction_rate"]),
+        Cell("produced ÷ promised", f"{_n(produced)} ÷ {_n(promised)}", SOURCES["produced_over_promised"]),
+        Cell("reach", ("yes" if reach else "no") if reach is not None else "—", SOURCES["reach"]),
+    ]
+
+
+def headline_of(run: dict) -> Headline:
+    """Verified per turn from a run dict, or a dash that says which part is missing."""
+    turns = run.get("turns_typed")
+    verified = run.get("claims_verified")
+    produced = run.get("artifacts_produced")
+    vpt = verified_per_turn(verified, produced, turns)
+    if vpt is not None:
+        text = f"{vpt:.2f}"
+        formula = f"({verified} verified + {produced} artifacts) ÷ {turns} typed turns"
+    else:
+        text = "—"
+        missing = [k for k, v in (("verified claims", verified), ("artifacts produced", produced),
+                                  ("typed turns", turns)) if v is None]
+        formula = "needs " + ", ".join(missing) if missing else "no typed turns"
+    return Headline(text=text, value=vpt, formula=formula, five=five_cells(run))
+
 
 def build_activity(run: dict) -> Activity:
     turns = run.get("turns_typed")
@@ -122,39 +179,7 @@ def build_activity(run: dict) -> Activity:
     except ValueError:
         date_str = started or "—"
 
-    # ---- the five numbers + the headline (all optional in the run JSON) ----
-    claims = run.get("claims")
-    verified = run.get("claims_verified")
-    corrections = run.get("corrections")
-    produced = run.get("artifacts_produced")
-    promised = run.get("artifacts_promised")
-    reach = run.get("reach")
-
-    vpt = verified_per_turn(verified, produced, turns)
-    share = _ratio(verified, claims)   # None when no claims were made
-    corr = _ratio(corrections, turns)
-
-    def _n(v):
-        return "—" if v is None else str(v)
-
-    five = [
-        Cell("typed turns", _n(turns), SOURCES["typed_turns"], cost=True),
-        Cell("verified claims",
-             f"{verified}/{claims} · {share:.0%}" if share is not None else
-             (f"{verified}/{claims}" if verified is not None and claims is not None else "—"),
-             SOURCES["verified_share"]),
-        Cell("correction rate", f"{corr:.0%}" if corr is not None else "—", SOURCES["correction_rate"]),
-        Cell("produced ÷ promised", f"{_n(produced)} ÷ {_n(promised)}", SOURCES["produced_over_promised"]),
-        Cell("reach", ("yes" if reach else "no") if reach is not None else "—", SOURCES["reach"]),
-    ]
-    if vpt is not None:
-        headline = f"{vpt:.2f}"
-        formula = f"({verified} verified + {produced} artifacts) ÷ {turns} typed turns"
-    else:
-        headline = "—"
-        missing = [k for k, v in (("verified claims", verified), ("artifacts produced", produced),
-                                  ("typed turns", turns)) if v is None]
-        formula = "needs " + ", ".join(missing) if missing else "no typed turns"
+    hl = headline_of(run)
 
     return Activity(
         athlete=run.get("athlete", "athlete"),
@@ -171,8 +196,8 @@ def build_activity(run: dict) -> Activity:
         prompts_per_hour=f"{pph:.1f}/h" if pph else "—",
         focus_pb=focus_pb,
         rhythm=[int(x) for x in rhythm],
-        headline=headline,
-        headline_val=vpt,
-        headline_formula=formula,
-        five=five,
+        headline=hl.text,
+        headline_val=hl.value,
+        headline_formula=hl.formula,
+        five=hl.five,
     )

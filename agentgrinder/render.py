@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from html import escape
 
-from .metrics import Activity, Cell
+from .metrics import HEADLINE_TIP, Activity, Cell
 
 
 def _route_svg(rhythm: list[int], w: int = 720, h: int = 150) -> str:
@@ -102,7 +102,7 @@ def render_card(a: Activity) -> str:
     letter-spacing:.08em}}
   .stats{{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);
     border-top:1px solid var(--line);border-bottom:1px solid var(--line)}}
-  @media (max-width:420px){{.fiverow{{grid-template-columns:repeat(3,1fr)}}.hl .n{{font-size:36px}}
+  @media (max-width:420px){{.fiverow{{grid-template-columns:repeat(2,1fr)}}.five:nth-child(5){{grid-column:span 2}}.hl .n{{font-size:36px}}
     .stat .v{{font-size:17px}}}}
   .stat{{background:var(--card);padding:14px 16px}}
   .stat .v{{font-size:22px;font-weight:720;letter-spacing:-.01em}}
@@ -158,7 +158,8 @@ def render_profile(p: dict) -> str:
     cards = "".join(f'''
       <a class="runrow" href="#">
         <div class="rt">{a.title}</div>
-        <div class="rm"><span>{a.distance}</span><span>{a.moving_time}</span><span>{a.pace}</span>
+        <div class="rm"><span class="hl" title="{escape(HEADLINE_TIP)} · {escape(a.headline_formula)}">{a.headline} verified/turn</span>
+          <span class="cost">{a.distance} · cost</span><span>{a.moving_time}</span><span>{a.pace}</span>
           <span>{a.commits} commits</span>{" <span class='pb'>★ PB</span>" if a.focus_pb else ""}</div>
         <div class="rs">{a.harness} · {a.project} · {a.date_str}</div>
       </a>''' for a in acts) or '<div class="empty">No runs yet — <code>agentgrinder run</code> to log one.</div>'
@@ -182,6 +183,9 @@ def render_profile(p: dict) -> str:
     border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:12px}}
   .s{{background:var(--card);padding:14px}} .s .v{{font-size:22px;font-weight:720}}
   .s .k{{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}}
+  .s.hl .v{{color:var(--accent)}} .s.hl{{cursor:help}}
+  .cost{{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em;margin:0 2px 14px}}
+  .rm .hl{{color:var(--accent);font-weight:700;cursor:help}} .rm .cost{{color:var(--muted)}}
   .row2{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}}
   .panel{{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}}
   .panel h3{{margin:0 0 8px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}}
@@ -198,11 +202,12 @@ def render_profile(p: dict) -> str:
     <div><h1>{gh.get("name")}</h1><div class="bio">@{gh.get("login")}{" · " + gh.get("bio") if gh.get("bio") else ""}</div></div>
     <div class="brand">AGENTGRINDER</div></div>
   <div class="stats">
+    <div class="s hl" title="{escape(HEADLINE_TIP)} · {escape(t["vpt_formula"])}"><div class="v">{t["verified_per_turn"]}</div><div class="k">Verified per turn</div></div>
     <div class="s"><div class="v">{t["runs"]}</div><div class="k">Runs</div></div>
-    <div class="s"><div class="v">{t["prompts"]}</div><div class="k">Prompts</div></div>
     <div class="s"><div class="v">{t["session_commits"]}</div><div class="k">Run commits</div></div>
     <div class="s"><div class="v">{stat(gh.get("public_repos"))}</div><div class="k">Repos</div></div>
   </div>
+  <div class="cost">Cost — {t["prompts"]} prompts typed across {t["runs"]} runs</div>
   <div class="row2">
     <div class="panel"><h3>Setup</h3><div class="chip">{" · ".join(t["harnesses"])}</div></div>
     <div class="panel"><h3>Recently shipped ({stat(gh.get("recent_commits"))} commits)</h3><ul>{repos}</ul></div>

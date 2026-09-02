@@ -1,8 +1,8 @@
 {
-  "athlete": "morkeeth",
-  "title": "agent-attack \u2014 the gemma differential probe",
+  "athlete": "sample-grinder",
+  "title": "sample-project — a two-hour probe",
   "harness": "Claude Code",
-  "project": "agent-attack",
+  "project": "sample-project",
   "started": "2026-08-30T06:00:00",
   "duration_s": 8400,
   "turns_typed": 47,
@@ -67,5 +67,5 @@
   "artifacts_promised": null,
   "corrections": null,
   "reach": null,
-  "_five_numbers_note": "sample fixture: claims/claims_verified/artifacts_produced are illustrative; a real run gets them from ingest.py (v0 rule in claims.py). corrections/promised/reach are None until Transcripto/ZUP/reach sources exist."
+  "_five_numbers_note": "sample fixture: claims/claims_verified/artifacts_produced are illustrative; a real run gets them from ingest.py (v0 rule in claims.py). corrections/promised/reach are None until Transcripto/ZUP/reach sources exist. athlete/title/project are neutral sample names, not a real person or repository."
 }

@@ -357,7 +357,9 @@ def main(argv=None) -> int:
         prof = build_profile(args.username, args.runs)
         out = Path(args.out); out.write_text(render_profile(prof), encoding="utf-8")
         g=prof["gh"]; t=prof["totals"]
-        print(f"\n  {g.get('name')} (@{g.get('login')}) — {t['runs']} runs, {t['prompts']} prompts, {g.get('public_repos')} repos")
+        print(f"\n  {g.get('name')} (@{g.get('login')}) — {t['runs']} runs, "
+              f"{t['verified_per_turn']} verified per turn, {t['prompts']} prompts (cost), "
+              f"{g.get('public_repos')} repos")
         print(f"  profile -> {out}\n")
         if not args.no_open:
             webbrowser.open(out.resolve().as_uri())   # module-level import (line 8); a LOCAL
@@ -578,6 +580,13 @@ def _grind(args) -> int:
     print(f"\n  {run['athlete']} · {run['project']} · {run['started'][:10]} {t0} -> {t1}"
           f"   (sitting {run['sitting']['index']} of {run['sitting']['of']})")
     print(f"  {h}\n")
+    # the same numbers the card prints, in the same order: headline, five, then COST
+    from .metrics import headline_of
+    hl = headline_of(run)
+    print(f"  {hl.text:>5} verified per turn   {hl.formula}")
+    for c in hl.five:
+        print(f"        {c.label:<20} {c.value:<14}{'cost' if c.cost else ''}")
+    print("\n  cost — what the grind spent")
     _pw = "prompt " if run['turns_typed'] == 1 else "prompts"
     print(f"  {run['turns_typed']:>5} {_pw} you typed   (promptSource typed|queued, of "
           f"{a['user_records_total']:,} type:user records)")
