@@ -386,8 +386,9 @@ def parse_solo(path: str, athlete: str = "you", pick: int = -1, gap: int = SITTI
     moving = _moving(events)
 
     # ---- the five numbers this repo can compute (fleet-ops/METRICS-AGENTIC-ENGINEERING-2026-09-02.md)
-    # Same window as every other count on the card. The v0 rule lives in claims.py and
-    # OVER-COUNTS; the card prints the claim share beside the headline so a reader sees the ceiling.
+    # Same window as every other count on the card. The claim rule lives in claims.py and is
+    # calibrated (precision 0.63, recall 0.66 on a held-out hand-labelled set, 3 Sep 2026); the
+    # card prints the claim share beside the headline so a reader sees both halves of it.
     claims, claims_verified = _claims_in_window(s["claim_ev"], t0, hi)
     artifacts_produced = len({p for _, p, kind in visits if kind == "edit" and os.path.exists(p)})
 

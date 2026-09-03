@@ -5,8 +5,8 @@ A 'run' JSON (see samples/) carries only counts read from a real session:
   turns_typed, tool_calls, files_touched, commits,
   rhythm  -> typed turns per time bucket (the 'route')
 and, optionally, the five numbers of a run (fleet-ops/METRICS-AGENTIC-ENGINEERING-2026-09-02.md):
-  claims, claims_verified        -> verified-claims share (v0 rule in ingest.py; a per-claim
-                                    witness log later)
+  claims, claims_verified        -> verified-claims share (the calibrated claim rule in
+                                    claims.py; the evidence side is still unmeasured)
   corrections                    -> correction rate (not measured yet: nothing labels a turn as
                                     undoing the one before it)
   artifacts_produced, artifacts_promised -> produced ÷ promised (produced is measured; promised is
@@ -51,8 +51,10 @@ def _fmt_pace(sec_per: float | None) -> str:
 SOURCES = {
     "typed_turns": "the turns you typed or queued, read from the transcript (authorship.py): "
                    "tool results and injected context are not turns",
-    "verified_share": "claims that had matching evidence inside their own turn (the v0 rule in "
-                      "claims.py). It over-counts, so read it as a ceiling, not a score",
+    "verified_share": "claims that had matching evidence inside their own turn. The rule that "
+                      "decides what a claim is reads precision 0.63 and recall 0.66 on a "
+                      "held-out hand-labelled set (docs/CLAIM-RULE-CALIBRATION-2026-09-03.md); "
+                      "whether a claim was matched to the right evidence is not measured yet",
     "correction_rate": "not measured yet: it needs every turn labelled as undoing the one before "
                        "it, and no harness records that, so nothing on your machine can supply it "
                        "today",
@@ -117,8 +119,9 @@ class Activity:
     five: list = field(default_factory=list)   # five Cell rows, in the metric spec's order
 
 HEADLINE_TIP = ("verified per turn = (verified claims + artifacts produced) ÷ typed turns. "
-                "Local v0: claims.py rule + Edit/Write paths on disk — it over-counts, read it as a "
-                "ceiling until a per-claim witness log replaces it")
+                "Local: the calibrated claims.py rule (precision 0.63, recall 0.66 held out) plus "
+                "Edit/Write paths on disk. A rate, not a count: a count of claims moves with how "
+                "much the agent talks, see /methodology")
 
 
 @dataclass
