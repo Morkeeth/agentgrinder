@@ -3,12 +3,19 @@ doc: hack
 project: AGENT GRINDER — where you post your real runs
 phase: BUILD
 event: CANDIDATE — Agents for Humans (Devpost, Sun 14 Sep 2026, $40K)
-ruling: PENDING Oscar — AGENT GRINDER as Sep 14 entry
+ruling: EYES 1 Sep — Grinder is the product; MAGNET submits Sep 14
 canonical: docs/AGENT-GRINDER-PRD.md · docs/AGENT-GRINDER-BRANDBOOK.md
-last-touched: 2026-08-30
+last-touched: 2026-09-02 (Fable)
 ---
 
 # AGENT GRINDER — hack.md
+
+## STATE 2026-09-02 (Fable, probed)
+- `Morkeeth/agentgrinder` PUBLIC (HTTP 200), main, 0 unpushed. Live agentgrinder.vercel.app. STRANGER-PASS done (`docs/STRANGER-PASS.md`). `aistrava` (no remote, 82 commits) is the history; this repo is the seed. **Ruling 6 (clean seed → new remote) is executed.**
+- Ruling of record (EYES 1 Sep): Grinder is the PRODUCT; MAGNET is the Sep-14 entry.
+- **Metric finding (fleet-ops/METRICS-AGENTIC-ENGINEERING-2026-09-02.md):** the PRD maps Strava Distance → human prompts. Prompts are a COST (the denominator), not an achievement. A card that headlines "47 prompts" celebrates the METR failure. Rule needed: **distance = verified output; prompts = cost.** The card's five numbers: typed turns · verified-claims share · correction rate · produced ÷ promised · reach. Headline = verified-per-turn.
+- PRD gate lines: buyer = none at v0 (consumer face of MAGNET's data); recurring number = runs shared per week by non-authors; incumbent test = GitHub could ship "session wrapped" in a sprint, the wedge is cross-harness authorship + the honest verified term; day-two user = a builder who wants to post a real run; vision = the social layer for AI-native work.
+
 
 > **Where you post your real runs.** Log grinds from Claude, Cursor, Codex — track progression,
 > run with crews, earn ACKs. Strava-shaped loop; agent-native vocabulary (see brand book).
