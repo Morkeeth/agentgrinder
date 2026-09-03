@@ -1299,6 +1299,19 @@ async function refreshAuth(){ if(!sb)return;
   } else { ME=null; $('me').textContent=''; $('auth').innerHTML='Sign in<span class="wide"> with GitHub</span>'; $('deletewrap').hidden=true; }
 }
 
+// The publish payload survives the OAuth round trip in sessionStorage, because it cannot survive
+// it in the URL. Written before the redirect, read back and put on the URL before route() looks
+// at location.hash. route() runs twice after a redirect (refreshAuth, then onAuthStateChange);
+// the hash is written before the stash is cleared, so the second pass still finds the payload.
+const IMPORT_STASH='ag_import';
+function stashImport(payload){ try{ sessionStorage.setItem(IMPORT_STASH,payload); }catch(_){} }
+function restoreImport(){
+  let stash=null; try{ stash=sessionStorage.getItem(IMPORT_STASH); }catch(_){ return; }
+  if(!stash) return;
+  if(!/import=/.test(location.hash)) history.replaceState(null,'','/#import='+stash);
+  try{ sessionStorage.removeItem(IMPORT_STASH); }catch(_){}
+}
+
 function importRun(){
   const m=location.hash.match(/import=([^&]+)/); if(!m) return false;
   let run; try{ run=JSON.parse(atob(decodeURIComponent(m[1]))); }catch(_){ return false; }
@@ -1330,7 +1343,13 @@ function importRun(){
     <div class="row"><select id="i_vis"><option value="private">private</option><option value="public">public</option><option value="link">link-only</option><option value="anonymous">anonymous · ghost grind</option></select>
     <button id="i_pub">${ME?'Publish':'Sign in to publish'}</button></div></div></div>`;
   $('i_pub').addEventListener('click',async()=>{
-    if(!ME){ sb.auth.signInWithOAuth({provider:'github',options:{redirectTo:location.href}}); return; }
+    // SIGN-IN USED TO DESTROY THE RUN IT WAS CALLED TO PUBLISH. The whole payload lives in the
+    // URL fragment (#import=<base64>) and this call passed `redirectTo: location.href`. RFC 6749
+    // 3.1.2 forbids a fragment in an OAuth redirect_uri, so the provider drops it: the user came
+    // back signed in, on an empty profile, with the run gone and no way to get it back short of
+    // re-running the command. Stash it before leaving, put it back in route() on the way in.
+    if(!ME){ stashImport(m[1]);
+      sb.auth.signInWithOAuth({provider:'github',options:{redirectTo:location.origin+'/'}}); return; }
     const base={profile_id:ME.id,title:$('i_title').value||'Untitled run',
       project:run.project||null,harness:run.harness||null,prompts:run.turns_typed||null,duration_s:run.duration_s||null,
       commits:run.commits||null,tool_calls:run.tool_calls||null,files_touched:run.files_touched||null,
@@ -1448,6 +1467,7 @@ async function viewEvent(){
 
 
 async function route(){ authErrorFromUrl();
+  restoreImport();
   if(importRun()) return;
   const q=new URLSearchParams(location.search);
   if(q.get('claim')) return viewClaim();
