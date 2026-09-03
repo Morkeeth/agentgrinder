@@ -957,7 +957,7 @@ async function viewOnboard(){
   const step2=`<div class="ob-step"><h3>Grind locally</h3>
     <p class="hint">Reads Claude Code or Cursor on your machine. Transcripts never upload, only metrics, and only if you push.</p>
     ${cmd('git clone https://github.com/Morkeeth/agentgrinder && cd agentgrinder && pip install -e .')}
-    ${cmd('python3 -m agentgrinder grind --coach')}
+    ${cmd('python3 -m agentgrinder grind')}
     ${cmd('python3 -m agentgrinder flex')}
     <p class="hint">Compare Claude against Cursor on your machine before you push.</p></div>`;
   const step3=`<div class="ob-step"><h3>What leaves your machine</h3>
@@ -966,7 +966,7 @@ async function viewOnboard(){
     <div class="p-row" style="padding-left:0;padding-right:0"><span>Code and file paths</span><span class="v never">never</span></div>
     <p class="hint" style="margin-top:10px"><a href="/privacy">Privacy policy</a> · <a href="/methodology">methodology</a></p></div>`;
   const step4=`<div class="ob-step"><h3>Publish your first grind</h3>
-    ${cmd('python3 -m agentgrinder grind --coach --push')}
+    ${cmd('python3 -m agentgrinder grind --push')}
     <p class="hint">Opens this site with a preview. You choose public, link-only, or private.</p>
     <div class="ob-actions">
       ${ME?`<button id="ob-push">I pushed, show my grind</button>`:`<button disabled>Sign in first</button>`}
@@ -1458,10 +1458,10 @@ async function viewEvent(){
   frame(railHtml('feed',R), sidePanels(R));
   app.innerHTML=`<div class="head"><h2>Agents for Humans</h2><span class="meta">Sep 14 2026 · grind event</span></div>
     <div class="up"><div class="up-top"><span class="t">Post your real runs</span><span class="meta">metrics only, your click</span></div>
-      <div class="cmd"><span class="c">python3 -m agentgrinder grind --coach --push</span></div>
+      <div class="cmd"><span class="c">python3 -m agentgrinder grind --push</span></div>
       <div class="up-foot">Tag your grind for the hackathon crew. No streaks. Agents propose, you ship.</div></div>
     <div class="head"><h2>Event feed</h2><span class="meta">${R.length||'none yet'}</span></div>
-    ${R.length?R.map(r=>runCard(r,ad.mine.has(r.id),ad.counts[r.id])).join(''):'<div class="card"><div class="empty">Be the first on the board: python3 -m agentgrinder grind --coach --push</div></div>'}`;
+    ${R.length?R.map(r=>runCard(r,ad.mine.has(r.id),ad.counts[r.id])).join(''):'<div class="card"><div class="empty">Be the first on the board: python3 -m agentgrinder grind --push</div></div>'}`;
   wireKudos(); countUp();
 }
 

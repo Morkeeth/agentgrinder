@@ -73,3 +73,14 @@ def test_the_hint_the_user_actually_sees_names_a_venv_and_the_running_version():
     assert "venv" in out
     assert "3.10 or newer" in out
     assert f"{sys.version_info[0]}.{sys.version_info[1]}" in out   # says which python you are on
+
+
+def test_no_command_the_page_prints_promises_the_coach_without_a_venv():
+    """The event page hardcoded `grind --coach --push` twice, outside INSTALL_CMD, so the fix to
+    the copy button did not reach it. On a stock Mac that command now exits 1 with no verdict."""
+    for n, line in enumerate(HTML.splitlines(), 1):
+        if "agentgrinder grind --coach" not in line:
+            continue
+        if line.lstrip().startswith("//"):
+            continue                      # prose about the old command, not a command
+        assert "venv" in line, f"site/index.html:{n} tells a stranger to run --coach with no venv"
