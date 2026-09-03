@@ -271,7 +271,10 @@ def build_coach_tools(ctx: CoachContext) -> list:
     try:
         from strands import tool
     except ImportError as exc:  # pragma: no cover
-        raise ImportError('the coach needs the Strands SDK: pip install -e ".[coach]"') from exc
+        raise ImportError(
+            "the coach needs the Strands SDK, which needs Python 3.10 or newer: make a venv on a "
+            '3.10+ interpreter, then `.venv/bin/pip install -e ".[coach]"`'
+        ) from exc
 
     @tool
     def read_run() -> dict:

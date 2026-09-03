@@ -1080,13 +1080,23 @@ function howItWorks(){
     <div class="g-row meta">A mode that fails does not fall back quietly. The run is marked <b style="color:var(--ink);font-weight:500">DEGRADED</b>, and the screen names the failure, the reason, and the mode it fell back to.</div></div>`;
 }
 
-// The install-and-score command, exactly as a stranger runs it. One click copies it.
-const INSTALL_CMD="git clone https://github.com/Morkeeth/agentgrinder && cd agentgrinder && pip install -e . && agentgrinder grind --coach";
+// The command a stranger runs, exactly as they run it. One click copies it.
+//
+// It used to be `... && pip install -e . && agentgrinder grind --coach`. Measured on a stock Mac
+// (3 Sep 2026): `/usr/bin/python3` is 3.9.6 and ships pip 21.2.4, which predates PEP 660 and
+// refuses an editable install of a pyproject-only project. The chain died at the third command
+// with exit 1, so the first thing anyone did from this page failed. There is no install in the
+// line any more, because the package needs none: it runs from the clone on the python macOS
+// already has. The coach is a second, honest line — it needs Python 3.10 or newer, and says so.
+const INSTALL_CMD="git clone https://github.com/Morkeeth/agentgrinder && cd agentgrinder && python3 -m agentgrinder grind";
+const COACH_CMD='python3.12 -m venv .venv && .venv/bin/pip install -e ".[coach]" && .venv/bin/agentgrinder grind --coach';
 function uploadBlock(){
   return `<div class="up">
     <div class="up-top"><span class="t">Score a run</span><span class="meta">no account needed</span></div>
     <div class="cmd"><span class="c">${INSTALL_CMD}</span><button class="act" id="cp1">Copy</button></div>
-    <div class="cmd"><span class="c plain">Reads the newest session on your machine, checks every claim against its own turn, prints the card.</span></div>
+    <div class="cmd"><span class="c plain">Reads the newest session on your machine, prints the card. No install, no key: it runs on the python macOS already ships.</span></div>
+    <div class="up-top" style="margin-top:2px"><span class="t">Then have the coach check it</span><span class="meta">needs Python 3.10 or newer</span></div>
+    <div class="cmd"><span class="c">${COACH_CMD}</span></div>
     <div class="up-foot">Posting is a second command and your click. Nothing uploads until then.</div>
   </div>`;
 }
