@@ -16,6 +16,39 @@ from .render import render_profile
 SAMPLE = Path(__file__).resolve().parent.parent / "samples" / "sample_run.json"
 
 
+# --coach ON A HARNESS THAT CANNOT FEED IT.
+#
+# The README says the tool "never degrades quietly". It did, in exactly one place: on a Cursor
+# run, `grind --coach` was accepted, printed no coach block, no verdict and no warning, and exited
+# 0. Measured 3 Sep 2026 in a 3.12 venv with the Strands SDK installed, so this was not a missing
+# dependency — the coach simply had no inputs and said nothing about it.
+#
+# The coach's five tools need what a Cursor or Codex transcript does not carry: claim lines to
+# check against their own turn, written file paths to test against the disk, and commits to ask
+# git about. Nothing here invents any of them. The banner names the fields that harness cannot
+# supply, read off the parsed run itself so the list cannot drift from the parser, and the command
+# exits non-zero because the thing that was asked for did not happen.
+COACH_NEEDS = ("files_touched", "commits", "claims", "claims_verified", "artifacts_produced")
+
+
+def coach_degraded_banner(harness: str, run: dict) -> str:
+    missing = [k for k in COACH_NEEDS if run.get(k) is None]
+    bar = "!" * 72
+    lines = [
+        "", bar,
+        f"!! DEGRADED — --coach was asked for and the coach cannot run on a {harness} transcript.",
+        f"!! {harness} sessions do not carry: {', '.join(missing)}.",
+        "!! The coach checks every claim against the evidence in its own turn, every written file",
+        "!! against the disk, and every file against git. None of those three has an input here,",
+        "!! and nothing was invented to fill them. The grind trace cannot be drawn either.",
+        "!!",
+        "!! The v1 card with the real prompt and tool counts was still written.",
+        "!! For a coached run:  python3 -m agentgrinder grind --harness claude --coach",
+        bar, "",
+    ]
+    return "\n".join(lines)
+
+
 # Nothing found, and where we looked.
 #
 # The old auto message said "no Claude or Cursor session found on this machine" and named no
@@ -565,6 +598,11 @@ def _grind(args) -> int:
         out.write_text(render_card(build_activity(run)), encoding="utf-8")
         print(f"\n  Cursor transcripts carry no file paths and no commits, so the grind trace"
               f"\n  cannot be drawn for them. The v1 card is rendered instead -> {out}\n")
+        if getattr(args, "coach", None) is not None:
+            # asked for explicitly and cannot be delivered: say which fields are missing, and do
+            # not push. Publishing a run the person asked to have coached, uncoached, is the
+            # quiet degrade wearing a different hat.
+            print(coach_degraded_banner("Cursor", run)); return 1
         if args.push:
             from .push import import_url
             from .ingest import detect_rig
@@ -594,6 +632,8 @@ def _grind(args) -> int:
         out = Path(args.out)
         out.write_text(render_card(build_activity(run)), encoding="utf-8")
         print(f"\n  Codex rollouts carry no file-route trace yet — v1 card with real prompt/tool counts -> {out}\n")
+        if getattr(args, "coach", None) is not None:
+            print(coach_degraded_banner("Codex", run)); return 1
         if args.push:
             from .push import import_url
             from .ingest import detect_rig
