@@ -75,14 +75,20 @@ committed before the sample was opened and the honest record is the order things
   name **before any line was read**. The holdout half was scored once, at the end, and never tuned on.
 - **Three strata,** so recall is measurable and not just precision:
   - **A** the current rule fires;
-  - **B** the rule does not fire but the line carries a broader completion vocabulary fixed in
-    advance (committed, pushed, merged, added, created, wrote, updated, implemented, removed,
-    landed, confirmed, complete, passing, ran, renamed, replaced, working, success);
+  - **B** the rule does not fire but the line carries one of a broader list of 28 completion words
+    fixed in advance (committed, commit, commits, pushed, merged, added, created, wrote, written,
+    updated, implemented, removed, deleted, landed, confirmed, complete, completed, passing, ran,
+    renamed, replaced, working, now, all tests, no errors, success, successful);
   - **C** everything else.
   Each stratum was crossed with harness. Population sizes per cell were recorded, so precision is a
   plain proportion inside A, and recall is a stratum-weighted (Horvitz-Thompson) estimate over the
   whole line population.
 - Labelling was **blind**: the labeller saw the line and nothing else, no stratum, no rule verdict.
+- **One labeller, one pass.** No second labeller and no re-label, so there is no inter-rater
+  agreement number. On the hardest boundary, work done against finding, a second labeller would
+  probably disagree on some lines, and that disagreement is not in the intervals below. The
+  measurement asked for two labellers or one twice; it got one, once. Read the intervals as the
+  sampling error only.
 
 ## 3. Results
 
@@ -120,10 +126,15 @@ rather than a regex with an unknown one, which is the whole difference between t
 
 ### What the rule still gets wrong
 
-Every held-out false positive but two was a **finding**: a sentence stating something true the agent
-discovered about the system, which the rubric excludes because it is not work done. That is the
-hardest boundary in the label set and it is where the remaining error lives. The false negatives are
-mostly claims folded inside a heading or a label, which the rule refuses on purpose.
+The 12 held-out false positives split two ways. Five are **findings**: a sentence stating something
+true the agent discovered about the system, which the rubric excludes because it is not work done.
+That is the hardest boundary in the label set. Seven are **not claims at all**, and seven of the
+twelve begin with a bold marker rather than a hash: a heading or a label written as `**LIKE THIS**`
+is invisible to a rule that only refuses `#`. That is the cheapest remaining fix and it is named
+here rather than made, because the rule is frozen at the numbers above.
+
+The 15 false negatives are mostly claims folded into a heading or a label, or into a line ending in
+a colon, which the rule refuses on purpose. Refusing them is what bought the precision.
 
 ## 4. The verbosity coupling
 
@@ -154,5 +165,5 @@ cleanest number in the set and is the one this rule exists to make trustworthy.
 error rate; the verified SHARE inherits an unmeasured one on top of it. That is the next label set,
 and until it exists the share should be read as an estimate with one measured half.
 
-Rule digest at the time of measurement: `035858f135c57033` (`agentgrinder.claims.rule_fingerprint`).
+Rule digest at the time of measurement: `e49d8713c3c2df38` (`agentgrinder.claims.rule_fingerprint`).
 Measured 3 September 2026.

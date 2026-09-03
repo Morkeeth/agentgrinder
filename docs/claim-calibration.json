@@ -297,7 +297,7 @@
   "measured": "2026-09-03",
   "note": "pop = lines in that cell across the corpus; n = lines sampled and hand-labelled from it. Weighted precision and recall are Horvitz-Thompson estimates with weight pop/n. No line of the corpus is reproduced here.",
   "positive_class": "a claim about work done (label W in the rubric)",
-  "rule_fingerprint": "035858f135c57033",
+  "rule_fingerprint": "e49d8713c3c2df38",
   "sittings_scanned": 646,
   "unit": "one stripped, non-empty line of assistant text",
   "verbosity": {

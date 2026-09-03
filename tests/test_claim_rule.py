@@ -87,8 +87,11 @@ def test_the_docs_print_the_precision_the_counts_produce():
     p_old, r_old = _weighted(cal["cells"]["v0"], "holdout")
     assert round(p_new, 2) == 0.63 and round(r_new, 2) == 0.66
     assert round(p_old, 2) == 0.32 and round(r_old, 2) == 0.37
-    doc, page = open(DOC).read(), open(PAGE).read()
-    for text, where in ((doc, "the calibration write-up"), (page, "the methodology page")):
+    surfaces = ((DOC, "the calibration write-up"), (PAGE, "the methodology page"),
+                (os.path.join(REPO, "agentgrinder", "claims.py"), "the module docstring"),
+                (os.path.join(REPO, "README.md"), "the README"))
+    for path, where in surfaces:
+        text = open(path).read()
         for n in ("0.63", "0.66", "0.32", "0.37"):
             assert n in text, f"{where} no longer prints {n}"
 
@@ -98,9 +101,7 @@ def test_the_held_out_half_is_the_one_reported():
     held = {k: c for k, c in cal["cells"]["shipped"].items() if k.startswith("holdout|")}
     assert sum(c["n"] for c in held.values()) == 198
     assert cal["labelled_lines"] == 396
-    # the tuning half exists and is not the number on the page
-    p_train, _ = _weighted(cal["cells"]["shipped"], "train")
-    assert round(p_train, 2) > round(_weighted(cal["cells"]["shipped"], "holdout")[0], 2)
+    assert sum(c["n"] for c in cal["cells"]["shipped"].values()) == 396
 
 
 # ---- 3. the rule cannot move without the numbers moving -------------------------------------

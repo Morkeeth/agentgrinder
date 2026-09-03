@@ -1,9 +1,10 @@
 r"""The claim rule: which lines of the agent's own text are claims about work done, and which
 of those carried tool evidence in the same trace.
 
-MEASURED, 3 Sep 2026. 276 assistant lines were hand-labelled against a rubric written before the
+MEASURED, 3 Sep 2026. 396 assistant lines were hand-labelled against a rubric written before the
 sample was opened, sampled in three strata across three harnesses, split by session into a tuning
-half and a held-out half. Numbers, the design, and the error bars:
+half and a held-out half. On the half it was never tuned on this rule reads precision 0.63 and
+recall 0.66, against 0.32 and 0.37 for the rule it replaces. Numbers, the design, and the error bars:
 docs/CLAIM-RULE-CALIBRATION-2026-09-03.md, counts in docs/claim-calibration.json.
 
   claim     = a line of assistant TEXT whose sentences assert, as accomplished fact, that work in
@@ -21,8 +22,8 @@ docs/CLAIM-RULE-CALIBRATION-2026-09-03.md, counts in docs/claim-calibration.json
 
 WHAT REPLACED WHAT. v0 was one vocabulary regex over a whole line
 (passes|passed|fixed|done|deployed|works|green|verified|ships?|shipped). Measured against the label
-set it ran at precision 0.37 on the held-out half: nearly two of every three lines it called a claim
-were a heading, a plan, a table row or a piece of advice. Its own docstring said "most sessions read
+set it ran at precision 0.32 on the held-out half: two of every three lines it called a claim were a
+heading, a plan, a table row or a piece of advice, and it missed two thirds of the real ones. Its own docstring said "most sessions read
 100% verified"; over 590 real sittings the median is 0.09. Both statements were unmeasured, and both
 were wrong. The rule here is still one deterministic pass of small regexes over a line, no model and
 no network, but it reads each SENTENCE, rejects the shapes that are not assertions, and requires an
@@ -184,7 +185,11 @@ RULE_PARTS = (NOT_PROSE, VERB, OUT, OUTCOME, OUTCOME_LOOSE, STATUS_TOKEN, CHECK_
 
 
 def rule_fingerprint() -> str:
-    """A digest of every pattern the claim rule is made of.
+    """A digest of the claim rule: every pattern AND the code that applies them.
+
+    The patterns alone are not the rule. The order they are tried in, the distance a check subject
+    may sit from its outcome, the colon-label refusal and the sentence split all decide what counts
+    as a claim, so the source of the four functions that hold them is digested too.
 
     The published precision and recall belong to THIS rule text. The digest is stored beside
     those numbers in docs/claim-calibration.json, and a test fails when the rule changes and the
@@ -192,7 +197,10 @@ def rule_fingerprint() -> str:
     instrument is edited.
     """
     import hashlib
+    import inspect
     blob = "\n".join(p if isinstance(p, str) else p.pattern for p in RULE_PARTS)
+    blob += "\n".join(inspect.getsource(f) for f in
+                      (_sentences, _accept, _sentence_is_claim, is_claim_line))
     return hashlib.sha256(blob.encode()).hexdigest()[:16]
 
 
