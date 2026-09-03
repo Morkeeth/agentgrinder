@@ -25,6 +25,13 @@
     .nav.second{display:none}
     #auth{padding:8px 12px}
   }
+  /* phone: one header row and a shorter hero, so the coach's verdict is reachable with one
+     thumb rather than two. Every route dropped from the bar is a button on the page itself. */
+  @media (max-width:560px){
+    .nav{display:none}
+    .lander-hero{padding-top:8px!important}
+    .lander-hero .runner{font-size:12px;margin-bottom:8px}
+  }
   .logo{display:flex;align-items:center;gap:9px;cursor:pointer;color:var(--ink);text-decoration:none}
   .logo .mk{width:30px;height:30px}
   .logo .wm{font-weight:800;font-size:16px;letter-spacing:.14em;text-transform:uppercase}
@@ -832,7 +839,7 @@ function howItWorks(){
 }
 
 function landingHTML(r){
-  return `<div style="text-align:center;padding:26px 0 4px">${runnerHTML()}
+  return `<div class="lander-hero" style="text-align:center;padding:26px 0 4px">${runnerHTML()}
     <div style="font-size:27px;font-weight:800;letter-spacing:-.025em;margin:2px 0 10px">Where you post your real runs.</div>
     <div style="font-size:17px;font-weight:600;max-width:460px;margin:0 auto 10px;line-height:1.45">Your agent says it shipped. A second agent checks before the card shows a number.</div>
     <div class="hint" style="max-width:470px;margin:0 auto 20px;line-height:1.6">Agent Grinder reads one session on your machine. Then the coach checks every claim against the tool results in its own turn, every file against the disk, and every file against git. Metrics only, never your prompts and never your code.</div></div>
