@@ -58,7 +58,7 @@ R_NO_REMOTE = "{n} commits, and this repository has no remote configured: the wo
 R_LOCAL_ONLY = "{n} commits, and none of them is on any remote: the work never left this machine"
 R_FOREIGN = "a commit from this window is on a remote the author does not own"
 R_PR = "a pull request from this window's branch is open on a repository the author does not own"
-R_LATE = "not measured yet: the commits left this machine after the window closed, so the crossing belongs to another run"
+R_LATE = "not measured yet: the commits left this machine outside this run's window, so the crossing belongs to another run"
 R_UNKNOWN_TIME = "not measured yet: the commits are on a remote but nothing records when they were pushed"
 R_OWN_ONLY = "not measured yet: the commits reached the author's own remote only, and who read it there is not a fact on this disk"
 R_NO_IDENTITY = "not measured yet: the author's account name is not on this machine (no gh login, no GitHub address), so ownership could not be compared"
@@ -152,21 +152,42 @@ def owner_of(url: str) -> str | None:
     return parts[-2].lower() if len(parts) >= 2 else None
 
 
-# ---- when did a ref move -----------------------------------------------------
-def _ref_move_times(root: str, ref: str) -> list[datetime]:
+# ---- when did the WORK reach the remote ---------------------------------------
+# Not "when did this ref last move": a `git fetch` at the start of a session moves
+# `origin/main` without carrying anything of yours, and the first version of this module read
+# that as "your commits crossed inside the window". The reflog stores the ref's VALUE after each
+# move, so the honest question is the first move whose value already contained one of this
+# window's commits. Same lesson as gitwork.touched_since: a sentence can be true about the window
+# and false about the world.
+def _ref_moves(root: str, ref: str) -> list[tuple[str, datetime]]:
+    """(value, when) for each recorded move of this ref, oldest first."""
     out = _run(["git", "-C", root, "reflog", "show", "--date=iso-strict", ref])
     if not out or out.returncode != 0:
         return []
-    times = []
+    moves = []
     for line in out.stdout.splitlines():
-        m = re.search(r"@\{([^}]+)\}", line)
+        m = re.match(r"^([0-9a-f]+)\s.*@\{([^}]+)\}", line.strip())
         if not m:
             continue
         try:
-            times.append(_aware(datetime.fromisoformat(m.group(1))))
+            moves.append((m.group(1), _aware(datetime.fromisoformat(m.group(2)))))
         except ValueError:
             continue
-    return times
+    return list(reversed(moves))
+
+
+def _contains(root: str, ancestor: str, ref_value: str) -> bool:
+    out = _run(["git", "-C", root, "merge-base", "--is-ancestor", ancestor, ref_value], timeout=15)
+    return bool(out and out.returncode == 0)
+
+
+def arrived_at(root: str, ref: str, shas: list[str]) -> datetime | None:
+    """When any of these commits FIRST appeared on this remote ref, or None if nothing says."""
+    probe = shas[:5]
+    for value, when in _ref_moves(root, ref)[-40:]:
+        if any(_contains(root, sha, value) for sha in probe):
+            return when
+    return None
 
 
 def _refs_containing(root: str, sha: str) -> list[str]:
@@ -262,14 +283,12 @@ def reach_of(repo_root: str | None, since: datetime, until: datetime,
         owner = owners.get(remote)
         if owner == "":                      # a directory on this machine: not a crossing
             continue
-        times = _ref_move_times(repo_root, "refs/remotes/" + ref)
-        if not times:
+        arrived = arrived_at(repo_root, "refs/remotes/" + ref, shas)
+        if arrived is None:
             unknown_time = True
             continue
-        closes = until + timedelta(seconds=PUSH_GRACE_S)
-        if not any(since <= t <= closes for t in times):
-            if all(t > closes for t in times):
-                late = True
+        if not (since <= arrived <= until + timedelta(seconds=PUSH_GRACE_S)):
+            late = True          # it left this machine, but not during this run
             continue
         if owner is None:
             unknown_owner = True
