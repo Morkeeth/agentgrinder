@@ -49,7 +49,7 @@ Nothing is uploaded. Sharing is your click.
 ```bash
 python3 -m agentgrinder grind --list          # the sittings in that transcript
 python3 -m agentgrinder grind --pick 2        # render a specific one
-python3 -m agentgrinder grind --harness auto  # freshest Claude or Cursor session
+python3 -m agentgrinder grind --harness auto  # freshest Claude Code, Cursor or Codex session
 python3 -m agentgrinder share                  # fun share card from latest grind
 python3 -m agentgrinder share --claim          # invite card — claim your handle
 python3 -m agentgrinder history               # every grind on this machine, ranked
@@ -95,17 +95,39 @@ they were 20% faster and measured 19% slower). The rule, from the internal metri
 (`METRICS-AGENTIC-ENGINEERING-2026-09-02`, not in this repo): *a good agentic engineer turns the
 fewest human decisions into the most verified, delivered work — distance = verified output; prompts = cost.*
 
-| Number | Role | Definition | Computed here? | Owner / source when not |
+| Number | Role | Definition | Computed here? | If not: what it needs, and can you supply it today? |
 |---|---|---|---|---|
 | **Verified per turn** | **headline** | (verified claims + artifacts produced) ÷ typed turns | yes, when its three parts exist | — |
-| Typed turns | cost | human-authored turns (`authorship.py`: typed OR queued, drops isMeta / isSidechain / tool_result) | yes | Transcripto export-run |
-| Verified-claims share | run number | of the agent's claims, the fraction with tool evidence in the same trace | **v0** (`claims.py`, rule below) | Helicon witness |
-| Correction rate | run number | typed turns that correct the agent ÷ typed turns | no — prints `—` | Transcripto export-run (coach inverse class) |
-| Produced ÷ promised | run number | deliverables that exist at their path ÷ deliverables the run named | produced **v0**; promised prints `—` | ZUP artifact-detect |
-| Reach | run number | did the output cross to a person who is not the author (0/1) | no — prints `—` | git remotes + `gh` + the launch log |
+| Typed turns | cost | human-authored turns (`authorship.py`: typed OR queued, drops isMeta / isSidechain / tool_result) | yes | — |
+| Verified-claims share | run number | of the agent's claims, the fraction with tool evidence in the same trace | **v0** (`claims.py`, rule below) | a per-claim witness log. The v0 rule over-counts, so read it as a ceiling |
+| Correction rate | run number | typed turns that correct the agent ÷ typed turns | **not measured yet** — prints `—` | every turn labelled as undoing the one before it. No harness records that, so nothing on your machine can supply it today |
+| Produced ÷ promised | run number | deliverables that exist at their path ÷ deliverables the run named | produced **v0**; promised **not measured yet**, prints `—` | a record of what the run said it would deliver. Nothing records it, so you cannot supply it today |
+| Reach | run number | did the output cross to a person who is not the author | **yes on Claude Code** (`reach.py`): true, false, or `—` when the machine cannot tell | on Cursor and Codex: the repository and the session window their transcripts do not carry |
 | Moving time · pace · effort · segments · commits · cadence | cost group | unchanged from the v1 card | yes | — |
 
-A `—` is never blank: hover it and the tooltip names the tool that owns that number.
+A `—` is never blank: hover it and the tooltip says, in plain words, which fact is missing and
+whether you can supply it today. No number on a card is ever defaulted to zero, and no `—` points
+at a tool you cannot install.
+
+**Reach** (`agentgrinder/reach.py`, 3 Sep 2026) is read from git on your own machine, and needs no
+network for the negative case:
+
+* **true** — a commit made inside the session window sits on a remote owned by neither you nor an
+  organisation you belong to, and the push landed while the window was open. Ownership comes from
+  `git config remote.<name>.url` (not `git remote -v`, which prints URLs after any `insteadOf`
+  rewrite), the push time from the remote-tracking ref's reflog, and your organisations from a
+  signed-in `gh`. An open pull request on a repository you do not own counts too. The first real
+  run of this returned *yes* for a push to the author's own GitHub organisation, which was true
+  about the string and false about the world, so an unfamiliar owner is now checked against your
+  organisations before anything is claimed.
+* **false** — the window closed with commits that are on no remote at all, or only on a
+  directory of yours: the work never left this machine.
+* **`—`** — everything else, each with its own sentence on hover: no commit in the window, a push
+  that landed after the window closed, a remote nobody can attribute, no account name on this
+  machine to compare an owner against, an unfamiliar owner with no signed-in `gh` to say whether
+  it is an organisation of yours (that one you can supply today: `gh auth login`), or commits that
+  reached only your OWN remote, because a repository you own is not another person and this disk
+  cannot say who read it.
 
 **The v0 claim rule** (`agentgrinder/claims.py`, a stand-in until `helicon witness` is wired):
 a *claim* is a line of assistant text matching `passes|passed|fixed|done|deployed|works|green|verified|ship(s|ped)`.

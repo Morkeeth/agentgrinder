@@ -67,5 +67,5 @@
   "artifacts_promised": null,
   "corrections": null,
   "reach": null,
-  "_five_numbers_note": "sample fixture: claims/claims_verified/artifacts_produced are illustrative; a real run gets them from ingest.py (v0 rule in claims.py). corrections/promised/reach are None until Transcripto/ZUP/reach sources exist. athlete/title/project are neutral sample names, not a real person or repository."
+  "_five_numbers_note": "sample fixture: claims/claims_verified/artifacts_produced are illustrative; a real run gets them from ingest.py (v0 rule in claims.py). corrections and artifacts_promised are None because nothing on a machine records them yet; reach is None here because this fixture has no repository to ask git about. athlete/title/project are neutral sample names, not a real person or repository."
 }
