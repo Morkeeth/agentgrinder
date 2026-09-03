@@ -119,8 +119,19 @@ a.act{display:inline-block;text-decoration:none}
 /* run card */
 .card{background:var(--box);border:1px solid var(--rule);margin-bottom:14px}
 .c-top,.runtop{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--rule)}
-.av{width:26px;height:26px;border:1px solid var(--rule);border-radius:50%;display:grid;place-items:center;
-  font-size:11px;font-weight:600;color:var(--soft);flex:none;text-transform:uppercase}
+/* THE MARK IS THE GRIND. Brand book section 6: the mark is generative, the rhythm of a real
+   session drawn as a profile line, so the logo is never a stock glyph. The avatar is that tile:
+   a square hairline box holding the account's own newest grind trace. No letter, no image, no
+   emoji, no gradient. An account with no run draws a flat line, deliberately empty. */
+.av{width:26px;height:26px;border:1px solid var(--rule);display:block;flex:none;
+  position:relative;background:var(--box)}
+.av svg{display:block;width:100%;height:100%}
+.trace{fill:none;stroke:var(--ink);stroke-width:1;stroke-linejoin:round;stroke-linecap:round}
+/* no run yet: a flat line, the same dash this design already prints for a number nobody
+   measured. Your mark appears when you post your first grind. */
+.trace.empty{stroke:var(--dim)}
+/* an agent account is marked by a rule the design already uses, not a new colour or a badge */
+.av.agent::after{content:'';position:absolute;left:0;right:0;bottom:-3px;height:1px;background:var(--ink)}
 .who a,.who span{font-size:14px;font-weight:500}
 .who small{display:block;font-size:13px;color:var(--dim);font-weight:400}
 .who small a{color:var(--dim)}
@@ -227,7 +238,7 @@ footer{max-width:1320px;margin:0 auto;padding:20px 24px 40px;color:var(--dim);fo
 
 /* profile head */
 .phero{display:flex;align-items:center;gap:12px;margin:0 0 16px}
-.phero .av{width:36px;height:36px;font-size:13px}
+.phero .av{width:36px;height:36px}
 .phero h1{margin:0;font-size:14px;font-weight:600}
 .phero .h{color:var(--soft);font-size:13px}
 .ptotals{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));background:var(--rule);gap:1px;
@@ -256,8 +267,7 @@ footer{max-width:1320px;margin:0 auto;padding:20px 24px 40px;color:var(--dim);fo
 .share-brand{font-size:14px;font-weight:600}
 .share-brand i{color:var(--blue);font-style:normal}
 .share-handle-row{display:flex;align-items:center;gap:16px;margin-top:26px}
-.share-av{width:56px;height:56px;border:1px solid var(--rule);border-radius:50%;display:grid;
-  place-items:center;font-size:20px;font-weight:600;color:var(--soft);flex:none;text-transform:uppercase}
+.share-av{width:56px;height:56px}
 .share-handle{font-size:28px;font-weight:500;letter-spacing:-.02em;line-height:1.1}
 .share-stamp{font-size:13px;font-weight:500;color:var(--blue);margin-top:4px}
 .share-lead{margin-top:24px;font-size:20px;font-weight:500;letter-spacing:-.01em}
@@ -373,7 +383,8 @@ const FEATURED_SNAPSHOT={id:FEATURED_RUN,title:"One real sitting, refereed by th
 async function fetchFeatured(){
   if(!sb) return null;
   try{
-    const {data}=await sb.from('runs').select('*, profiles(github_handle,name)').eq('id',FEATURED_RUN).maybeSingle();
+    const {data}=await sb.from('runs').select('*, profiles(github_handle,name,rig)').eq('id',FEATURED_RUN).maybeSingle();
+    if(data) noteTraces([data]);
     return data||null;
   }catch(_){ return null; }
 }
@@ -432,9 +443,71 @@ if(!window.supabase) status("Couldn't load, refresh.",true);
 const sb=window.supabase&&window.supabase.createClient(SB_URL,SB_KEY);
 let ME=null;
 
-// The avatar is one letter in a hairline circle. No gradient, no generated face: the design
-// language has one accent and no decoration that carries no meaning.
-function avatar(handle){ return esc((handle||'?')[0]).toUpperCase(); }
+// THE MARK IS THE GRIND, drawn small.
+//
+// Brand book section 6: "The mark is generative: the grind trace, the rhythm of a real session
+// drawn as a profile line. Every grind has a different shape, so the logo is never a stock
+// glyph." An initial in a circle was a stock glyph, so the avatar is now the account's own
+// newest grind rhythm, hairline, monochrome, in a square tile.
+//
+// Nothing here is invented. TRACES only ever holds a rhythm array this page actually fetched
+// from public.runs. An anonymous run never writes its author's trace, because a shape that
+// matched a public card would undo the anonymity. TRACE_LOOKED records the handles this page
+// really queried, so the words "no grind yet" are only ever said about an account we looked for.
+const TRACES={}, TRACE_LOOKED={}, TRACE_AGENT={};
+const traceKey=h=>String(h||'').toLowerCase();
+function noteLooked(handles){ (handles||[]).forEach(h=>{ if(h) TRACE_LOOKED[traceKey(h)]=true; }); }
+// A profile is an agent because its own row says so (rig.agent === true), never because a name
+// or a null auth_uid looked like one. No row sets it today; the rule is here, unfired.
+const isAgentProfile=p=>!!(p&&p.rig&&p.rig.agent===true);
+function noteTraces(runs){
+  (runs||[]).forEach(r=>{
+    if(!r||r.visibility==='anonymous') return;
+    const p=r.profiles||{}, h=p.github_handle; if(!h) return;
+    const k=traceKey(h); TRACE_LOOKED[k]=true;
+    if(isAgentProfile(p)) TRACE_AGENT[k]=true;
+    if(!r.rhythm||!r.rhythm.length) return;
+    const at=r.created_at||'';
+    if(!TRACES[k]||at>=TRACES[k].at) TRACES[k]={rhythm:r.rhythm,at:at};
+  });
+}
+// Bucket MAX, not mean: a tile 26px wide cannot draw 90 minutes, and averaging turns a spiky
+// session into a hill that looks like everyone else's. The peaks are the identity.
+function traceBuckets(rhythm,cols){
+  const r=(rhythm||[]).map(v=>Number(v)||0);
+  if(!r.length) return null;
+  let out;
+  if(r.length<=cols) out=r.slice();
+  else { out=[]; for(let i=0;i<cols;i++){
+    const a=Math.floor(i*r.length/cols), b=Math.max(a+1,Math.floor((i+1)*r.length/cols));
+    out.push(Math.max.apply(null,r.slice(a,b))); } }
+  if(out.length===1) out.push(out[0]);
+  return out;
+}
+function traceSvg(rhythm,size,cols){
+  const p=Math.max(2.5,size*0.09), b=traceBuckets(rhythm,cols);
+  if(!b) return `<svg viewBox="0 0 ${size} ${size}" aria-hidden="true"><line class="trace empty" x1="${p}" y1="${(size/2).toFixed(1)}" x2="${(size-p).toFixed(1)}" y2="${(size/2).toFixed(1)}"/></svg>`;
+  const n=b.length, mx=Math.max.apply(null,b)||1;
+  const x=i=>p+(i/(n-1))*(size-2*p), y=v=>size-p-(v/mx)*(size-2*p);
+  const pts=b.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  return `<svg viewBox="0 0 ${size} ${size}" aria-hidden="true"><polyline class="trace" points="${pts}"/></svg>`;
+}
+// The whole tile, every call site. opts.rhythm is the run already on screen: the single-run page
+// and the share view fetch one row, so that row's own rhythm is the trace, not a guess at the
+// newest. The letter is gone, so the handle rides in aria-label.
+function avatar(handle,opts){
+  opts=opts||{};
+  const size=opts.size||26;
+  const cols=opts.cols||(size>=48?18:size>=34?14:12);
+  const k=traceKey(handle), ghost=!!opts.ghost;
+  const rhythm=ghost?null:((opts.rhythm&&opts.rhythm.length)?opts.rhythm:(TRACES[k]?TRACES[k].rhythm:null));
+  const agent=!ghost&&(opts.agent||TRACE_AGENT[k]);
+  const label=ghost?'anonymous grinder, no trace'
+    :(handle?('@'+handle+(rhythm?', grind trace':', no grind yet')):'no handle, no trace');
+  const title=rhythm?'':(ghost?'anonymous, no trace':((handle&&TRACE_LOOKED[k])?'no grind yet':''));
+  return `<span class="av${opts.cls?' '+opts.cls:''}${agent?' agent':''}" role="img" aria-label="${esc(label)}"`
+    +`${title?` title="${esc(title)}"`:''}>${traceSvg(rhythm,size,cols)}</span>`;
+}
 
 const esc=s=>(s||'').replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
 function runAttribution(r){
@@ -530,12 +603,24 @@ function ackListHtml(rows){
   if(!rows||!rows.length) return '<p class="hint" style="padding:0 17px 14px">No ACKs yet — be the first to recognize this grind.</p>';
   return `<div class="ack-list">${rows.map(a=>{
     const p=a.profiles||{}, h=p.github_handle||'?', meta=ACK_REASONS[a.reason]||{label:a.reason,evidence:''};
-    return `<div class="ack-row"><div class="av">${avatar(h)}</div><div><b>@${esc(h)}</b> ACKed <b>${esc(meta.label)}</b><br><span>${esc(meta.evidence)}</span></div></div>`;
+    return `<div class="ack-row">${avatar(h)}<div><b>@${esc(h)}</b> ACKed <b>${esc(meta.label)}</b><br><span>${esc(meta.evidence)}</span></div></div>`;
   }).join('')}</div>`;
 }
 async function fetchAckList(runId){
-  const {data}=await sb.from('acks').select('id,reason,created_at,from_profile,profiles:from_profile(github_handle,name)').eq('run_id',runId).order('created_at',{ascending:false});
+  const {data}=await sb.from('acks').select('id,reason,created_at,from_profile,profiles:from_profile(github_handle,name,rig)').eq('run_id',runId).order('created_at',{ascending:false});
+  await fillTraces(data||[]);
   return data||[];
+}
+// An ACK row names someone whose runs this page never fetched. Look their newest public run up
+// before the row is drawn, so a flat tile there means "no public grind", never "we did not ask".
+async function fillTraces(rows){
+  const ids=[...new Set((rows||[]).map(a=>a.from_profile).filter(Boolean))];
+  const handles=(rows||[]).map(a=>(a.profiles||{}).github_handle).filter(Boolean);
+  const missing=handles.filter(h=>!TRACES[traceKey(h)]);
+  if(!ids.length||!missing.length) return;
+  const {data}=await sb.from('runs').select('rhythm,created_at,visibility,profiles(github_handle,name,rig)')
+    .in('profile_id',ids).eq('visibility','public').order('created_at',{ascending:false}).limit(200);
+  noteTraces(data||[]); noteLooked(handles);
 }
 async function submitAck(runId,toProfile,reason){
   if(!ME){status('Sign in to ACK.');return false;}
@@ -626,7 +711,7 @@ function runCard(r,acked,count,opts={}){ const att=runAttribution(r),h=att.handl
   const vibeChip=v?`<span class="vibe-chip" title="${esc(v[1])}">${esc(v[0].toLowerCase())}</span>`:'';
   const refereed=r.coach_verdict?'<span class="state">Refereed</span>':'<span class="state off">Not refereed</span>';
   return `<div class="card" id="card-${r.id}">
-    <div class="runtop"><div class="av">${avatar(h)}</div>
+    <div class="runtop">${avatar(h,{rhythm:r.rhythm,ghost:att.ghost})}
       <div class="who">${whoLink}${anonTag}<small>${att.ghost?'metrics only ·':`@${esc(h)} ·`} <a href="/?run=${r.id}">${new Date(r.created_at).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</a></small></div>${refereed}</div>
     <div class="title">${esc(r.title)}${r.is_ship?' · ship':''}${vibeChip}</div>
     <div class="sub">${esc(r.harness||'agent')}${r.project?' · '+esc(r.project):''}${(r.route&&r.route.length)?' · '+(new Set(r.route)).size+' regions':''}${r.files_touched?' · '+r.files_touched+' files':''}</div>
@@ -746,7 +831,7 @@ function shareCardHtml(opts){
   return `<div class="share-scene"><div class="share-scale" id="share-scale"><div class="share-frame" id="share-frame">
     <div class="share-main">
       <section class="share-left"><div class="share-brand">Agent<i>&middot;</i>Grinder</div>
-        <div><div class="share-handle-row"><div class="share-av">${esc((h[0]||'?').toUpperCase())}</div>
+        <div><div class="share-handle-row">${avatar(h,{size:56,cols:20,cls:'share-av',ghost:ghost,rhythm:opts.rhythm})}
           <div><div class="share-handle">@${esc(h)}</div><div class="share-stamp">${esc(stamp)}</div></div></div>
           <p class="share-lead">${esc(opts.lead||'')}</p><p class="share-sub">${esc(opts.sub||'')}</p></div></section>
       <section class="share-right"><div class="share-hero" title="${esc(opts.heroTip||'')}"><div class="n num">${esc(String(heroN))}</div><div class="k">${esc(heroK)}</div></div>
@@ -807,17 +892,19 @@ async function viewMe(){
   if(!ME){ return viewLanding(); }
   const app=$('app');
   frame(railHtml('me'),null); app.innerHTML=skeletonCard()+skeletonCard();
-  const {data:runs}=await sb.from('runs').select('*, profiles(github_handle,name)').eq('profile_id',ME.id).order('created_at',{ascending:false}).limit(60);
+  const {data:runs}=await sb.from('runs').select('*, profiles(github_handle,name,rig)').eq('profile_id',ME.id).order('created_at',{ascending:false}).limit(60);
+  noteTraces(runs); noteLooked([ME.github_handle]);
   const R=runs||[]; const {count:acksR}=await sb.from('acks').select('*',{count:'exact',head:true}).eq('to_profile',ME.id);
-  const {data:recentAcks}=await sb.from('acks').select('id,reason,created_at,run_id,from_profile,profiles:from_profile(github_handle,name)').eq('to_profile',ME.id).order('created_at',{ascending:false}).limit(8);
+  const {data:recentAcks}=await sb.from('acks').select('id,reason,created_at,run_id,from_profile,profiles:from_profile(github_handle,name,rig)').eq('to_profile',ME.id).order('created_at',{ascending:false}).limit(8);
   const {data:allAcks}=await sb.from('acks').select('reason').eq('to_profile',ME.id);
+  await fillTraces(recentAcks||[]);
   const sh=grindShape(R,acksR||0);
   frame(railHtml('me',R), sidePanels(R,{mine:true}));
   const composer=`<div class="up">
     <div class="up-top"><span class="t">Score a run</span><span class="meta">nothing uploads until you push</span></div>
     <div class="cmd"><span class="c">${INSTALL_CMD}</span><button class="act" id="cp1">Copy</button></div>
     <div class="up-foot">Reads the newest session on your machine, metrics only.</div></div>`;
-  app.innerHTML=`<div class="phero"><div class="av">${avatar(ME.github_handle)}</div>
+  app.innerHTML=`<div class="phero">${avatar(ME.github_handle,{size:36})}
       <div><h1>Your grind</h1><div class="h">@${esc(ME.github_handle)} · private by default</div></div></div>
     ${shapeRow(sh)}${coachLine(R)}
     ${compareAgents(R)}
@@ -943,7 +1030,7 @@ function featuredCard(r){
   const plan=r.coach_plan?String(r.coach_plan).split('\n').filter(x=>x.trim()):[];
   const when=r.created_at?new Date(r.created_at).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}):'';
   return `<div class="card">
-    <div class="runtop"><div class="av">${avatar(att.handle)}</div>
+    <div class="runtop">${avatar(att.handle,{rhythm:r.rhythm,ghost:att.ghost})}
       <div class="who"><span>${esc(att.ghost?'Ghost grinder':att.name)}</span><small>${att.ghost?'metrics only':'@'+esc(att.handle)}${when?' · '+esc(when):''} · public, no account needed</small></div>
       <span class="state">Refereed</span></div>
     <div class="title">${esc(r.title||'A grind')}</div>
@@ -1014,7 +1101,7 @@ function coachStrip(r){
   const dm=r.duration_s?Math.round(r.duration_s/60):0;
   const head=[dm?fmtDur(dm):'',r.harness].filter(Boolean).join(' · ');
   return `<div class="check" id="check">
-    <div class="check-top"><span class="av">${avatar((r.profiles||{}).github_handle)}</span>
+    <div class="check-top">${avatar((r.profiles||{}).github_handle,{rhythm:r.rhythm})}
       <span class="t">${esc(head||'a real sitting')}</span><span class="s" id="st">reading</span></div>
     ${rows.map((t,i)=>`<div class="step" data-s="${i}"><span class="i"></span><span class="n">${esc(t[0])}</span><span class="o">${esc(t[1])}</span></div>`).join('')}</div>`;
 }
@@ -1068,8 +1155,9 @@ async function viewRun(id){
   const app=$('app');
   const q=new URLSearchParams(location.search);
   frame(null,null); app.innerHTML=skeletonCard();
-  const {data:r}=await sb.from('runs').select('*, profiles(github_handle,name)').eq('id',id).single();
+  const {data:r}=await sb.from('runs').select('*, profiles(github_handle,name,rig)').eq('id',id).single();
   if(!r){ app.innerHTML='<div class="card"><div class="empty">This run is private or does not exist.</div></div>'; return; }
+  noteTraces([r]);
   const ad=await ackData([r]);
   const acks=await fetchAckList(id);
   const suggested=suggestAckReasons(r);
@@ -1106,7 +1194,8 @@ function trendingBlock(repos){ if(!repos.length) return '';
 async function viewExplore(){
   const app=$('app');
   frame(railHtml('feed'),null); app.innerHTML=skeletonCard()+skeletonCard()+skeletonCard();
-  const {data:runs,error}=await sb.from('runs').select('*, profiles(github_handle,name)').in('visibility',['public','anonymous']).order('created_at',{ascending:false}).limit(50);
+  const {data:runs,error}=await sb.from('runs').select('*, profiles(github_handle,name,rig)').in('visibility',['public','anonymous']).order('created_at',{ascending:false}).limit(50);
+  noteTraces(runs);
   if(error){status(error.message,true);return;}
   const ad=await ackData(runs||[]);
   const R=runs||[];
@@ -1146,8 +1235,9 @@ async function viewProfile(handle){
   const {data:prof}=await sb.from('profiles').select('*').eq('github_handle',handle).single();
   if(!prof){ app.innerHTML='<div class="card"><div class="empty">No such grinder.</div></div>'; return; }
   const mine=ME&&ME.id===prof.id;
-  const {data:runs}=await sb.from('runs').select('*, profiles(github_handle,name)')
+  const {data:runs}=await sb.from('runs').select('*, profiles(github_handle,name,rig)')
     .eq('profile_id',prof.id)[mine?'in':'eq']('visibility',mine?['public','link','private','anonymous']:'public').order('created_at',{ascending:false}).limit(50);
+  noteTraces(runs); noteLooked([handle]);
   const R=runs||[]; const {count:acksR}=await sb.from('acks').select('*',{count:'exact',head:true}).eq('to_profile',prof.id);
   const sh=grindShape(R, acksR||0);
   const T={runs:R.length,prompts:R.reduce((a,r)=>a+(r.prompts||0),0),
@@ -1159,7 +1249,7 @@ async function viewProfile(handle){
   const mcpNames=(rg.share_names&&rg.mcp_names&&rg.mcp_names.length)?esc(rg.mcp_names.join(' · ')):'';
   const setup=[harnesses.join(' · '), ...rigbits].filter(Boolean).join(' · ');
   frame(railHtml(mine?'me':null,R), sidePanels(R,{mine:!!mine}));
-  app.innerHTML=`<div class="phero"><div class="av">${avatar(handle)}</div>
+  app.innerHTML=`<div class="phero">${avatar(handle,{size:36,agent:isAgentProfile(prof)})}
       <div><h1>${esc(prof.name||handle)}</h1><div class="h">@${esc(handle)}${setup?' · '+esc(setup):''}</div></div></div>
     <div class="ptotals num"><div class="hero" title="${esc(VPT_TIP+' · '+T.vptFormula)}" style="cursor:help"><div class="k">verified per turn</div><div class="v">${T.vpt}</div></div>
       <div><div class="k">runs</div><div class="v" data-count="${T.runs}">0</div></div>
@@ -1257,8 +1347,9 @@ function importRun(){
 async function viewShareRun(id){
   const app=$('app'); frame(null,null,true);
   const q=new URLSearchParams(location.search);
-  const {data:r}=await sb.from('runs').select('*, profiles(github_handle,name)').eq('id',id).single();
+  const {data:r}=await sb.from('runs').select('*, profiles(github_handle,name,rig)').eq('id',id).single();
   if(!r){ app.innerHTML='<div class="empty">Run not found or private.</div>'; return; }
+  noteTraces([r]);
   const att=runAttribution(r);
   const bits=[r.title,r.harness,r.project].filter(Boolean);
   app.innerHTML=shareCardHtml({
@@ -1298,6 +1389,7 @@ async function viewShareProfile(handle){
   const mine=ME&&ME.id===prof.id;
   const {data:runs}=await sb.from('runs').select('*').eq('profile_id',prof.id)
     [mine?'in':'eq']('visibility',mine?['public','link','private']:'public');
+  noteTraces((runs||[]).map(r=>({...r,profiles:{github_handle:handle,rig:prof.rig}}))); noteLooked([handle]);
   const R=runs||[];
   const T={runs:R.length,prompts:R.reduce((a,r)=>a+(r.prompts||0),0),
     hours:Math.round(R.reduce((a,r)=>a+(r.duration_s||0),0)/360)/10,
@@ -1326,7 +1418,8 @@ function viewClaim(){
 async function viewEvent(){
   const app=$('app');
   frame(railHtml('feed'),null); app.innerHTML=skeletonCard()+skeletonCard();
-  const {data:runs}=await sb.from('runs').select('*, profiles(github_handle,name)').in('visibility',['public','anonymous']).order('created_at',{ascending:false}).limit(40);
+  const {data:runs}=await sb.from('runs').select('*, profiles(github_handle,name,rig)').in('visibility',['public','anonymous']).order('created_at',{ascending:false}).limit(40);
+  noteTraces(runs);
   const ad=await ackData(runs||[]);
   const R=runs||[];
   frame(railHtml('feed',R), sidePanels(R));
