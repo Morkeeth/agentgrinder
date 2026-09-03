@@ -152,4 +152,25 @@ Delete it and the next run rebuilds it: **7.8s** over 1,370 transcripts here, 0.
 `nightrun --public` redacts repository and lane names while leaving every number and the shape
 unchanged. No auto-post, no auto-upload.
 
-MIT.
+## Pre-existing code, disclosed
+
+The Agents for Humans rules ask for new work built inside the submission period (10 Aug to 14 Sep
+2026) and for any other pre-existing code to be disclosed. This repository was created on 31 Aug
+2026. Three pieces of it did not start life here:
+
+- `agentgrinder/authorship.py` is vendored from Transcripto (same author, earlier project). It is
+  the rule that decides which `type: "user"` records a person typed. Named at the top of the file.
+- The coach scaffolding in `agentgrinder/coach/` (the agent creation shape, the scripted local
+  model that replays a plan through the real Strands event loop, and the three-mode dispatch with
+  the DEGRADED banner) is lifted from [Morkeeth/agents-for-humans](https://github.com/Morkeeth/agents-for-humans)
+  (MAGNET, same author, MIT, built from 29 Aug 2026 onwards, inside the submission period). The
+  five coach tools and the verdict are new here. MAGNET does not enter this hackathon.
+- The per-project series logic in `agentgrinder/engine/` (a verdict over a series of readings,
+  `baseline` under two readings) comes from the same MAGNET repo, which itself ported it from
+  [Morkeeth/mountain-of-helicon](https://github.com/Morkeeth/mountain-of-helicon) (same author,
+  before the period).
+
+Everything else in this repository was written inside the period. The Strands Agents SDK is a
+dependency, not copied code.
+
+MIT. See `LICENSE`.
