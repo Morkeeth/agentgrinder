@@ -256,13 +256,39 @@ def parse_cursor_session(path: str, athlete: str = "you") -> dict:
 
 
 # ---- Codex origin ------------------------------------------------------------
-# ~/.codex/archived_sessions/rollout-*.jsonl — event_msg user_message = human turn.
+# rollout-*.jsonl — event_msg user_message = human turn.
+#
+# WHERE CODEX ACTUALLY WRITES. Until 3 Sep 2026 this globbed `~/.codex/archived_sessions/*.jsonl`
+# only, flat and non-recursive. Codex CLI writes live sessions to
+# `~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl` and archives a fraction of them. Measured on the
+# author's own machine that day: the shipped glob saw 16 files, the real tree held 64. A person
+# who has just started with Codex has no archived sessions at all, so every Codex command
+# returned "nothing to read" while their transcripts sat on disk.
 _INJECT_MARKERS = ("<recommended_plugins>", "<environment_context>", "<turn_aborted>")
+
+CODEX_GLOBS = (
+    "~/.codex/sessions/**/*.jsonl",      # where live sessions land, nested by date
+    "~/.codex/archived_sessions/*.jsonl",  # where some of them are moved later
+)
+
+
+def codex_session_files() -> list[str]:
+    """Every Codex rollout on this machine, both trees, newest first, no duplicates."""
+    seen: dict[str, float] = {}
+    for pat in CODEX_GLOBS:
+        for f in glob.glob(os.path.expanduser(pat), recursive=True):
+            if f in seen or not os.path.isfile(f):
+                continue
+            try:
+                seen[f] = os.path.getmtime(f)
+            except OSError:
+                continue
+    return sorted(seen, key=lambda f: seen[f], reverse=True)
 
 
 def latest_codex_session() -> str | None:
-    files = glob.glob(os.path.expanduser("~/.codex/archived_sessions/*.jsonl"))
-    return max(files, key=os.path.getmtime) if files else None
+    files = codex_session_files()
+    return files[0] if files else None
 
 
 def _codex_count(path: str) -> tuple[int, int] | None:

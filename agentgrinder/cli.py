@@ -562,7 +562,11 @@ def _grind(args) -> int:
         from .render import render_card
         path = args.session or latest_codex_session()
         if not path:
-            print("no Codex session under ~/.codex/archived_sessions"); return 1
+            from .ingest import CODEX_GLOBS
+            print("\n  no Codex session found. Searched:")
+            for g in CODEX_GLOBS:
+                print(f"      {g}")
+            print("\n  try:  python3 -m agentgrinder demo\n"); return 1
         run = parse_codex_session(path, athlete=args.athlete)
         out = Path(args.out)
         out.write_text(render_card(build_activity(run)), encoding="utf-8")
