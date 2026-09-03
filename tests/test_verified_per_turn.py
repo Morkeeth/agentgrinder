@@ -66,12 +66,16 @@ def test_card_headlines_verified_per_turn_not_prompts():
     assert 'title="Transcripto export-run' in html and "ZUP" in html and "Helicon witness" in html
 
 
-# ---- the v0 claim rule ----------------------------------------------------------------
+# ---- the claim rule (calibrated 3 Sep 2026, see tests/test_claim_rule.py) --------------
 
 def test_claim_lines_and_tokens():
+    # "Ran the suite." is a claim the v0 vocabulary regex could not see: it names no completion
+    # word at all. The calibrated rule reads it as one, and still ignores the line that asserts
+    # nothing. The tokens come from the claim line, and only from it.
     cl = claims_in("Ran the suite.\ntests/test_x.py passes — test_alpha green\nno claim here\n")
-    assert len(cl) == 1
-    assert "test_alpha" in cl[0].tokens and "tests/test_x.py" in cl[0].tokens
+    assert [c.line for c in cl] == ["Ran the suite.", "tests/test_x.py passes — test_alpha green"]
+    assert "test_alpha" in cl[1].tokens and "tests/test_x.py" in cl[1].tokens
+    assert cl[0].tokens == set()
 
 
 def test_evidence_generic_token_rejected_when_result_also_fails():
