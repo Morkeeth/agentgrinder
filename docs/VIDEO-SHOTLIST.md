@@ -1,6 +1,6 @@
 # VIDEO SHOTLIST · Agent Grinder · Agents for Humans
 
-Target length **2:50**. The rules allow 5 minutes; a judge watching 7,262 entries does not. The
+Target length **2:55**. The rules allow 5 minutes; a judge watching 7,262 entries does not. The
 pitch must cover the problem, who it is for, and why it matters, and the rules accept screen
 recording plus voiceover with nobody on camera.
 
@@ -19,7 +19,7 @@ it is the consequence. If a cut has to lose 20 seconds, it comes out of shots 2,
 | P3 | Do one real 20 minute session inside the agentgrinder clone, then stop typing for 30 minutes | any coding-agent session in that directory | so shot 6's grind trace shows this project's own files, not another repo's paths |
 | P4 | Terminal at 1280x720 or larger, font large enough to read on a phone, light background | | judges scrub on small screens |
 | P5 | Cold review pass: watch shots 1 to 9 once with the sound off before recording anything | | you cannot see your own demo's bugs |
-| P6 | Optional but strong: push one coached run so the hosted card shows a number | `python3 -m agentgrinder grind --coach --push`, then sign in and publish | the two runs in the hosted database today predate the coach and correctly print a dash |
+| P6 | Nothing to do. A coached run is already published and shot 8 points at it | open `https://agentgrinder.vercel.app/?run=28d5d0b7-eda2-4d94-a83c-580d2e3b75b2` once to confirm it loads | verified 3 September: 3.67 verified per turn, "verdict produced by 37 tool calls", the paragraph and the plan all render |
 
 **Never on screen.** The name MAGNET, the repository `Morkeeth/agents-for-humans`, the word
 "engine library", the README's disclosure paragraph, or any second product. The disclosure belongs
@@ -42,8 +42,8 @@ Supabase service key. Use the clone and the bundled sample.
 | 5 | 1:22 | 1:52 | **The refusal.** The script prints the offered verdict, then `accepted: False` and the two reasons | `python3 scripts/show-refusal.py` | "Here is the part that matters. The tools verified one claim of two, and one file of two. Now I hand the verdict tool a verdict that says two and two, the flattering version. It refuses. Claims verified: you wrote two, the tools returned one. Artifacts produced: you wrote two, the tools returned one. It cannot write a number a tool did not return. A card with no verdict is available. A card with a wrong verdict is not." |
 | 6 | 1:52 | 2:18 | `grind --coach` runs, then the card in the browser, scrolled to the verdict block | `python3 -m agentgrinder grind --coach` then open `grind.html` | "So this is my real session, on this repository. The card takes the numbers the coach checked, and it says where they came from: verdict produced by four tool calls, Strands agent loop. Verified per turn, and every claim it counted has a tool result behind it in its own turn." |
 | 7 | 2:18 | 2:32 | Scroll one line down to the series verdict, then the grind trace | hold on `grind.html` | "Next to it, this session against your last session on the same project. Helped, hurt, or baseline, because one reading is not a trend. And the trace: one row per file, your typed prompts as ticks, and the longest stretch nobody typed through." |
-| 8 | 2:32 | 2:42 | Browser, the hosted card page | open `https://agentgrinder.vercel.app/?run=<id>` | "Sharing is a click you make. The card goes to a page with the same verdict on it, and nothing is uploaded until you say so." |
-| 9 | 2:42 | 2:55 | Back to the terminal, `pytest -q` printing `54 passed` | `python3 -m pytest -q` | "This is for anyone whose day is now judgment over an agent's output: engineers, and the people who have to trust what an agent reports. It matters because the alternative is a number nobody checked. Agent Grinder. An agent checks your session before the card counts it." |
+| 8 | 2:32 | 2:42 | Browser, the hosted card, scrolled so the headline and the coach line are both in frame | open `https://agentgrinder.vercel.app/?run=28d5d0b7-eda2-4d94-a83c-580d2e3b75b2` | "Sharing is a click you make. This one is published. Three point six seven verified per turn, three of seven claims with evidence, verdict produced by thirty seven tool calls. Nothing is uploaded until you say so." |
+| 9 | 2:42 | 2:55 | Back to the terminal, `pytest -q` printing the green line (61 tests at commit 0fed2c7; read the count off the screen on the day, it moves) | `python3 -m pytest -q` | "This is for anyone whose day is now judgment over an agent's output: engineers, and the people who have to trust what an agent reports. It matters because the alternative is a number nobody checked. Agent Grinder. An agent checks your session before the card counts it." |
 
 Total 2:55. Shot 2 is the first cut if it runs long; shots 8 and 9 can merge into one 12 second
 close if the recording drifts past 3:10.

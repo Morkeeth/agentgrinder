@@ -127,7 +127,11 @@ in its own turn, 2 files written of which 1 exists on disk, 0 commits, verified 
 8 tool calls dispatched by the Strands loop. Run it twice and you get the same verdict, because
 the local path has no model temperature in it.
 
-Live: **https://agentgrinder.vercel.app**
+Live, and nothing to install: a published run with the verdict on it,
+**https://agentgrinder.vercel.app/?run=28d5d0b7-eda2-4d94-a83c-580d2e3b75b2**. Verified per turn
+3.67, three typed turns, three of seven claims with evidence in their own turn, eight of fourteen
+written files on disk, and the line "verdict produced by 37 tool calls", which is the hook's
+count. The site is at **https://agentgrinder.vercel.app**.
 
 ## Honest limits
 
@@ -140,10 +144,11 @@ Live: **https://agentgrinder.vercel.app**
   headline instead of inside it for exactly this reason. Replacing that rule with a real witness
   is the next slice, and the coach is the seam it plugs into: the agent already calls the rule
   per claim rather than in bulk.
-- **Two profiles today.** The hosted database holds 2 profiles and 2 runs, and both runs were
-  posted before the coach shipped, so their cards correctly print a dash for verified per turn
-  rather than a number invented after the fact. Nobody who is not the author has published a
-  coached run yet. The local path is what has been used; the network has not been proven.
+- **The network is one person wide.** The hosted database holds 2 profiles and 3 runs, and all of
+  them are the author's. One of those runs carries a coach verdict; the two older ones were
+  published before the coach existed and correctly print a dash for verified per turn rather than
+  a number invented after the fact. Nobody who is not the author has published a coached run. The
+  tool works; the network has not been proven.
 - **Bedrock is opt-in and it has a privacy cost.** The default is keyless and offline. Choosing
   `--model bedrock` sends claim lines and tool-result snippets to AWS, and the command says so
   before it runs. Nothing else in the tool ever leaves the machine, and no session is ever
@@ -190,6 +195,8 @@ app. No runtime dependencies for the local card path.
 
 - Repository: https://github.com/Morkeeth/agentgrinder (MIT, licence file at the root)
 - Live: https://agentgrinder.vercel.app
+- A published run, with the coach's verdict on it:
+  https://agentgrinder.vercel.app/?run=28d5d0b7-eda2-4d94-a83c-580d2e3b75b2
 - Architecture diagram: `docs/architecture.md`
 
 ---
@@ -209,7 +216,8 @@ keyless path is deterministic.
 | 127 tracked files | `git ls-files \| wc -l` | 127 |
 | 23 commits, first on 31 August 2026 | `git rev-list --count HEAD` | 23, first commit `2026-08-31 23:43:39 +0200` |
 | 7 coach columns live on the hosted database | `information_schema.columns` on `public.runs` | `claims`, `claims_verified`, `artifacts_produced`, `coach_verdict`, `coach_plan`, `coach_tool_calls`, `progress_verdict`, all nullable |
-| Live site and hosted card reachable | `curl -o /dev/null -w "%{http_code}"` on `/` and on `/?run=<id>` | 200 and 200; headless render shows the card |
+| Live site and hosted card reachable | `curl -o /dev/null -w "%{http_code}"` on `/` and on `/?run=28d5d0b7...` | 200 and 200; a headless render shows the verdict block, 3.67 verified per turn, 37 tool calls |
+| 2 profiles, 3 runs, 1 of them coached, 0 by anyone but the author | `select count(*)` on `public.profiles` and `public.runs` | 2, 3, and 1 row with `coach_tool_calls` not null |
 | 7,262 participants in the field | `curl -sL https://agentsforhumans.devpost.com/` | `Participants (7262)` |
 
 The METR figure (20% believed faster, 19% measured slower) is from METR's 2025 randomized

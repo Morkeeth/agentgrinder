@@ -28,11 +28,11 @@ it is the one nobody does because it means rereading the transcript.
 | MIT or Apache licence file, detectable in the About section | **done** | `LICENSE` at the root; `gh repo view` reports `MIT License` |
 | README | **done** | `README.md`, includes the disclosure paragraph |
 | Architecture diagram | **done** | `docs/architecture.md`, mermaid, renders on GitHub |
-| Video, 5 minutes maximum, public on YouTube or Vimeo | **shot list ready, not filmed** | `docs/VIDEO-SHOTLIST.md`, a 2:55 cut |
+| Video, 5 minutes maximum, public on YouTube or Vimeo | **shot list ready and verified, no recording exists** | `docs/VIDEO-SHOTLIST.md`, a 2:55 cut, every command in it run once |
 | Video demonstrates the working project | ready | shots 3 to 8 are live commands, no slides |
 | Pitch covers the problem, who it is for, why it matters | ready | shots 1, 2 and 9 |
 | AWS Builder ID | **Oscar, not done** | needed on the form |
-| Optional live demo link, which strengthens Technical Implementation | **done** | https://agentgrinder.vercel.app |
+| Optional live demo link, which strengthens Technical Implementation | **done** | https://agentgrinder.vercel.app, and a published run carrying the coach's verdict at https://agentgrinder.vercel.app/?run=28d5d0b7-eda2-4d94-a83c-580d2e3b75b2 |
 | builder.aws blog post, bonus up to 0.6 | **not written** | see section 5 |
 
 Nothing on this list is blocked by code. What is left is Oscar's accounts, Oscar's camera, and one
@@ -84,7 +84,7 @@ Both are on the GitHub repository page, right side, under About:
 | Thing | How | Time |
 |---|---|---|
 | **AWS Builder ID** | sign in at `https://profile.aws.amazon.com` with an email, no AWS account needed. The form asks for the ID | 5 minutes |
-| **Public video URL** | film `docs/VIDEO-SHOTLIST.md`, voiceover with the local Kokoro TTS in `~/CODE/voice-generation`, upload to YouTube as **public**, not unlisted | about 2 hours including the cold review pass |
+| **Public video URL** | the shot list is written, timed at 2:55, and every command in it has been run: `docs/VIDEO-SHOTLIST.md`. The local Kokoro TTS in `~/CODE/voice-generation` is installed and ready for the voiceover. What does not exist is the recording and a public YouTube URL | about 2 hours of recording time including the cold review pass |
 | **Devpost account registered for the event** | the Join button on the event page | 2 minutes |
 | **AWS credentials**, only if the Bedrock take is filmed | the `bedrock` mode is opt-in and costs money. The video does not need it; the local mode is honest and the report prints the mode. `docs/BEDROCK-COACH-RECEIPT-TEMPLATE.md` has the command and the receipt fields if it is worth doing | 30 minutes |
 
@@ -115,8 +115,9 @@ Each title must contain the words **Agents for Humans**. Each post must be publi
 
 ## 6. The order for the last days
 
-1. Film and upload the video. It is the only item with a long tail and it is the weakest criterion
-   on the scorecard. Everything else is text that already exists.
+1. The video is the only item with a long tail and the weakest criterion on the scorecard. The
+   shot list, the commands, the published run it points at and the voice tooling are all ready;
+   the recording and the public URL are the gap. Everything else is text that already exists.
 2. Register on Devpost, get the AWS Builder ID, set the repository website field.
 3. Fill the form, paste from `docs/DEVPOST-DESCRIPTION.md`, attach the video URL, save as draft.
 4. Publish one builder.aws post. Two more if the evening allows.
@@ -131,9 +132,11 @@ Each title must contain the words **Agents for Humans**. Each post must be publi
 
 - **Presentation** is the criterion with no artifact yet. There is no video. The shot list is
   built to fix it in one afternoon.
-- **Impact** is thin in one specific way: the hosted database holds 2 profiles and 2 runs, both the
-  author's, and both were posted before the coach shipped, so their hosted cards print a dash where
-  the verdict goes. One stranger publishing one coached run changes that sentence.
+- **Impact** is thin in one specific way: the hosted database holds 2 profiles and 3 runs and every
+  one of them is the author's. One of the three now carries a full coach verdict and renders it,
+  which is what shot 8 of the video points at, so the surface is no longer empty. What is still
+  missing is a person who is not Oscar. One stranger publishing one coached run changes the
+  sentence, and `docs/STRANGER-RECRUIT.md` names three.
 - **Technical Implementation** is the tie-break criterion, and the honest reading is that the coach
   landed in the last week of the period while the rest of the repository does not touch Strands.
   The counter is that the coach owns the number the whole product is about, so it is the spine and
