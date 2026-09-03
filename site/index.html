@@ -206,6 +206,20 @@
 <script>
 const SB_URL="https://kqxasvolwtrczusjhlli.supabase.co";
 const SB_KEY="sb_publishable_EkNFC4I6eB71igOrhLblCg_nDocZ483";
+// THE PUBLIC EXAMPLE. One real run, pushed from a real session with `agentgrinder grind --coach`,
+// visibility public, readable with the publishable key above and no account. The landing page
+// shows it to a logged-out visitor so the argument of the product is on screen before sign-in.
+// FEATURED_SNAPSHOT is the same row, written down at publish time: it paints instantly, and the
+// live row replaces it the moment the fetch lands. If the two ever disagree, the live row wins.
+const FEATURED_RUN="28d5d0b7-eda2-4d94-a83c-580d2e3b75b2";
+const FEATURED_SNAPSHOT=null;
+async function fetchFeatured(){
+  if(!sb) return null;
+  try{
+    const {data}=await sb.from('runs').select('*, profiles(github_handle,name)').eq('id',FEATURED_RUN).maybeSingle();
+    return data||null;
+  }catch(_){ return null; }
+}
 const $=id=>document.getElementById(id);
 const status=(m,e)=>{const s=$('status');s.textContent=m||'';s.className=e?'err':'';};
 if(!window.supabase) status("Couldn't load, refresh.",true);
@@ -671,7 +685,7 @@ async function viewOnboard(){
     `<button id="ob-auth">Sign in with GitHub</button>`}</div>`;
   const step2=`<div class="ob-step ${ME?'':'done'}"><h3>Grind locally</h3>
     <p class="hint">Reads Claude Code or Cursor on your machine. Transcripts never upload — only metrics if you push.</p>
-    <div class="cmd">git clone &lt;repo&gt; && cd agentgrinder && pip install -e .</div>
+    <div class="cmd">git clone https://github.com/Morkeeth/agentgrinder && cd agentgrinder && pip install -e .</div>
     <div class="cmd">python3 -m agentgrinder grind</div>
     <div class="cmd">python3 -m agentgrinder flex</div>
     <p class="hint">Compare Claude vs Cursor on your machine before you push.</p></div>`;
@@ -742,12 +756,88 @@ function viewPitch(){
     </div></div>`;
 }
 
-function viewLanding(){ $('app').innerHTML=`<div class="empty" style="padding:56px 16px">${runnerHTML()}
-    <div style="font-size:24px;font-weight:800;letter-spacing:-.02em;margin:8px 0 6px">Where you post your real runs.</div>
-    <div class="hint" style="max-width:400px;margin:0 auto 18px">Agent Grinder reads Claude, Cursor, and fleet sessions locally — prompts, pace, commits, the grind trace — and turns them into runs you can share. Flex across agents. Metrics only.</div>
+// THE EXAMPLE CARD, for a visitor with no account. Same numbers, same skin and same coach block
+// as the feed card; the cost row, the route map and the ACK button are left to the full run page,
+// because the point of this one is the verdict and the count of tool calls behind it.
+function featuredCard(r){
+  const att=runAttribution(r);
+  const dm=r.duration_s?Math.round(r.duration_s/60):0;
+  const n=r.coach_tool_calls;
+  const plan=r.coach_plan?String(r.coach_plan).split('\n').filter(x=>x.trim()):[];
+  const when=r.created_at?new Date(r.created_at).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}):'';
+  return `<div class="card">
+    <div class="title" style="padding-top:16px">${esc(r.title||'A grind')}</div>
+    <div class="sub">${esc(r.harness||'agent')}${r.project?' · '+esc(r.project):''}${att.ghost?'':' · @'+esc(att.handle)}${when?' · '+esc(when):''} · public, no account needed</div>
+    ${vptHtml(r)}
+    ${fiveRow(r)}
+    <div class="grp">the coach${n?` · verdict produced by <b>${esc(String(n))}</b> tool call${n==1?'':'s'}`:''}</div>
+    ${r.coach_verdict?`<div style="padding:8px 17px 0;font-size:14px;line-height:1.6">${esc(String(r.coach_verdict))}</div>`:''}
+    ${plan.length?`<ul style="margin:8px 17px 0;padding-left:19px;font-size:13.5px;line-height:1.55;color:var(--muted)">${plan.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}
+    <div style="padding:13px 17px 2px"><div style="border-left:3px solid var(--accent);padding:5px 0 5px 12px;font-size:13.5px;line-height:1.55">
+      The coach never writes a number a tool did not return. <span class="num">write_verdict</span> refuses the number and names the tool that owns it.</div></div>
+    <div class="grp">cost — what the grind spent</div>
+    <div class="stats num">
+      <div class="stat"><div class="v">${r.prompts??'-'}</div><div class="k">prompts · cost</div></div>
+      <div class="stat"><div class="v">${fmtDur(dm)}</div><div class="k">time</div></div>
+      <div class="stat"><div class="v">${r.commits??0}</div><div class="k">commits</div></div>
+      <div class="stat"><div class="v">${r.tool_calls??0}</div><div class="k">tools</div></div></div>
+    ${curve(r.rhythm)}
+    <div class="foot"><a href="/?run=${r.id}" style="font-weight:600;text-decoration:none">Open the full run</a>
+      <span style="margin-left:auto"><a href="/?share=1&run=${r.id}" style="color:var(--muted);text-decoration:none">Share card</a></span></div></div>`;
+}
+
+// The five tools and the three modes, in words, with no account. Named exactly as the code names
+// them, so a reader can grep agentgrinder/coach/tools.py and agentgrinder/coach/agent.py.
+function howItWorks(){
+  const tools=[
+    ['read_run','cuts the sitting out of the transcript, counts the typed turns, and lists every claim line and every file the run wrote.'],
+    ['check_claim','looks for evidence in the same typed turn as the claim and returns the matching tool result, or says there was none.'],
+    ['verify_artifact','asks the disk whether the file exists, how big it is, and whether it was written inside the sitting.'],
+    ['git_evidence','asks git which commits inside the sitting carry the file, and the first commit after it that did.'],
+    ['write_verdict','writes the paragraph and the next-session plan, and refuses any number no tool in that run returned.']];
+  const modes=[
+    ['local','the default. A real Strands agent loop over the five tools, driven by a scripted local model. Keyless, no network, no spend.'],
+    ['bedrock','opt in. The same loop with a real model on Amazon Bedrock. Needs AWS credentials, costs money, and sends the claim lines off your machine. The command says so before it runs.'],
+    ['none','no agent. The five tools called in a fixed order.']];
+  const row=(k,v,i)=>`<div class="flex-row" style="display:block;padding:11px 0${i?'':';border-top:none'}">
+    <b class="num" style="font-size:13.5px">${esc(k)}</b>
+    <div class="hint" style="margin-top:3px;line-height:1.55">${esc(v)}</div></div>`;
+  return `<h2 class="sec">How it works</h2>
+  <div class="panel flex-panel"><h3 style="margin:14px 0 2px;font-size:15px">The five tools the coach calls</h3>
+    ${tools.map((t,i)=>row(t[0],t[1],i)).join('')}</div>
+  <div class="panel flex-panel"><h3 style="margin:14px 0 2px;font-size:15px">Three modes, and the mode is always printed</h3>
+    ${modes.map((m,i)=>row(m[0],m[1],i)).join('')}
+    <div class="hint" style="border-top:1px solid var(--line);padding:11px 0 4px;line-height:1.55">
+      A mode that fails does not fall back quietly. The run is marked <b>DEGRADED</b>, and the screen names the failure, the reason, and the mode it fell back to.</div></div>
+  <div class="panel"><h3 style="font-size:15px">What leaves your machine</h3>
+    <p class="hint" style="margin:0;line-height:1.6">Only if you publish, and only what you can see first: counts, pace, commits, the grind curve, and the coach paragraph. Never a prompt you typed. Never code. Never a file path from outside the repo. <a href="/privacy">Privacy</a> · <a href="/methodology">Methodology</a></p></div>`;
+}
+
+function landingHTML(r){
+  return `<div style="text-align:center;padding:26px 0 4px">${runnerHTML()}
+    <div style="font-size:27px;font-weight:800;letter-spacing:-.025em;margin:2px 0 10px">Where you post your real runs.</div>
+    <div style="font-size:17px;font-weight:600;max-width:460px;margin:0 auto 10px;line-height:1.45">Your agent says it shipped. A second agent checks before the card shows a number.</div>
+    <div class="hint" style="max-width:470px;margin:0 auto 20px;line-height:1.6">Agent Grinder reads one session on your machine. Then the coach checks every claim against the tool results in its own turn, every file against the disk, and every file against git. Metrics only, never your prompts and never your code.</div></div>
+  <h2 class="sec">A real run, refereed</h2>
+  ${r?featuredCard(r):`<div class="card"><div class="empty" style="padding:34px 16px">Loading the public example run.</div></div>`}
+  <div style="text-align:center;margin:4px 0 26px">
     <button onclick="location.href='/?onboard'">Get started</button>
     <button class="ghost" style="margin-left:8px" onclick="document.getElementById('auth').click()">Sign in</button>
-    <div class="hint" style="margin-top:14px"><a href="/?claim=1">Claim your handle →</a></div></div>`; startRunner(); }
+    <button class="ghost" style="margin-left:8px" onclick="location.href='/?explore'">Browse public runs</button>
+    <div class="hint" style="margin-top:12px">No account needed to read the run above or the feed.</div></div>
+  ${howItWorks()}`;
+}
+
+async function viewLanding(){
+  const app=$('app');
+  app.innerHTML=landingHTML(FEATURED_SNAPSHOT); startRunner();
+  const live=await fetchFeatured();
+  if(live){ app.innerHTML=landingHTML(live); startRunner(); }
+  else if(!FEATURED_SNAPSHOT){
+    const slot=app.querySelector('.card .empty');
+    if(slot) slot.innerHTML='The public example run could not be loaded. <a href="/?explore">Browse public runs</a>.';
+  }
+}
 
 
 async function viewRun(id){
