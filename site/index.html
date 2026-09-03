@@ -91,7 +91,7 @@ h3{font-size:14px;font-weight:600;margin:0 0 10px}
 .up-top .t{font-size:14px;font-weight:600}
 .up-top .meta{margin-left:auto}
 .cmd{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--rule-2)}
-.cmd .c{flex:1;min-width:0;font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cmd .c{flex:1;min-width:0;font-size:13px;font-weight:500;line-height:1.5;word-break:break-word}
 .cmd .d{font-size:13px;color:var(--soft);flex:none}
 .up-foot{padding:11px 16px;font-size:13px;color:var(--soft)}
 .cmd .c.plain{font-weight:400;color:var(--soft)}
@@ -312,7 +312,11 @@ footer{max-width:1320px;margin:0 auto;padding:20px 24px 40px;color:var(--dim);fo
   .step{grid-template-columns:14px minmax(0,1fr);gap:4px 12px}
   .step .o{grid-column:2}
   .cmd{flex-wrap:wrap}
-  .cmd .c{white-space:normal;flex-basis:100%}
+  .cmd .c{flex-basis:100%}
+  .head{flex-wrap:wrap}
+  .head .meta{flex-basis:100%}
+  .check-top{flex-wrap:wrap}
+  .check-top .s{margin-left:0;flex-basis:100%}
   .bar .right .wide{display:none}
   .row{flex-wrap:wrap}
   .share-frame{height:auto;min-height:630px}
@@ -396,7 +400,7 @@ function railHtml(active,runs){
 function sidePanels(runs,opts){
   opts=opts||{};
   const ps=projectStats(runs);
-  const proj=ps.length?`<div class="panel"><div class="p-top"><span class="t">${opts.mine?'Your projects':'Projects on the board'}</span><span class="lbl">verified per turn</span></div>
+  const proj=ps.length?`<div class="panel"><div class="p-top"><span class="t">${opts.mine?'Your projects':'Projects'}</span><span class="lbl" style="white-space:nowrap">verified per turn</span></div>
     ${ps.map(x=>`<div class="p-row"><span>${esc(x.name)}</span><span class="v">${x.vpt?`<b>${x.vpt}</b>`:'no verdict yet'}</span></div>`).join('')}</div>`:'';
   return proj+`<div class="panel"><div class="p-top"><span class="t">What leaves your machine</span></div>
     <div class="p-row"><span>Counts and timings</span><span class="v">shared</span></div>
@@ -944,8 +948,8 @@ function featuredCard(r){
       <div class="stat"><div class="k">commits</div><div class="v">${r.commits??0}</div></div>
       <div class="stat"><div class="k">tool calls</div><div class="v">${r.tool_calls??0}</div></div></div>
     ${curve(r.rhythm)}
-    <div class="foot"><span class="meta">the run page carries the full session</span>
-      <span class="acts"><a class="act blue" href="/?run=${r.id}">Open the full run</a><a class="act" href="/?share=1&run=${r.id}">Share</a></span></div></div>`;
+    <div class="foot"><a href="/?run=${r.id}" style="color:var(--blue);font-weight:500">Open the full run</a>
+      <span class="acts"><a class="act" href="/?share=1&run=${r.id}">Share</a></span></div></div>`;
 }
 
 
