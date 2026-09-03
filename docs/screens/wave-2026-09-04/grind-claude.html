@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>you · 2 files changed in workspace, no commit yet — AGENT GRINDER</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#f2f3f5;--card:#fff;--ink:#12151b;--muted:#5d6572;--faint:#8d94a1;--line:#e3e6ea;
+    --grid:#eef0f3;--accent:#fc4c02;--ship:#1a8f4c;}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --bg:#0b0d11;--card:#14181f;--ink:#eef1f5;--muted:#98a1af;--faint:#6d7684;--line:#232a34;
+    --grid:#1b212a;--accent:#ff6a2b;--ship:#3ecf7a;}}
+  :root[data-theme="dark"]{--bg:#0b0d11;--card:#14181f;--ink:#eef1f5;--muted:#98a1af;
+    --faint:#6d7684;--line:#232a34;--grid:#1b212a;--accent:#ff6a2b;--ship:#3ecf7a;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);padding:26px 14px;display:flex;
+    justify-content:center;font:15px/1.55 "Archivo",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+  .card{width:100%;max-width:1040px;background:var(--card);border:1px solid var(--line);
+    border-radius:14px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.10)}
+  .top{display:flex;align-items:center;gap:12px;padding:18px 22px 8px}
+  .av{width:38px;height:38px;border-radius:50%;background:var(--accent);color:#fff;font-weight:800;
+    display:grid;place-items:center;font-size:17px}
+  .who b{font-weight:700}
+  .who small{display:block;color:var(--faint);font-size:11.5px;white-space:nowrap;
+    font-family:"Space Mono",ui-monospace,Menlo,monospace}
+  .brand{margin-left:auto;font-weight:800;letter-spacing:.13em;color:var(--faint);font-size:11px}
+  h1{margin:6px 22px 2px;font-size:27px;line-height:1.16;letter-spacing:-.018em;font-weight:800}
+  .pb{display:inline-block;vertical-align:middle;margin-left:11px;font-size:11px;font-weight:700;
+    color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:3px 10px;
+    font-family:"Space Mono",ui-monospace,Menlo,monospace;letter-spacing:.02em;white-space:nowrap}
+  .prog{padding:8px 22px 0;font-size:12.5px;color:var(--muted)}
+  .prog b{color:var(--ink);font-family:"Space Mono",ui-monospace,Menlo,monospace}
+  .prog .q{color:var(--faint)}
+  .prog .mono{font-family:"Space Mono",ui-monospace,Menlo,monospace}
+  .sub{padding:0 22px 4px;color:var(--muted);font-size:13px}
+  .sub .q{color:var(--faint);font-style:italic}
+  .callout{margin:14px 22px 0;padding:12px 15px;border-left:3px solid var(--accent);
+    background:var(--bg);font-size:13.5px;line-height:1.62;color:var(--muted)}
+  .callout b{color:var(--ink);font-family:"Space Mono",ui-monospace,Menlo,monospace;font-weight:700}
+  .hl{display:flex;align-items:baseline;gap:14px;padding:14px 22px 10px;cursor:help}
+  .hl .n{font:800 46px/1 "Space Mono",ui-monospace,Menlo,monospace;letter-spacing:-.04em;color:var(--accent)}
+  .hl .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em}
+  .hl .f{display:block;font-size:12px;color:var(--faint);text-transform:none;letter-spacing:0;
+    font-family:"Space Mono",ui-monospace,Menlo,monospace}
+  .fiverow{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--line);
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .five{background:var(--card);padding:10px 8px 9px;text-align:center;cursor:help}
+  .five .v{font:700 15px/1.2 "Space Mono",ui-monospace,Menlo,monospace;letter-spacing:-.01em;white-space:nowrap}
+  .five .k{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;
+    margin-top:3px;line-height:1.25}
+  .five[data-missing] .v{color:var(--muted);font-weight:400}
+  .five.cost .v{color:var(--muted)}
+  .costtag{font-style:normal;display:inline-block;margin-left:4px;padding:0 4px;border-radius:4px;
+    background:var(--line);color:var(--muted);font-size:9px;letter-spacing:.04em}
+  .grp{padding:12px 22px 0;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.14em}
+  .verdict{padding:10px 22px 4px;font-size:13.5px;line-height:1.55}
+  .verdict .who{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.14em;margin-bottom:4px}
+  .verdict .who b{color:var(--ink);font-family:"Space Mono",ui-monospace,Menlo,monospace;text-transform:none;letter-spacing:0}
+  .verdict ul{margin:6px 0 0;padding-left:18px} .verdict li{margin:2px 0}
+  .verdict .prog{margin:8px 0 0;padding:8px 10px;border-left:3px solid var(--accent);background:var(--card);
+    color:var(--muted);font-size:12.5px} .verdict .prog b{color:var(--ink)}
+  .verdict .pred{color:var(--faint);font-style:italic}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-top:8px}
+  .stat{background:var(--card);padding:14px 18px}
+  .stat .v{font:700 25px/1.1 "Space Mono",ui-monospace,Menlo,monospace;letter-spacing:-.02em}
+  .stat .k{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:4px}
+  .stat .src{font-size:10.5px;color:var(--faint);margin-top:5px;
+    font-family:"Space Mono",ui-monospace,Menlo,monospace}
+  .maphead{display:flex;align-items:baseline;gap:14px;padding:18px 22px 0;flex-wrap:wrap}
+  .maphead h2{margin:0;font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted)}
+  .maphead .note{font-size:11.5px;color:var(--faint);
+    font-family:"Space Mono",ui-monospace,Menlo,monospace}
+  .mapwrap{padding:6px 22px 4px;overflow-x:auto}
+  .mapwrap.phonewrap{display:none;overflow:visible}
+  svg.routemap{display:block;width:100%;min-width:620px;height:auto}
+  svg.routemap.phone{min-width:0}
+  .grid{stroke:var(--grid);stroke-width:1}
+  .stretch{fill:var(--accent);opacity:.065}
+  .slabel{fill:var(--accent);font:700 10.5px "Space Mono",ui-monospace,Menlo,monospace;letter-spacing:.04em}
+  .trunk{stroke:var(--ink);stroke-width:1.5}
+  .tick{stroke:var(--ink);stroke-width:2;opacity:.85}
+  .tlabel{fill:var(--ink);font:700 13px "Space Mono",ui-monospace,Menlo,monospace}
+  .hair{stroke:var(--line);stroke-width:1}
+  .path{fill:none;stroke:var(--accent);stroke-width:1.05;opacity:.3;stroke-linejoin:round}
+  .hair.faint{opacity:.6}
+  .mark{stroke-linecap:round}
+  .mark.edit{stroke:var(--accent);stroke-width:5.5;opacity:.95}
+  .mark.read{stroke:var(--muted);stroke-width:2.2;opacity:.55}
+  .mark.faint{opacity:.3}
+  .cap.ship{fill:var(--ship)}
+  .cap.spur{fill:var(--card);stroke:var(--accent);stroke-width:1.5;opacity:.9}
+  .cap.late{fill:var(--card);stroke:var(--ship);stroke-width:1.5;opacity:.8}
+  .flag{stroke:var(--ship);stroke-width:1.6}
+  .pennant{fill:var(--ship)}
+  .rtag{fill:var(--ink);font:700 11.5px "Space Mono",ui-monospace,Menlo,monospace}
+  .rtag.faint{fill:var(--faint);font-weight:400}
+  .rnote{fill:var(--faint);font-weight:400}
+  .gl{fill:var(--faint);font:10px "Space Mono",ui-monospace,Menlo,monospace}
+  .profill{fill:var(--accent);opacity:.13}
+  .profline{fill:none;stroke:var(--accent);stroke-width:1.6;stroke-linejoin:round}
+  .base{stroke:var(--line);stroke-width:1}
+  .plabel{fill:var(--muted);font:11px "Space Mono",ui-monospace,Menlo,monospace}
+  .pmax{fill:var(--faint);font:10px "Space Mono",ui-monospace,Menlo,monospace}
+  .legend{display:flex;flex-wrap:wrap;gap:15px;padding:2px 22px 16px;font-size:11.5px;
+    color:var(--muted);font-family:"Space Mono",ui-monospace,Menlo,monospace}
+  .legend i{display:inline-block;vertical-align:middle;margin-right:6px;font-style:normal}
+  .se{width:22px;height:0;border-top:5px solid var(--accent);display:inline-block;vertical-align:middle}
+  .sp{width:22px;height:0;border-top:1.5px solid var(--accent);opacity:.4;display:inline-block;vertical-align:middle}
+  .sr{width:22px;height:0;border-top:2px solid var(--muted);opacity:.6;display:inline-block;vertical-align:middle}
+  .st{width:2px;height:13px;background:var(--ink);display:inline-block;vertical-align:middle}
+  .sf{width:0;height:0;border-left:8px solid var(--ship);border-top:4px solid transparent;
+    border-bottom:4px solid transparent;display:inline-block;vertical-align:middle}
+  .sd{width:8px;height:8px;border:1.5px solid var(--accent);border-radius:50%;
+    display:inline-block;vertical-align:middle;background:var(--card)}
+  .sl{width:8px;height:8px;border:1.5px solid var(--ship);border-radius:50%;
+    display:inline-block;vertical-align:middle;background:var(--card)}
+  .sg{width:16px;height:11px;background:var(--accent);opacity:.14;display:inline-block;vertical-align:middle}
+  .dead{margin:0 22px 16px;padding:11px 14px;border-left:3px solid var(--accent);background:var(--bg);
+    font-size:12.5px;color:var(--muted);line-height:1.6}
+  .dead.ok{border-left-color:var(--ship)}
+  .dead b{color:var(--ink);font-family:"Space Mono",ui-monospace,Menlo,monospace}
+  .dead .mono{font-family:"Space Mono",ui-monospace,Menlo,monospace}
+  .dead code{font-family:"Space Mono",ui-monospace,Menlo,monospace;font-size:11.5px;color:var(--ink)}
+  .dead .q{color:var(--faint)}
+  .honest{background:var(--bg);border-top:1px solid var(--line);padding:15px 22px;
+    font-size:12px;color:var(--muted);line-height:1.65}
+  .honest b{color:var(--ink);font-family:"Space Mono",ui-monospace,Menlo,monospace;font-weight:700}
+  .honest .mono{font-family:"Space Mono",ui-monospace,Menlo,monospace}
+  ul.tally{margin:8px 0;padding-left:0;list-style:none}
+  ul.tally li{padding:2px 0 2px 14px;border-left:2px solid var(--line);margin-bottom:3px}
+  .repro{display:block;margin-top:9px;color:var(--faint);font-size:11px;
+    font-family:"Space Mono",ui-monospace,Menlo,monospace;word-break:break-all}
+  .foot{display:flex;align-items:center;gap:8px;padding:13px 22px;border-top:1px solid var(--line);
+    color:var(--muted);font-size:12.5px}
+  .foot .tag{margin-left:auto;font-family:"Space Mono",ui-monospace,Menlo,monospace;color:var(--faint)}
+  /* Below 760 the desktop trace is retired outright and the phone layout takes over. It was
+     kept, scaled and scrolled, until 31 Aug: measured in a real 390px iframe, that put 14 of
+     grind-deep's file-path labels outside the scroller at the card's own opening scroll. */
+  @media (max-width:760px){
+    #mapwrap{display:none}
+    .mapwrap.phonewrap{display:block}
+    svg.routemap.phone .rtag{font-size:10px}
+    svg.routemap.phone .rnote{font-size:9px}
+    svg.routemap.phone .tlabel{font-size:11px}
+    svg.routemap.phone .gl{font-size:9px}
+    svg.routemap.phone .plabel{font-size:9.5px}
+    svg.routemap.phone .pmax{font-size:9px}
+    svg.routemap.phone .slabel{font-size:9.5px}
+    svg.routemap.phone .mark.edit{stroke-width:4.2}
+    svg.routemap.phone .mark.read{stroke-width:1.8}
+  }
+  @media (max-width:640px){
+    body{padding:12px 8px}
+    .av{flex:0 0 auto;width:34px;height:34px;font-size:15px}
+    .who{min-width:0} .who small{font-size:10px}
+    .brand{flex:0 0 auto;font-size:9.5px;letter-spacing:.1em}
+    .top{gap:9px}
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .fiverow{grid-template-columns:repeat(2,1fr)} .five:nth-child(5){grid-column:span 2}
+    .hl{padding-left:14px;padding-right:14px} .hl .n{font-size:36px} .grp{padding-left:14px}
+    h1{font-size:20px} .stat .v{font-size:21px}
+    .top,.sub,h1,.mapwrap,.maphead,.legend,.honest,.foot,.callout,.dead{padding-left:14px;padding-right:14px}
+    .callout,.dead{margin-left:14px;margin-right:14px;padding-left:12px;padding-right:12px}
+  }
+</style></head>
+<body>
+  <div class="card">
+    <div class="top">
+      <div class="av">Y</div>
+      <div class="who"><b>you</b><small>Thu 20 Aug 2026 · 10:00 → 10:10</small></div>
+      <div class="brand">AGENT GRINDER</div>
+    </div>
+    <h1>2 files changed in workspace, no commit yet</h1>
+    <div class="sub">Claude Code · workspace ·
+      sitting 1 of 1 in this transcript
+      </div>
+    <div class="callout">From <b>3</b> typed prompts in <b>10</b> minutes.</div>
+    
+
+    <div class="hl" title="verified per turn = (verified claims + artifacts produced) ÷ typed turns. Local: the calibrated claims.py rule (precision 0.63, recall 0.66 held out) plus Edit/Write paths on disk. A rate, not a count: a count of claims moves with how much the agent talks, see /methodology · (1 verified + 1 artifacts) ÷ 3 typed turns">
+      <div class="n">0.67</div>
+      <div class="lbl">verified per turn<span class="f">(1 verified + 1 artifacts) ÷ 3 typed turns</span></div>
+    </div>
+    <div class="fiverow"><div class="five cost" title="the turns you typed or queued, read from the transcript (authorship.py): tool results and injected context are not turns"><div class="v">3</div><div class="k">typed turns<i class="costtag">cost</i></div></div><div class="five" title="claims that had matching evidence inside their own turn. The rule that decides what a claim is reads precision 0.63 and recall 0.66 on a held-out hand-labelled set (docs/CLAIM-RULE-CALIBRATION-2026-09-03.md); whether a claim was matched to the right evidence is not measured yet"><div class="v">1/2 · 50%</div><div class="k">verified claims</div></div><div class="five" title="not measured yet: it needs every turn labelled as undoing the one before it, and no harness records that, so nothing on your machine can supply it today" data-missing="1"><div class="v">—</div><div class="k">correction rate</div></div><div class="five" title="produced is measured here: files this run wrote that exist on disk. Promised is not measured yet: nothing records what a run said it would deliver, so you cannot supply it today" data-missing="1"><div class="v">1 ÷ —</div><div class="k">produced ÷ promised</div></div><div class="five" title="not measured yet: no commit landed inside this window, so nothing could have crossed" data-missing="1"><div class="v">—</div><div class="k">reach</div></div></div>
+    <div class="verdict"><div class="prog"><b>baseline</b> on workspace: this is the first grind recorded on it. Two measured grinds give a verdict.</div></div>
+
+    <div class="grp">Cost — what the grind spent</div>
+    <div class="stats">
+      <div class="stat"><div class="v">3</div><div class="k">Prompts · cost</div>
+        <div class="src">promptSource typed|queued</div></div>
+      <div class="stat"><div class="v">10m 10s</div><div class="k">Moving time</div>
+        <div class="src">gaps capped at 20m</div></div>
+      <div class="stat"><div class="v">3:23</div><div class="k">Pace /prompt</div>
+        <div class="src">moving time ÷ prompts</div></div>
+      <div class="stat"><div class="v">0</div><div class="k">Commits</div>
+        <div class="src">git log --all --name-only, during the grind</div></div>
+    </div>
+
+    <div class="maphead"><h2>The grind trace</h2>
+      <span class="note">one row per file · 2 opened, 2 changed · peak 9 tool calls/min</span></div>
+    <div class="mapwrap" id="mapwrap" data-focus="0.0260"><svg class="routemap" viewBox="0 0 1000 366" role="img"
+   aria-label="Session route: 3 typed prompts and 2 rows of files between 10:00 and 10:10; peak 9 tool calls per minute">
+  <rect class="stretch" x="26.0" y="28" width="467.2" height="314"><title>10:00–10:05 · nobody typed · 5m of agent work · 2 tool calls</title></rect>
+  <line class="grid" x1="960.4" y1="34" x2="960.4" y2="341"/>
+  <text class="gl" x="960.4" y="356" text-anchor="middle">10:10</text>
+  <line class="trunk" x1="26" y1="46" x2="976" y2="46"/>
+  <text class="tlabel" x="26" y="37">you</text>
+  <line class="tick" x1="26.0" y1="39" x2="26.0" y2="53"/>
+  <line class="tick" x1="493.2" y1="39" x2="493.2" y2="53"/>
+  <line class="tick" x1="960.4" y1="39" x2="960.4" y2="53"/>
+  <text class="slabel" x="259.6" y="37" text-anchor="middle">5m · nobody typing</text>
+  <polyline class="path" points="57.1,89.0 66.1,89.0 524.4,133.0 533.4,133.0 586.7,89.0 595.7,89.0"/>
+  <line class="hair" x1="26" y1="89.0" x2="976" y2="89.0"/>
+  <line class="mark edit" x1="57.1" y1="89.0" x2="66.1" y2="89.0"><title>edit · 10:00 · 1 call</title></line>
+  <line class="mark read" x1="586.7" y1="89.0" x2="595.7" y2="89.0"><title>read · 10:06 · 1 call</title></line>
+  <circle class="cap late" cx="586.7" cy="89.0" r="3.6"/>
+  <text class="rtag" x="57.1" y="79.5">samples/fixture-project/notes.md<tspan class="rnote"> · 1 edit · 1 read · committed 14:10</tspan></text>
+  <line class="hair" x1="26" y1="133.0" x2="976" y2="133.0"/>
+  <line class="mark edit" x1="524.4" y1="133.0" x2="533.4" y2="133.0"><title>edit · 10:05 · 1 call</title></line>
+  <circle class="cap spur" cx="533.4" cy="133.0" r="3.6"/>
+  <text class="rtag" x="976" y="123.5" text-anchor="end">samples/fixture-project/draft.md<tspan class="rnote"> · 1 edit · nothing has committed it since</tspan></text>
+  <polygon class="profill" points="26.0,336 26.0,336.0 36.6,336.0 36.6,336.0 47.1,336.0 47.1,196.0 57.7,196.0 57.7,336.0 68.2,336.0 68.2,336.0 78.8,336.0 78.8,336.0 89.3,336.0 89.3,336.0 99.9,336.0 99.9,336.0 110.4,336.0 110.4,196.0 121.0,196.0 121.0,336.0 131.6,336.0 131.6,336.0 142.1,336.0 142.1,336.0 152.7,336.0 152.7,336.0 163.2,336.0 163.2,336.0 173.8,336.0 173.8,336.0 184.3,336.0 184.3,336.0 194.9,336.0 194.9,336.0 205.4,336.0 205.4,336.0 216.0,336.0 216.0,336.0 226.6,336.0 226.6,336.0 237.1,336.0 237.1,336.0 247.7,336.0 247.7,336.0 258.2,336.0 258.2,336.0 268.8,336.0 268.8,336.0 279.3,336.0 279.3,336.0 289.9,336.0 289.9,336.0 300.4,336.0 300.4,336.0 311.0,336.0 311.0,336.0 321.6,336.0 321.6,336.0 332.1,336.0 332.1,336.0 342.7,336.0 342.7,336.0 353.2,336.0 353.2,336.0 363.8,336.0 363.8,336.0 374.3,336.0 374.3,336.0 384.9,336.0 384.9,336.0 395.4,336.0 395.4,336.0 406.0,336.0 406.0,336.0 416.6,336.0 416.6,336.0 427.1,336.0 427.1,336.0 437.7,336.0 437.7,336.0 448.2,336.0 448.2,336.0 458.8,336.0 458.8,336.0 469.3,336.0 469.3,336.0 479.9,336.0 479.9,336.0 490.4,336.0 490.4,336.0 501.0,336.0 501.0,336.0 511.6,336.0 511.6,336.0 522.1,336.0 522.1,196.0 532.7,196.0 532.7,336.0 543.2,336.0 543.2,336.0 553.8,336.0 553.8,336.0 564.3,336.0 564.3,336.0 574.9,336.0 574.9,336.0 585.4,336.0 585.4,196.0 596.0,196.0 596.0,336.0 606.6,336.0 606.6,336.0 617.1,336.0 617.1,336.0 627.7,336.0 627.7,336.0 638.2,336.0 638.2,336.0 648.8,336.0 648.8,336.0 659.3,336.0 659.3,336.0 669.9,336.0 669.9,336.0 680.4,336.0 680.4,336.0 691.0,336.0 691.0,336.0 701.6,336.0 701.6,336.0 712.1,336.0 712.1,336.0 722.7,336.0 722.7,336.0 733.2,336.0 733.2,336.0 743.8,336.0 743.8,336.0 754.3,336.0 754.3,336.0 764.9,336.0 764.9,336.0 775.4,336.0 775.4,336.0 786.0,336.0 786.0,336.0 796.6,336.0 796.6,336.0 807.1,336.0 807.1,336.0 817.7,336.0 817.7,336.0 828.2,336.0 828.2,336.0 838.8,336.0 838.8,336.0 849.3,336.0 849.3,336.0 859.9,336.0 859.9,336.0 870.4,336.0 870.4,336.0 881.0,336.0 881.0,336.0 891.6,336.0 891.6,336.0 902.1,336.0 902.1,336.0 912.7,336.0 912.7,336.0 923.2,336.0 923.2,336.0 933.8,336.0 933.8,336.0 944.3,336.0 944.3,336.0 954.9,336.0 954.9,336.0 965.4,336.0 965.4,336.0 976.0,336.0 976.0,336"/>
+  <polyline class="profline" points="26.0,336.0 36.6,336.0 36.6,336.0 47.1,336.0 47.1,196.0 57.7,196.0 57.7,336.0 68.2,336.0 68.2,336.0 78.8,336.0 78.8,336.0 89.3,336.0 89.3,336.0 99.9,336.0 99.9,336.0 110.4,336.0 110.4,196.0 121.0,196.0 121.0,336.0 131.6,336.0 131.6,336.0 142.1,336.0 142.1,336.0 152.7,336.0 152.7,336.0 163.2,336.0 163.2,336.0 173.8,336.0 173.8,336.0 184.3,336.0 184.3,336.0 194.9,336.0 194.9,336.0 205.4,336.0 205.4,336.0 216.0,336.0 216.0,336.0 226.6,336.0 226.6,336.0 237.1,336.0 237.1,336.0 247.7,336.0 247.7,336.0 258.2,336.0 258.2,336.0 268.8,336.0 268.8,336.0 279.3,336.0 279.3,336.0 289.9,336.0 289.9,336.0 300.4,336.0 300.4,336.0 311.0,336.0 311.0,336.0 321.6,336.0 321.6,336.0 332.1,336.0 332.1,336.0 342.7,336.0 342.7,336.0 353.2,336.0 353.2,336.0 363.8,336.0 363.8,336.0 374.3,336.0 374.3,336.0 384.9,336.0 384.9,336.0 395.4,336.0 395.4,336.0 406.0,336.0 406.0,336.0 416.6,336.0 416.6,336.0 427.1,336.0 427.1,336.0 437.7,336.0 437.7,336.0 448.2,336.0 448.2,336.0 458.8,336.0 458.8,336.0 469.3,336.0 469.3,336.0 479.9,336.0 479.9,336.0 490.4,336.0 490.4,336.0 501.0,336.0 501.0,336.0 511.6,336.0 511.6,336.0 522.1,336.0 522.1,196.0 532.7,196.0 532.7,336.0 543.2,336.0 543.2,336.0 553.8,336.0 553.8,336.0 564.3,336.0 564.3,336.0 574.9,336.0 574.9,336.0 585.4,336.0 585.4,196.0 596.0,196.0 596.0,336.0 606.6,336.0 606.6,336.0 617.1,336.0 617.1,336.0 627.7,336.0 627.7,336.0 638.2,336.0 638.2,336.0 648.8,336.0 648.8,336.0 659.3,336.0 659.3,336.0 669.9,336.0 669.9,336.0 680.4,336.0 680.4,336.0 691.0,336.0 691.0,336.0 701.6,336.0 701.6,336.0 712.1,336.0 712.1,336.0 722.7,336.0 722.7,336.0 733.2,336.0 733.2,336.0 743.8,336.0 743.8,336.0 754.3,336.0 754.3,336.0 764.9,336.0 764.9,336.0 775.4,336.0 775.4,336.0 786.0,336.0 786.0,336.0 796.6,336.0 796.6,336.0 807.1,336.0 807.1,336.0 817.7,336.0 817.7,336.0 828.2,336.0 828.2,336.0 838.8,336.0 838.8,336.0 849.3,336.0 849.3,336.0 859.9,336.0 859.9,336.0 870.4,336.0 870.4,336.0 881.0,336.0 881.0,336.0 891.6,336.0 891.6,336.0 902.1,336.0 902.1,336.0 912.7,336.0 912.7,336.0 923.2,336.0 923.2,336.0 933.8,336.0 933.8,336.0 944.3,336.0 944.3,336.0 954.9,336.0 954.9,336.0 965.4,336.0 965.4,336.0 976.0,336.0"/>
+  <line class="base" x1="26" y1="336" x2="976" y2="336"/>
+  <text class="plabel" x="26" y="184">tool calls<tspan class="pmax"> · peak 9/min</tspan></text>
+</svg></div>
+    <div class="mapwrap phonewrap"><svg class="routemap phone" viewBox="0 0 360 278" role="img" aria-hidden="true">
+  <rect class="stretch" x="4.0" y="16" width="173.1" height="244"/>
+  <line class="grid" x1="177.1" y1="21" x2="177.1" y2="258"/>
+  <text class="gl" x="177.1" y="270" text-anchor="middle">10:05</text>
+  <line class="grid" x1="350.2" y1="21" x2="350.2" y2="258"/>
+  <text class="gl" x="356.0" y="270" text-anchor="end">10:10</text>
+  <text class="gl" x="4" y="270">10:00</text>
+  <line class="trunk" x1="4" y1="30" x2="356" y2="30"/>
+  <text class="tlabel" x="4" y="22">you</text>
+  <line class="tick" x1="4.0" y1="25" x2="4.0" y2="35"/>
+  <line class="tick" x1="177.1" y1="25" x2="177.1" y2="35"/>
+  <line class="tick" x1="350.2" y1="25" x2="350.2" y2="35"/>
+  <text class="slabel" x="90.6" y="22" text-anchor="middle">5m · nobody typing</text>
+  <polyline class="path" points="15.5,72.0 24.5,72.0 188.7,104.0 197.7,104.0 211.7,72.0 220.7,72.0"/>
+  <text class="rtag" x="4" y="64.0">notes.md<tspan class="rnote"> · 1 edit · 1 read · committed 14:10</tspan></text>
+  <line class="hair" x1="4" y1="72.0" x2="356" y2="72.0"/>
+  <line class="mark edit" x1="15.5" y1="72.0" x2="24.5" y2="72.0"/>
+  <line class="mark read" x1="211.7" y1="72.0" x2="220.7" y2="72.0"/>
+  <circle class="cap late" cx="211.7" cy="72.0" r="2.9"/>
+  <text class="rtag" x="4" y="96.0">draft.md<tspan class="rnote"> · 1 edit · nothing has committed it since</tspan></text>
+  <line class="hair" x1="4" y1="104.0" x2="356" y2="104.0"/>
+  <line class="mark edit" x1="188.7" y1="104.0" x2="197.7" y2="104.0"/>
+  <circle class="cap spur" cx="197.7" cy="104.0" r="2.9"/>
+  <polygon class="profill" points="4.0,254 4.0,254.0 7.9,254.0 7.9,254.0 11.8,254.0 11.8,152.0 15.7,152.0 15.7,254.0 19.6,254.0 19.6,254.0 23.6,254.0 23.6,254.0 27.5,254.0 27.5,254.0 31.4,254.0 31.4,254.0 35.3,254.0 35.3,152.0 39.2,152.0 39.2,254.0 43.1,254.0 43.1,254.0 47.0,254.0 47.0,254.0 50.9,254.0 50.9,254.0 54.8,254.0 54.8,254.0 58.8,254.0 58.8,254.0 62.7,254.0 62.7,254.0 66.6,254.0 66.6,254.0 70.5,254.0 70.5,254.0 74.4,254.0 74.4,254.0 78.3,254.0 78.3,254.0 82.2,254.0 82.2,254.0 86.1,254.0 86.1,254.0 90.0,254.0 90.0,254.0 94.0,254.0 94.0,254.0 97.9,254.0 97.9,254.0 101.8,254.0 101.8,254.0 105.7,254.0 105.7,254.0 109.6,254.0 109.6,254.0 113.5,254.0 113.5,254.0 117.4,254.0 117.4,254.0 121.3,254.0 121.3,254.0 125.2,254.0 125.2,254.0 129.2,254.0 129.2,254.0 133.1,254.0 133.1,254.0 137.0,254.0 137.0,254.0 140.9,254.0 140.9,254.0 144.8,254.0 144.8,254.0 148.7,254.0 148.7,254.0 152.6,254.0 152.6,254.0 156.5,254.0 156.5,254.0 160.4,254.0 160.4,254.0 164.4,254.0 164.4,254.0 168.3,254.0 168.3,254.0 172.2,254.0 172.2,254.0 176.1,254.0 176.1,254.0 180.0,254.0 180.0,254.0 183.9,254.0 183.9,254.0 187.8,254.0 187.8,152.0 191.7,152.0 191.7,254.0 195.6,254.0 195.6,254.0 199.6,254.0 199.6,254.0 203.5,254.0 203.5,254.0 207.4,254.0 207.4,254.0 211.3,254.0 211.3,152.0 215.2,152.0 215.2,254.0 219.1,254.0 219.1,254.0 223.0,254.0 223.0,254.0 226.9,254.0 226.9,254.0 230.8,254.0 230.8,254.0 234.8,254.0 234.8,254.0 238.7,254.0 238.7,254.0 242.6,254.0 242.6,254.0 246.5,254.0 246.5,254.0 250.4,254.0 250.4,254.0 254.3,254.0 254.3,254.0 258.2,254.0 258.2,254.0 262.1,254.0 262.1,254.0 266.0,254.0 266.0,254.0 270.0,254.0 270.0,254.0 273.9,254.0 273.9,254.0 277.8,254.0 277.8,254.0 281.7,254.0 281.7,254.0 285.6,254.0 285.6,254.0 289.5,254.0 289.5,254.0 293.4,254.0 293.4,254.0 297.3,254.0 297.3,254.0 301.2,254.0 301.2,254.0 305.2,254.0 305.2,254.0 309.1,254.0 309.1,254.0 313.0,254.0 313.0,254.0 316.9,254.0 316.9,254.0 320.8,254.0 320.8,254.0 324.7,254.0 324.7,254.0 328.6,254.0 328.6,254.0 332.5,254.0 332.5,254.0 336.4,254.0 336.4,254.0 340.4,254.0 340.4,254.0 344.3,254.0 344.3,254.0 348.2,254.0 348.2,254.0 352.1,254.0 352.1,254.0 356.0,254.0 356.0,254"/>
+  <polyline class="profline" points="4.0,254.0 7.9,254.0 7.9,254.0 11.8,254.0 11.8,152.0 15.7,152.0 15.7,254.0 19.6,254.0 19.6,254.0 23.6,254.0 23.6,254.0 27.5,254.0 27.5,254.0 31.4,254.0 31.4,254.0 35.3,254.0 35.3,152.0 39.2,152.0 39.2,254.0 43.1,254.0 43.1,254.0 47.0,254.0 47.0,254.0 50.9,254.0 50.9,254.0 54.8,254.0 54.8,254.0 58.8,254.0 58.8,254.0 62.7,254.0 62.7,254.0 66.6,254.0 66.6,254.0 70.5,254.0 70.5,254.0 74.4,254.0 74.4,254.0 78.3,254.0 78.3,254.0 82.2,254.0 82.2,254.0 86.1,254.0 86.1,254.0 90.0,254.0 90.0,254.0 94.0,254.0 94.0,254.0 97.9,254.0 97.9,254.0 101.8,254.0 101.8,254.0 105.7,254.0 105.7,254.0 109.6,254.0 109.6,254.0 113.5,254.0 113.5,254.0 117.4,254.0 117.4,254.0 121.3,254.0 121.3,254.0 125.2,254.0 125.2,254.0 129.2,254.0 129.2,254.0 133.1,254.0 133.1,254.0 137.0,254.0 137.0,254.0 140.9,254.0 140.9,254.0 144.8,254.0 144.8,254.0 148.7,254.0 148.7,254.0 152.6,254.0 152.6,254.0 156.5,254.0 156.5,254.0 160.4,254.0 160.4,254.0 164.4,254.0 164.4,254.0 168.3,254.0 168.3,254.0 172.2,254.0 172.2,254.0 176.1,254.0 176.1,254.0 180.0,254.0 180.0,254.0 183.9,254.0 183.9,254.0 187.8,254.0 187.8,152.0 191.7,152.0 191.7,254.0 195.6,254.0 195.6,254.0 199.6,254.0 199.6,254.0 203.5,254.0 203.5,254.0 207.4,254.0 207.4,254.0 211.3,254.0 211.3,152.0 215.2,152.0 215.2,254.0 219.1,254.0 219.1,254.0 223.0,254.0 223.0,254.0 226.9,254.0 226.9,254.0 230.8,254.0 230.8,254.0 234.8,254.0 234.8,254.0 238.7,254.0 238.7,254.0 242.6,254.0 242.6,254.0 246.5,254.0 246.5,254.0 250.4,254.0 250.4,254.0 254.3,254.0 254.3,254.0 258.2,254.0 258.2,254.0 262.1,254.0 262.1,254.0 266.0,254.0 266.0,254.0 270.0,254.0 270.0,254.0 273.9,254.0 273.9,254.0 277.8,254.0 277.8,254.0 281.7,254.0 281.7,254.0 285.6,254.0 285.6,254.0 289.5,254.0 289.5,254.0 293.4,254.0 293.4,254.0 297.3,254.0 297.3,254.0 301.2,254.0 301.2,254.0 305.2,254.0 305.2,254.0 309.1,254.0 309.1,254.0 313.0,254.0 313.0,254.0 316.9,254.0 316.9,254.0 320.8,254.0 320.8,254.0 324.7,254.0 324.7,254.0 328.6,254.0 328.6,254.0 332.5,254.0 332.5,254.0 336.4,254.0 336.4,254.0 340.4,254.0 340.4,254.0 344.3,254.0 344.3,254.0 348.2,254.0 348.2,254.0 352.1,254.0 352.1,254.0 356.0,254.0"/>
+  <line class="base" x1="4" y1="254" x2="356" y2="254"/>
+  <text class="plabel" x="4" y="143">tool calls<tspan class="pmax"> · peak 9/min</tspan></text>
+</svg></div>
+    <div class="legend"><span><i class="st"></i>a prompt you typed</span><span><i class="sp"></i>the path the work took between files</span><span><i class="se"></i>edited</span><span><i class="sl"></i>committed after the grind closed</span><span><i class="sd"></i>edited, nothing has committed it since</span><span><i class="sg"></i>the longest span nobody typed through</span></div>
+    <div class="dead"><b>2</b> files were edited in this grind. <b>1</b> was committed after it closed (first at <b>14:10</b>); <b>1</b> nothing has committed since: <code>samples/fixture-project/draft.md</code>. <span class="q">Asked of git per file — <span class="mono">git log --all --reverse -- &lt;file&gt;</span>. Disjoint, and they add up: <b>1 + 1 = 2</b>.</span></div>
+
+    <div class="honest">
+      <b>Authorship.</b> This sitting holds <b>7</b> records of
+      <b>type:&#8203;user</b>. <b>3</b> of them (42.9%) were typed by a person —
+      the gate is <span class="mono">promptSource</span> <b>typed</b> or <b>queued</b>, dropping
+      injected and sidechain records, which is Transcripto's measured signal, not a rule invented
+      here. The rest were sorted by what the record actually contains:
+      <ul class="tally"><li><b>4</b> tool results — a tool's output returning to the agent that called it</li></ul>
+      Disjoint, and they add up — the only way you can check them:
+      <b>3 + 4 = 7</b>.
+      A counter that trusted <b>type:&#8203;user</b> would print <b>7 prompts</b>
+      where this card prints <b>3</b>.
+      <span class="repro">python3 -m agentgrinder authorship --since <ISO></span>
+    </div>
+
+    <div class="foot"><span>Grind in public. Ship with proof.</span>
+      <span class="tag">4 tool calls · 1 per prompt · 1 shell</span></div>
+  </div>
+<script>
+  // A trace wider than the screen opens on its own left edge, which on most grinds is the
+  // minutes before anything happened. Open it where the work is instead.
+  (function () {
+    var w = document.getElementById("mapwrap");
+    if (!w) return;
+    var f = parseFloat(w.getAttribute("data-focus"));
+    if (!(f > 0)) return;
+    var over = w.scrollWidth - w.clientWidth;
+    if (over > 8) w.scrollLeft = Math.max(0, f * w.scrollWidth - w.clientWidth * 0.30);
+  })();
+</script>
+</body></html>

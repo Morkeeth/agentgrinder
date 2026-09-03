@@ -35,7 +35,7 @@ What exists now that did not exist (or was broken) at wave start:
 | Claude / Cursor / Codex HOMEs | same script | all three **PASS** with card files; claude headline 0.67; cursor 0.5; codex headline `—` (no artifacts) |
 | Demo five-row dashes | `HOME=$empty python3 -m agentgrinder demo --no-open` | correction / promised / reach print `—` |
 | Evidence synthetic arms | `python3 -m pytest -q tests/test_evidence_match_eval.py` | shipped P≈0.57, token_only P=1.00, silent takes no bait; suite pins the hole |
-| Touched tests | `pytest tests/test_claim_rule.py test_install_line.py test_evidence_match_eval.py test_harness_auto.py test_codex_paths.py test_verified_per_turn.py test_reach.py` | **60 passed** |
+| Touched tests | `pytest tests/ --ignore=tests/test_coach_missing_sdk.py` | **139 passed**, 1 skipped |
 
 ## WRONG
 

@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>you · build — AGENTGRINDER</title>
+<style>
+  :root {
+    --bg:#f4f5f7; --card:#ffffff; --ink:#14171f; --muted:#69707d; --line:#e6e8ec;
+    --accent:#fc5200; /* the run-orange */
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --bg:#0d0f13; --card:#161a21; --ink:#eef1f5; --muted:#98a1af; --line:#252b35; --accent:#ff6a2b;
+  }}
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    display:flex;justify-content:center;padding:28px 16px}
+  .card{width:100%;max-width:560px;background:var(--card);border:1px solid var(--line);
+    border-radius:18px;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,.08)}
+  .top{display:flex;align-items:center;gap:12px;padding:18px 20px 12px}
+  .avatar{width:42px;height:42px;border-radius:50%;background:var(--accent);color:#fff;
+    display:grid;place-items:center;font-weight:700;font-size:18px}
+  .who b{font-weight:650} .who small{color:var(--muted);display:block;font-size:12.5px}
+  .brand{margin-left:auto;font-weight:800;letter-spacing:.06em;color:var(--muted);font-size:12px}
+  .title{padding:0 20px 4px;font-size:19px;font-weight:680;display:flex;align-items:center;gap:10px}
+  .pb{font-size:11px;font-weight:700;color:var(--accent);border:1px solid var(--accent);
+    border-radius:999px;padding:2px 8px}
+  .sub{padding:0 20px 14px;color:var(--muted);font-size:13px}
+  .hl{display:flex;align-items:baseline;gap:14px;padding:6px 20px 12px}
+  .hl .n{font-size:44px;font-weight:800;letter-spacing:-.03em;line-height:1;color:var(--accent)}
+  .hl .lbl{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+  .hl .f{display:block;font-size:12px;color:var(--muted);text-transform:none;letter-spacing:0}
+  .fiverow{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--line);
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .five{background:var(--card);padding:10px 8px 9px;text-align:center;cursor:help}
+  .five .v{font-size:15px;font-weight:700;letter-spacing:-.01em;white-space:nowrap}
+  .five .k{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;
+    margin-top:2px;line-height:1.25}
+  .five[data-missing] .v{color:var(--muted);font-weight:500}
+  .five.cost .v{color:var(--muted)}
+  .costtag{font-style:normal;display:inline-block;margin-left:4px;padding:0 4px;border-radius:4px;
+    background:var(--line);color:var(--muted);font-size:9px;letter-spacing:.04em}
+  .grp{padding:10px 20px 4px;font-size:10.5px;color:var(--muted);text-transform:uppercase;
+    letter-spacing:.08em}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  @media (max-width:420px){.fiverow{grid-template-columns:repeat(2,1fr)}.five:nth-child(5){grid-column:span 2}.hl .n{font-size:36px}
+    .stat .v{font-size:17px}}
+  .stat{background:var(--card);padding:14px 16px}
+  .stat .v{font-size:22px;font-weight:720;letter-spacing:-.01em}
+  .stat .k{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+  .route{display:block;width:100%;height:150px;background:
+    linear-gradient(var(--card),var(--card))}
+  .routewrap{border-bottom:1px solid var(--line)}
+  .sec{display:flex;flex-wrap:wrap;gap:18px;padding:14px 20px;font-size:13px}
+  .sec div b{font-weight:650} .sec div span{color:var(--muted)}
+  .foot{display:flex;align-items:center;gap:16px;padding:12px 20px;border-top:1px solid var(--line);
+    color:var(--muted);font-size:13px}
+  .kudo{display:flex;align-items:center;gap:6px} .kudo b{color:var(--ink)}
+</style></head>
+<body>
+  <div class="card">
+    <div class="top">
+      <div class="avatar">Y</div>
+      <div class="who"><b>you</b><small>Fri 04 Sep 2026 · 10:00</small></div>
+      <div class="brand">AGENTGRINDER</div>
+    </div>
+    <div class="title">build </div>
+    <div class="sub">Cursor · tmp</div>
+    <div class="hl" title="verified per turn = (verified claims + artifacts produced) ÷ typed turns · (0 verified + 1 artifacts) ÷ 2 typed turns">
+      <div class="n">0.50</div>
+      <div class="lbl">verified per turn<span class="f">(0 verified + 1 artifacts) ÷ 2 typed turns</span></div>
+    </div>
+    <div class="fiverow"><div class="five cost" title="the turns you typed or queued, read from the transcript (authorship.py): tool results and injected context are not turns"><div class="v">2</div><div class="k">typed turns<i class="costtag">cost</i></div></div><div class="five" title="claims that had matching evidence inside their own turn. The rule that decides what a claim is reads precision 0.63 and recall 0.66 on a held-out hand-labelled set (docs/CLAIM-RULE-CALIBRATION-2026-09-03.md); whether a claim was matched to the right evidence is not measured yet"><div class="v">0/1 · 0%</div><div class="k">verified claims</div></div><div class="five" title="not measured yet: it needs every turn labelled as undoing the one before it, and no harness records that, so nothing on your machine can supply it today" data-missing="1"><div class="v">—</div><div class="k">correction rate</div></div><div class="five" title="produced is measured here: files this run wrote that exist on disk. Promised is not measured yet: nothing records what a run said it would deliver, so you cannot supply it today" data-missing="1"><div class="v">1 ÷ —</div><div class="k">produced ÷ promised</div></div><div class="five" title="not measured yet: this harness does not name the repository a session worked in, so a crossing cannot be traced" data-missing="1"><div class="v">—</div><div class="k">reach</div></div></div>
+    <div class="routewrap"><svg viewBox="0 0 720 150" class="route" preserveAspectRatio="none" role="img" aria-label="session route">
+  <polygon points="6,144 6.0,6.0 714.0,6.0 714.0,144" fill="url(#grad)"/>
+  <polyline points="6.0,6.0 714.0,6.0" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round"/>
+  <circle cx="6.0" cy="6.0" r="4.5" fill="var(--accent)" stroke="var(--card)" stroke-width="2"/>
+  <defs><linearGradient id="grad" x1="0" x2="0" y1="0" y2="1">
+    <stop offset="0" stop-color="var(--accent)" stop-opacity="0.28"/>
+    <stop offset="1" stop-color="var(--accent)" stop-opacity="0.02"/>
+  </linearGradient></defs>
+</svg></div>
+    <div class="grp">Cost — what the run spent</div>
+    <div class="stats">
+      <div class="stat"><div class="v">2 prompts</div><div class="k">Typed turns</div></div>
+      <div class="stat"><div class="v">1m 00s</div><div class="k">Moving time</div></div>
+      <div class="stat"><div class="v">0:30 /prompt</div><div class="k">Pace</div></div>
+    </div>
+    <div class="sec">
+      <div><span>Effort</span><br><b>1 tool calls</b></div>
+      <div><span>Segments</span><br><b>1 files</b></div>
+      <div><span>Commits</span><br><b>—</b></div>
+      <div><span>Cadence</span><br><b>120.0/h</b></div>
+    </div>
+    <div class="foot">
+      <div class="kudo">🔥 <b>kudos</b></div>
+      <div class="kudo">💬 comment</div>
+      <div style="margin-left:auto">Push loops. Ship proof.</div>
+    </div>
+  </div>
+</body></html>
