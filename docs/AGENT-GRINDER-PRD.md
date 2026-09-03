@@ -25,9 +25,11 @@ carried until then does not reproduce against the current splitter). The solo an
 **Honest metrics only — from logs, never vibes** (the "no ghost runs" rule):
 | Strava | Agent Run | Source |
 |---|---|---|
-| Distance | human prompts | `agentgrinder/authorship.py` · `promptSource` typed OR queued, dropping isMeta / isSidechain / tool_result |
+| **Distance (headline)** | **verified per turn** = (verified claims + artifacts produced) ÷ typed turns — what the prompts *bought* | `agentgrinder/metrics.py` · claims v0 in `claims.py` (Helicon witness later) · produced = Edit/Write paths that exist |
+| — (cost, the denominator) | human prompts — typed turns, shown as cost, never as the achievement (METR: self-report is worthless) | `agentgrinder/authorship.py` · `promptSource` typed OR queued, dropping isMeta / isSidechain / tool_result |
+| — (the five numbers, one row) | typed turns (cost) · verified-claims share · correction rate · produced ÷ promised · reach; `—` with a tooltip naming Transcripto / Helicon / ZUP / gh when not computable here | internal metric spec `METRICS-AGENTIC-ENGINEERING-2026-09-02` (not in this repo); receipt `docs/VERIFIED-PER-TURN-2026-09-02.md` |
 | Moving time | session duration | first→last timestamp |
-| Pace | time per human prompt | derived |
+| Pace | time per human prompt (cost group) | derived |
 | Elevation | tool calls (effort) | assistant tool_use |
 | Route map | **the grind trace** — one row per file, ordered by first arrival; marks where the work was; the path it took between them | `agentgrinder/soloroute.py` · Edit/Write/Read tool_use with a file_path |
 | Segments / PRs | commits, on the row of every file git says they contain | `git log --all --name-only`, window-bounded, offset explicit |

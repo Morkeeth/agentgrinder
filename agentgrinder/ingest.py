@@ -13,6 +13,7 @@ import os
 from datetime import datetime
 
 from .authorship import is_human_turn
+from .claims import ClaimTracker, is_tool_result, result_text
 
 _EDIT_TOOLS = {"Edit", "Write", "NotebookEdit"}
 
@@ -49,6 +50,8 @@ def parse_session(path: str, athlete: str = "you") -> dict:
     commits = 0
     project = None
     first_prompt = None
+    tracker = ClaimTracker()       # v0 verified-claims rule, see claims.py
+    written: set[str] = set()      # Edit/Write paths; 'produced' = the ones that exist at close
 
     with open(path, encoding="utf-8") as fh:
         for line in fh:
@@ -68,6 +71,7 @@ def parse_session(path: str, athlete: str = "you") -> dict:
             msg = o.get("message") if isinstance(o.get("message"), dict) else {}
 
             if is_human_turn(o):
+                tracker.typed_turn()
                 if ts:
                     typed_ts.append(ts)
                 if first_prompt is None:
@@ -79,11 +83,19 @@ def parse_session(path: str, athlete: str = "you") -> dict:
                             if isinstance(b, dict) and b.get("type") == "text":
                                 first_prompt = (b.get("text") or "").strip()
                                 break
+            elif is_tool_result(o):
+                tracker.tool_result(result_text(o))
             elif typ == "assistant":
+                c = msg.get("content")
+                if isinstance(c, list):
+                    tracker.assistant_text("\n".join(
+                        b.get("text", "") for b in c if isinstance(b, dict) and b.get("type") == "text"))
+                elif isinstance(c, str):
+                    tracker.assistant_text(c)
                 for name, inp in _tool_uses(msg):
                     tool_calls += 1
                     if name in _EDIT_TOOLS and inp.get("file_path"):
-                        fp = inp["file_path"]; files.add(fp)
+                        fp = inp["file_path"]; files.add(fp); written.add(fp)
                         # region = first meaningful path segment (privacy: names stay local; only indices are pushed)
                         parts = [p for p in fp.replace(str(project or ""), "").split("/") if p and not p.startswith(".")]
                         route.append(parts[0] if parts else "root")
@@ -92,8 +104,12 @@ def parse_session(path: str, athlete: str = "you") -> dict:
                         if "git commit" in cmd:
                             commits += 1
 
+    tracker.close()
     if not typed_ts:
         raise ValueError(f"no typed human turns found in {path}")
+    # v0 'artifacts produced': Edit/Write paths that exist on disk at PARSE time (not at the
+    # session's close — a later delete or rename reads as not produced). 'promised' is ZUP's.
+    artifacts_produced = sum(1 for fp in written if os.path.exists(fp))
 
     # moving time (Strava-style): sum gaps between events, but a gap over IDLE_CAP means you stepped away
     IDLE_CAP = 1200  # 20 min
@@ -142,6 +158,13 @@ def parse_session(path: str, athlete: str = "you") -> dict:
         "files_touched": len(files),
         "commits": commits,
         "rhythm": rhythm,
+        # the five numbers (fleet-ops/METRICS-AGENTIC-ENGINEERING-2026-09-02.md); None = not this repo's to compute
+        "claims": tracker.claims,
+        "claims_verified": tracker.verified,     # v0 rule, claims.py
+        "corrections": None,                     # Transcripto (coach inverse class) — not built
+        "artifacts_produced": artifacts_produced,
+        "artifacts_promised": None,              # ZUP artifact-detect
+        "reach": None,                           # git remotes + gh + launch log
         "has_rules": bool(rules), "rules_file": rules, "rules_lines": rules_lines, "has_plan": has_plan,
         "rig": detect_rig(),
         "route": _route_indices(route),          # numbers only -- safe to publish

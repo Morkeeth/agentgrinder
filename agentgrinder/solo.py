@@ -45,6 +45,7 @@ import os
 from datetime import datetime, timedelta
 
 from .authorship import CATEGORIES, classify, is_human_turn
+from .claims import ClaimTracker, is_tool_result, result_text
 from . import gitwork, privacy
 
 EDIT_TOOLS = {"Edit", "Write", "NotebookEdit"}
@@ -107,6 +108,9 @@ def _scan(path: str) -> dict:
     from it later without reading the file twice. Nothing is interpreted here."""
     typed, all_ts, visits, bash, cwds = [], [], [], [], []
     tool_ts, user_cats, prompt_at = [], [], {}
+    # (ts, kind, text) for the v0 claim rule (claims.py): kind is "typed" / "text" / "result".
+    # Text is held only long enough to be replayed over ONE sitting; counts alone leave.
+    claim_ev = []
     first_prompt = None
     with open(path, encoding="utf-8") as fh:
         for line in fh:
@@ -128,12 +132,20 @@ def _scan(path: str) -> dict:
             if is_human_turn(o):
                 if ts:
                     typed.append(ts)
+                    claim_ev.append((ts, "typed", ""))
                     txt = _text(o.get("message") or {}).strip()
                     if txt:
                         prompt_at[ts] = txt
                 if first_prompt is None:
                     first_prompt = _text(o.get("message") or {}).strip() or None
+            elif is_tool_result(o):
+                if ts:
+                    claim_ev.append((ts, "result", result_text(o)))
             elif o.get("type") == "assistant":
+                if ts:
+                    atext = _text(o.get("message") or {})
+                    if atext.strip():
+                        claim_ev.append((ts, "text", atext))
                 for b in (o.get("message") or {}).get("content") or []:
                     if not (isinstance(b, dict) and b.get("type") == "tool_use"):
                         continue
@@ -151,7 +163,7 @@ def _scan(path: str) -> dict:
     return dict(typed=sorted(typed), all_ts=sorted(all_ts),
                 visits=sorted(visits, key=lambda v: v[0]),
                 bash=bash, cwds=cwds, tool_ts=sorted(tool_ts), user_cats=user_cats,
-                prompt_at=prompt_at, first_prompt=first_prompt,
+                prompt_at=prompt_at, first_prompt=first_prompt, claim_ev=claim_ev,
                 counts={c: 0 for c in CATEGORIES}, tool_calls=len(tool_ts), user_records=0)
 
 
@@ -373,6 +385,12 @@ def parse_solo(path: str, athlete: str = "you", pick: int = -1, gap: int = SITTI
     stretch = longest_stretch(s["typed"], events, t1, tool_in_window)
     moving = _moving(events)
 
+    # ---- the five numbers this repo can compute (fleet-ops/METRICS-AGENTIC-ENGINEERING-2026-09-02.md)
+    # Same window as every other count on the card. The v0 rule lives in claims.py and
+    # OVER-COUNTS; the card prints the claim share beside the headline so a reader sees the ceiling.
+    claims, claims_verified = _claims_in_window(s["claim_ev"], t0, hi)
+    artifacts_produced = len({p for _, p, kind in visits if kind == "edit" and os.path.exists(p)})
+
     title = _title(s["first_prompt"], repo_name, show_prompt=show_paths)
     # The card only quotes the headline back as a typed sentence when it really is one.
     prompt_shown = bool(show_paths and privacy.safe_prompt(s["first_prompt"], opt_in=True))
@@ -390,6 +408,10 @@ def parse_solo(path: str, athlete: str = "you", pick: int = -1, gap: int = SITTI
         files_edited=len(edited), files_read=len([p for p, f in files.items() if not f["edits"]]),
         files_touched=len(files),
         commits=len(commits),
+        # verified per turn = (claims_verified + artifacts_produced) ÷ turns_typed (metrics.headline_of).
+        # corrections / artifacts_promised / reach are None: Transcripto / ZUP / reach probe own them.
+        claims=claims, claims_verified=claims_verified, artifacts_produced=artifacts_produced,
+        corrections=None, artifacts_promised=None, reach=None,
         commits_list=[dict(hash=c["hash"], at=c["at"], subject=c["subject"],
                            # file NAMES never travel; the digest is only a join key (see _key)
                            files=[_key(p) for p in c["files"]]) for c in commits],
@@ -420,6 +442,23 @@ def parse_solo(path: str, athlete: str = "you", pick: int = -1, gap: int = SITTI
                  reason=None if repo_root else "not inside a git work tree"),
     )
     return run
+
+
+def _claims_in_window(claim_ev: list, t0: datetime, t1: datetime) -> tuple[int, int]:
+    """(claims, verified) over one sitting, by the v0 rule. Records without a timestamp were
+    never collected, so nothing outside the window can leak in and nothing is guessed."""
+    tr = ClaimTracker()
+    for ts, kind, text in claim_ev:
+        if not (t0 <= ts <= t1):
+            continue
+        if kind == "typed":
+            tr.typed_turn()
+        elif kind == "text":
+            tr.assistant_text(text)
+        else:
+            tr.tool_result(text)
+    tr.close()
+    return tr.claims, tr.verified
 
 
 SHIP_STATES = ("shipped", "later", "never", "unasked")

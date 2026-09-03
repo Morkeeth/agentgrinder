@@ -74,6 +74,40 @@ Every number names what it counted and over which population, or it prints an em
   machine it fires on **34 of them, 5.4%** (31 Aug; the replay is `history.badge` over
   `history.load()`, and the per-measure cut is `max(3, 2% of the population)`).
 
+## The numbers — verified output is the distance, prompts are the cost
+
+The headline of every card is **verified per turn** = (verified claims + artifacts produced) ÷
+typed turns. Typed turns are the denominator: what the run *spent*. A card that headlines
+"47 prompts" celebrates the person who talked the most — the METR finding (developers believed
+they were 20% faster and measured 19% slower). The rule, from the internal metric spec
+(`METRICS-AGENTIC-ENGINEERING-2026-09-02`, not in this repo): *a good agentic engineer turns the
+fewest human decisions into the most verified, delivered work — distance = verified output; prompts = cost.*
+
+| Number | Role | Definition | Computed here? | Owner / source when not |
+|---|---|---|---|---|
+| **Verified per turn** | **headline** | (verified claims + artifacts produced) ÷ typed turns | yes, when its three parts exist | — |
+| Typed turns | cost | human-authored turns (`authorship.py`: typed OR queued, drops isMeta / isSidechain / tool_result) | yes | Transcripto export-run |
+| Verified-claims share | run number | of the agent's claims, the fraction with tool evidence in the same trace | **v0** (`claims.py`, rule below) | Helicon witness |
+| Correction rate | run number | typed turns that correct the agent ÷ typed turns | no — prints `—` | Transcripto export-run (coach inverse class) |
+| Produced ÷ promised | run number | deliverables that exist at their path ÷ deliverables the run named | produced **v0**; promised prints `—` | ZUP artifact-detect |
+| Reach | run number | did the output cross to a person who is not the author (0/1) | no — prints `—` | git remotes + `gh` + the launch log |
+| Moving time · pace · effort · segments · commits · cadence | cost group | unchanged from the v1 card | yes | — |
+
+A `—` is never blank: hover it and the tooltip names the tool that owns that number.
+
+**The v0 claim rule** (`agentgrinder/claims.py`, a stand-in until `helicon witness` is wired):
+a *claim* is a line of assistant text matching `passes|passed|fixed|done|deployed|works|green|verified|ship(s|ped)`.
+It is *verified* when a tool result **in the same human turn** (the span between two typed turns,
+before or after the claim) carries a matching token: a `test_*` name or file path from the claim
+line, or a generic success token (`N passed`, a line starting `OK`, `exit 0`) that is not
+contradicted by `N failed` / `FAILED` / `Traceback` in the same result. *Artifacts produced* v0 =
+distinct Edit/Write paths that exist on disk when the transcript is parsed. Known blind spots are
+listed in the module docstring. Sampled 2 Sep over the 11 most recent sittings on this machine:
+1–3 typed turns each (fleet lanes), 1–42 claims, verified share 0–100% (most 100%), verified per
+turn 1.0–18.5 — the rule **over-counts**: `done` and `ship` match prose, and one `N passed` in a
+turn verifies every claim beside it. Read the share as a ceiling until Helicon witness replaces
+it; that is why the claim count sits on the card next to the headline instead of inside it.
+
 ## The lexicon
 
 | Term | Meaning | Strava analogue |

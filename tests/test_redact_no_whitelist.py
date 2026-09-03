@@ -48,4 +48,11 @@ t("the output declares it is redacted", out.get("redacted") is True)
 t("the source run is not mutated", RUN["repos"][0]["name"] == "aistrava")
 
 print("\nok=%d fail=%d" % (ok, fail))
-sys.exit(1 if fail else 0)
+
+
+def test_redact_has_no_whitelist():
+    assert fail == 0, "%d redact checks failed" % fail
+
+
+if __name__ == "__main__":
+    sys.exit(1 if fail else 0)

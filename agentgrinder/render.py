@@ -3,10 +3,16 @@
 Signature device: THE SESSION ROUTE — the run's rhythm (typed turns per bucket) drawn as an
 elevation profile, the way Strava draws a route. It is taken from the work itself, not a component
 library: the shape IS the session. Remove it and you lose the argument that this was a real effort.
+
+Headline: VERIFIED PER TURN — what the typed turns bought, never how many there were. The five
+numbers of a run sit under it in one row; every Strava-shaped number (prompts, moving time, pace,
+effort, cadence) is kept, grouped as COST. A dash carries a tooltip naming the tool that owns it.
 """
 from __future__ import annotations
 
-from .metrics import Activity
+from html import escape
+
+from .metrics import HEADLINE_TIP, Activity, Cell
 
 
 def _route_svg(rhythm: list[int], w: int = 720, h: int = 150) -> str:
@@ -33,10 +39,25 @@ def _route_svg(rhythm: list[int], w: int = 720, h: int = 150) -> str:
 </svg>'''
 
 
+def _five_row(cells: list[Cell]) -> str:
+    out = []
+    for c in cells:
+        cls = "five cost" if c.cost else "five"
+        tag = '<i class="costtag">cost</i>' if c.cost else ""
+        dash = ' data-missing="1"' if c.value.startswith("—") or " —" in c.value else ""
+        out.append(f'<div class="{cls}" title="{escape(c.source)}"{dash}>'
+                   f'<div class="v">{escape(c.value)}</div>'
+                   f'<div class="k">{escape(c.label)}{tag}</div></div>')
+    return "".join(out)
+
+
 def render_card(a: Activity) -> str:
     initial = (a.athlete or "?")[0].upper()
     pb = '<span class="pb" title="high sustained cadence">★ focus PB</span>' if a.focus_pb else ""
     route = _route_svg(a.rhythm)
+    five = _five_row(a.five)
+    hl_title = ("verified per turn = (verified claims + artifacts produced) ÷ typed turns · "
+                + escape(a.headline_formula))
     return f'''<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -63,8 +84,26 @@ def render_card(a: Activity) -> str:
   .pb{{font-size:11px;font-weight:700;color:var(--accent);border:1px solid var(--accent);
     border-radius:999px;padding:2px 8px}}
   .sub{{padding:0 20px 14px;color:var(--muted);font-size:13px}}
+  .hl{{display:flex;align-items:baseline;gap:14px;padding:6px 20px 12px}}
+  .hl .n{{font-size:44px;font-weight:800;letter-spacing:-.03em;line-height:1;color:var(--accent)}}
+  .hl .lbl{{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}}
+  .hl .f{{display:block;font-size:12px;color:var(--muted);text-transform:none;letter-spacing:0}}
+  .fiverow{{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--line);
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line)}}
+  .five{{background:var(--card);padding:10px 8px 9px;text-align:center;cursor:help}}
+  .five .v{{font-size:15px;font-weight:700;letter-spacing:-.01em;white-space:nowrap}}
+  .five .k{{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;
+    margin-top:2px;line-height:1.25}}
+  .five[data-missing] .v{{color:var(--muted);font-weight:500}}
+  .five.cost .v{{color:var(--muted)}}
+  .costtag{{font-style:normal;display:inline-block;margin-left:4px;padding:0 4px;border-radius:4px;
+    background:var(--line);color:var(--muted);font-size:9px;letter-spacing:.04em}}
+  .grp{{padding:10px 20px 4px;font-size:10.5px;color:var(--muted);text-transform:uppercase;
+    letter-spacing:.08em}}
   .stats{{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);
     border-top:1px solid var(--line);border-bottom:1px solid var(--line)}}
+  @media (max-width:420px){{.fiverow{{grid-template-columns:repeat(2,1fr)}}.five:nth-child(5){{grid-column:span 2}}.hl .n{{font-size:36px}}
+    .stat .v{{font-size:17px}}}}
   .stat{{background:var(--card);padding:14px 16px}}
   .stat .v{{font-size:22px;font-weight:720;letter-spacing:-.01em}}
   .stat .k{{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}}
@@ -86,12 +125,18 @@ def render_card(a: Activity) -> str:
     </div>
     <div class="title">{a.title} {pb}</div>
     <div class="sub">{a.harness} · {a.project}</div>
+    <div class="hl" title="{hl_title}">
+      <div class="n">{a.headline}</div>
+      <div class="lbl">verified per turn<span class="f">{escape(a.headline_formula)}</span></div>
+    </div>
+    <div class="fiverow">{five}</div>
+    <div class="routewrap">{route}</div>
+    <div class="grp">Cost — what the run spent</div>
     <div class="stats">
-      <div class="stat"><div class="v">{a.distance}</div><div class="k">Distance</div></div>
+      <div class="stat"><div class="v">{a.distance}</div><div class="k">Typed turns</div></div>
       <div class="stat"><div class="v">{a.moving_time}</div><div class="k">Moving time</div></div>
       <div class="stat"><div class="v">{a.pace}</div><div class="k">Pace</div></div>
     </div>
-    <div class="routewrap">{route}</div>
     <div class="sec">
       <div><span>Effort</span><br><b>{a.effort}</b></div>
       <div><span>Segments</span><br><b>{a.segments}</b></div>
@@ -113,7 +158,8 @@ def render_profile(p: dict) -> str:
     cards = "".join(f'''
       <a class="runrow" href="#">
         <div class="rt">{a.title}</div>
-        <div class="rm"><span>{a.distance}</span><span>{a.moving_time}</span><span>{a.pace}</span>
+        <div class="rm"><span class="hl" title="{escape(HEADLINE_TIP)} · {escape(a.headline_formula)}">{a.headline} verified/turn</span>
+          <span class="cost">{a.distance} · cost</span><span>{a.moving_time}</span><span>{a.pace}</span>
           <span>{a.commits} commits</span>{" <span class='pb'>★ PB</span>" if a.focus_pb else ""}</div>
         <div class="rs">{a.harness} · {a.project} · {a.date_str}</div>
       </a>''' for a in acts) or '<div class="empty">No runs yet — <code>agentgrinder run</code> to log one.</div>'
@@ -137,6 +183,9 @@ def render_profile(p: dict) -> str:
     border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:12px}}
   .s{{background:var(--card);padding:14px}} .s .v{{font-size:22px;font-weight:720}}
   .s .k{{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}}
+  .s.hl .v{{color:var(--accent)}} .s.hl{{cursor:help}}
+  .cost{{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em;margin:0 2px 14px}}
+  .rm .hl{{color:var(--accent);font-weight:700;cursor:help}} .rm .cost{{color:var(--muted)}}
   .row2{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}}
   .panel{{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}}
   .panel h3{{margin:0 0 8px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}}
@@ -153,11 +202,12 @@ def render_profile(p: dict) -> str:
     <div><h1>{gh.get("name")}</h1><div class="bio">@{gh.get("login")}{" · " + gh.get("bio") if gh.get("bio") else ""}</div></div>
     <div class="brand">AGENTGRINDER</div></div>
   <div class="stats">
+    <div class="s hl" title="{escape(HEADLINE_TIP)} · {escape(t["vpt_formula"])}"><div class="v">{t["verified_per_turn"]}</div><div class="k">Verified per turn</div></div>
     <div class="s"><div class="v">{t["runs"]}</div><div class="k">Runs</div></div>
-    <div class="s"><div class="v">{t["prompts"]}</div><div class="k">Prompts</div></div>
     <div class="s"><div class="v">{t["session_commits"]}</div><div class="k">Run commits</div></div>
     <div class="s"><div class="v">{stat(gh.get("public_repos"))}</div><div class="k">Repos</div></div>
   </div>
+  <div class="cost">Cost — {t["prompts"]} prompts typed across {t["runs"]} runs</div>
   <div class="row2">
     <div class="panel"><h3>Setup</h3><div class="chip">{" · ".join(t["harnesses"])}</div></div>
     <div class="panel"><h3>Recently shipped ({stat(gh.get("recent_commits"))} commits)</h3><ul>{repos}</ul></div>

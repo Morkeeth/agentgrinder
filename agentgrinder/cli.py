@@ -22,7 +22,9 @@ def _render(run: dict, out: Path, open_it: bool) -> None:
     # terminal summary (Oscar reads the terminal too)
     print(f"\n  {a.athlete} · {a.title}")
     print(f"  {a.harness} · {a.project} · {a.date_str}")
-    print(f"  {a.distance:>14} | {a.moving_time:>9} | {a.pace}")
+    print(f"\n  VERIFIED PER TURN  {a.headline}    {a.headline_formula}")
+    print("  " + " · ".join(f"{c.label} {c.value}" + (" (cost)" if c.cost else "") for c in a.five))
+    print(f"\n  cost: {a.distance} | {a.moving_time} | {a.pace}")
     print(f"  effort {a.effort} · {a.segments} · {a.commits} commits · {a.prompts_per_hour}"
           + ("  ★ focus PB" if a.focus_pb else ""))
     print(f"\n  card -> {out}\n")
@@ -355,7 +357,9 @@ def main(argv=None) -> int:
         prof = build_profile(args.username, args.runs)
         out = Path(args.out); out.write_text(render_profile(prof), encoding="utf-8")
         g=prof["gh"]; t=prof["totals"]
-        print(f"\n  {g.get('name')} (@{g.get('login')}) — {t['runs']} runs, {t['prompts']} prompts, {g.get('public_repos')} repos")
+        print(f"\n  {g.get('name')} (@{g.get('login')}) — {t['runs']} runs, "
+              f"{t['verified_per_turn']} verified per turn, {t['prompts']} prompts (cost), "
+              f"{g.get('public_repos')} repos")
         print(f"  profile -> {out}\n")
         if not args.no_open:
             webbrowser.open(out.resolve().as_uri())   # module-level import (line 8); a LOCAL
@@ -576,6 +580,13 @@ def _grind(args) -> int:
     print(f"\n  {run['athlete']} · {run['project']} · {run['started'][:10]} {t0} -> {t1}"
           f"   (sitting {run['sitting']['index']} of {run['sitting']['of']})")
     print(f"  {h}\n")
+    # the same numbers the card prints, in the same order: headline, five, then COST
+    from .metrics import headline_of
+    hl = headline_of(run)
+    print(f"  {hl.text:>5} verified per turn   {hl.formula}")
+    for c in hl.five:
+        print(f"        {c.label:<20} {c.value:<14}{'cost' if c.cost else ''}")
+    print("\n  cost — what the grind spent")
     _pw = "prompt " if run['turns_typed'] == 1 else "prompts"
     print(f"  {run['turns_typed']:>5} {_pw} you typed   (promptSource typed|queued, of "
           f"{a['user_records_total']:,} type:user records)")
