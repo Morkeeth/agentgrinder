@@ -739,6 +739,14 @@ def _grind(args) -> int:
         print()
         print(coach_text)
     print(f"\n  card -> {out}")
+    if getattr(args, "coach", None) is not None and coach_text is None:
+        # --coach was asked for and did not happen. The card is written, because the counts on it
+        # are real, but the exit code says the verdict is not there and the run is not pushed.
+        # Same rule as the Cursor and Codex branches: a run the person asked to have coached,
+        # published uncoached, is a quiet degrade. The reason was printed above by
+        # _run_coach_into, and on a stock Mac it names the venv that fixes it.
+        print("  --coach did not run, so this grind has no verdict and was not pushed.\n")
+        return 1
     if args.push:
         from .push import import_url
         from .ingest import detect_rig
