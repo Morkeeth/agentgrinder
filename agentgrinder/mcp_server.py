@@ -34,7 +34,7 @@ TOOLS = [
     },
     {
         "name": "list_sessions",
-        "description": "List recent local agent sessions (Claude Code + Cursor). Local only.",
+        "description": "List recent local agent sessions (Claude Code, Cursor, Codex). Local only.",
         "inputSchema": {"type": "object", "properties": {}},
     },
     {
@@ -93,7 +93,7 @@ TOOLS = [
     },
     {
         "name": "a2a_flex",
-        "description": "Compare your real runs across agents on this machine (Claude vs Cursor). Local only.",
+        "description": "Compare your real runs across agents on this machine (Claude Code, Cursor, Codex). Local only.",
         "inputSchema": {"type": "object", "properties": {}},
     },
     {

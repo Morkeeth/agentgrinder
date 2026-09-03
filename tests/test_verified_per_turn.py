@@ -39,9 +39,16 @@ def test_activity_headline_and_five_row():
     typed, share, corr, prod, reach = a.five
     assert typed.value == "47" and typed.cost is True          # prompts are the cost
     assert share.value == "6/9 · 67%"
-    assert corr.value == "—" and "Transcripto" in corr.source   # the dash names its owner
-    assert prod.value == "4 ÷ —" and "ZUP" in prod.source
-    assert reach.value == "—" and "gh" in reach.source
+    # 3 Sep: a dash used to name a private project of the author's ("Transcripto", "ZUP",
+    # "Helicon"), which reads to a stranger as "this will never work for you". A dash now names
+    # THE MISSING FACT and says whether the reader can supply it today.
+    assert corr.value == "—" and corr.source.startswith("not measured yet")
+    assert "no harness records that" in corr.source
+    assert prod.value == "4 ÷ —" and "Promised is not measured yet" in prod.source
+    assert reach.value == "—" and "cross to a person who is not the author" in reach.source
+    for cell in a.five:
+        for private in ("Transcripto", "ZUP", "Helicon"):
+            assert private not in cell.source, cell.label
     # the Strava-shaped numbers survive, under cost
     assert a.distance == "47 prompts"
 
@@ -53,6 +60,16 @@ def test_activity_with_no_five_numbers_prints_dashes():
     assert [c.value for c in a.five] == ["12", "—", "—", "— ÷ —", "—"]
 
 
+def test_no_surface_points_a_stranger_at_a_project_only_the_author_can_run():
+    """The headline tooltip named a witness log by a private project's name on two surfaces the
+    terminal card does not use (the grind card and the profile), so the card test above missed
+    it. The rule is per SENTENCE, not per surface."""
+    from agentgrinder.metrics import HEADLINE_TIP, SOURCES
+    for text in [HEADLINE_TIP, *SOURCES.values()]:
+        for private in ("Transcripto", "ZUP", "Helicon"):
+            assert private not in text, text
+
+
 def test_card_headlines_verified_per_turn_not_prompts():
     run = json.load(open(os.path.join(os.path.dirname(__file__), "..", "samples", "sample_run.json")))
     html = render_card(build_activity(run))
@@ -62,8 +79,12 @@ def test_card_headlines_verified_per_turn_not_prompts():
     assert ">Distance<" not in html
     assert "Cost — what the run spent" in html
     assert "47 prompts" in html
-    # every dash carries a tooltip naming a source
-    assert 'title="Transcripto export-run' in html and "ZUP" in html and "Helicon witness" in html
+    # every dash carries a tooltip saying which fact is missing, and none of them names a
+    # project a stranger cannot install
+    assert "not measured yet: it needs every turn labelled as undoing the one before it" in html
+    assert "Promised is not measured yet" in html
+    for private in ("Transcripto", "ZUP", "Helicon"):
+        assert private not in html
 
 
 # ---- the claim rule (calibrated 3 Sep 2026, see tests/test_claim_rule.py) --------------
@@ -225,9 +246,15 @@ def test_web_app_never_headlines_prompts():
     prof = src[src.index("async function viewProfile("):src.index("async function refreshAuth(")]
     assert prof.index("verified per turn") < prof.index("prompts · cost")
     assert '<div class="k">prompts</div>' not in prof
-    # a missing part is a dash with the owner in the tooltip, never a 0
+    # a missing part is a dash that names the missing fact, never a 0 and never a private project
     assert "if(v==null||a==null||!p) return null;" in src
-    assert "not stored by the web app yet" in src
+    assert "not measured yet: it needs every turn labelled as undoing the one before it" in src
+    assert "Promised is not measured yet" in src
+    five = src[src.index("const VPT_TIP="):src.index("const pace=")]   # the headline tip too
+    for private in ("Transcripto", "ZUP", "Helicon"):
+        assert private not in five, private
+    # the reach cell prints the sentence THIS run's probe wrote, when it carried one
+    assert "r.reach_reason||VPT_SRC.reach" in five
 
 
 def test_profile_headlines_verified_per_turn_and_leaves_missing_runs_out():

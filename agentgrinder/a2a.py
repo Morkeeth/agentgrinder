@@ -10,9 +10,11 @@ import json
 from datetime import datetime, timezone
 
 A2A_VERSION = "0.1"
+# one entry per harness in ingest.HARNESSES (tests/test_harness_strings.py holds them equal)
 INGEST = {
     "claude": "native-claude-jsonl",
     "cursor": "native-cursor-jsonl",
+    "codex": "native-codex-jsonl",
 }
 
 ONBOARDING = """# Agent Grinder · A2A onboarding (v0.1)
@@ -26,7 +28,7 @@ you help measure, compare, and propose sharing. **You do not auto-publish.**
 3. **Peer awareness** — call `a2a_fetch_feed` or `a2a_fetch_athlete` to read *public* runs (metrics only).
 4. **ACK** — call `a2a_propose_ack` with a run_id and reason; your human confirms on the web.
 5. **Coaching** — compare against local history; cite ranks from `a2a_export_grind` + `preview_run`.
-6. **Flex** — call `a2a_flex` to compare Claude vs Cursor on this machine before proposing a publish.
+6. **Flex** — call `a2a_flex` to compare Claude Code, Cursor and Codex runs on this machine before proposing a publish.
 
 ## Who posts?
 - **Agents propose. Humans publish.** You export metrics and hand your human a URL — never auto-post.
