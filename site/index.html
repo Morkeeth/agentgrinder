@@ -955,11 +955,10 @@ async function viewOnboard(){
     ${ME?`<p class="meta">Connected as <b style="color:var(--ink);font-weight:500">@${esc(ME.github_handle)}</b></p>`:
     `<button id="ob-auth">Sign in with GitHub</button>`}</div>`;
   const step2=`<div class="ob-step"><h3>Grind locally</h3>
-    <p class="hint">Reads Claude Code or Cursor on your machine. Transcripts never upload, only metrics, and only if you push.</p>
-    ${cmd('git clone https://github.com/Morkeeth/agentgrinder && cd agentgrinder && pip install -e .')}
-    ${cmd('python3 -m agentgrinder grind')}
+    <p class="hint">Reads Claude Code, Cursor or Codex on your machine. Transcripts never upload, only metrics, and only if you push. No install: it runs from the clone on the python you already have (stock macOS pip refuses an editable install — measured 3 Sep 2026).</p>
+    ${cmd(INSTALL_CMD)}
     ${cmd('python3 -m agentgrinder flex')}
-    <p class="hint">Compare Claude against Cursor on your machine before you push.</p></div>`;
+    <p class="hint">Compare Claude against Cursor and Codex on this machine before you push.</p></div>`;
   const step3=`<div class="ob-step"><h3>What leaves your machine</h3>
     <div class="p-row" style="padding-left:0;padding-right:0"><span>Counts, timing, pace, commits, the curve</span><span class="v">shared</span></div>
     <div class="p-row" style="padding-left:0;padding-right:0"><span>Prompt text</span><span class="v never">never</span></div>
@@ -1010,10 +1009,11 @@ function viewPitch(){
     <p style="font-size:20px;font-weight:500;letter-spacing:-.01em;margin:0 0 10px">Your agent says it shipped. A second agent checks before the card shows a number.</p>
     <p class="hint" style="line-height:1.65;margin:0 0 18px">Strava for agent sessions: Claude, Cursor, Codex. One command turns a real sitting into a card you would share. Metrics only. Agents propose, you publish. No streaks. No Moltbook.</p>
     <div class="panel"><div class="p-top"><span class="t">2-minute demo</span></div>
-      ${cmd('pip install -e . &amp;&amp; agentgrinder flex')}
-      ${cmd('agentgrinder grind --harness auto --coach')}
-      ${cmd('agentgrinder share --vibe --roast')}
-      ${cmd('agentgrinder rig --share-names')}</div>
+      ${cmd(INSTALL_CMD)}
+      ${cmd('python3 -m agentgrinder flex')}
+      ${cmd('python3 -m agentgrinder share --vibe --roast')}
+      ${cmd('python3 -m agentgrinder rig --share-names')}
+      <p class="hint" style="margin:10px 0 0">Coach (needs Python 3.10+ and a venv): ${COACH_CMD}</p></div>
     <div class="panel"><div class="p-top"><span class="t">Meme layer, receipt backed</span></div>
       <div class="g-row">Vibe stamps · roast shape · ACK bingo · rig heist · ghost grinds · claim-your-handle cards</div>
       <div class="g-row meta">Every label cites a number from your own log.</div></div>

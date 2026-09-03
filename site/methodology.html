@@ -53,7 +53,12 @@ artefacts instead does not fix it (+0.56). The card's headline is a rate, and it
 talkativeness sits in both halves of a ratio and divides out.</p>
 <p><b>Still unmeasured, so you know.</b> Whether a claim was matched to the <i>right</i> evidence has
 no label set yet. The claim count now carries a measured error; the verified share carries that plus
-one we have not measured.</p>
+one we have not measured. A <i>synthetic</i> embarrassment set in
+<code>tests/test_evidence_match_eval.py</code> (hand-written cases, no real transcript lines)
+shows the hole plainly: the shipped matcher still treats a bare <code>N passed</code> as evidence
+for any claim in the same turn, and on that set a token-only baseline beats it on precision.
+That is not a held-out measurement. It is a red light that the real label set has not been drawn.
+Re-run the test to see tonight's scores; do not copy them forward.</p>
 
 <h2>What we will not fake</h2>
 <p>We never compare your metrics to a top engineer's <i>session</i> metrics, because those are private,

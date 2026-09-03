@@ -246,6 +246,8 @@ def parse_cursor_session(path: str, athlete: str = "you") -> dict:
     tool_calls = 0
     stamps = []
     first_prompt = None
+    written: set[str] = set()
+    tracker = ClaimTracker()
     ts_re = _re.compile(r"<timestamp>(.*?)</timestamp>")
     uq_re = _re.compile(r"<user_query>(.*?)</user_query>", _re.S)
     with open(path, encoding="utf-8") as fh:
@@ -261,6 +263,7 @@ def parse_cursor_session(path: str, athlete: str = "you") -> dict:
             msg = o.get("message") if isinstance(o.get("message"), dict) else {}
             text = _cursor_text(msg)
             if role == "user" and "<user_query>" in text:
+                tracker.typed_turn()
                 typed += 1
                 m = ts_re.search(text)
                 if m:
@@ -270,6 +273,19 @@ def parse_cursor_session(path: str, athlete: str = "you") -> dict:
                     first_prompt = (q.group(1).strip() if q else text.strip())
             elif role == "assistant":
                 tool_calls += _cursor_tool_blocks(msg)
+                if text:
+                    tracker.assistant_text(text)
+                # Cursor tool_use blocks carry path/file_path when the agent wrote a file.
+                # Until this was measured, the parser pretended the harness named no files at all.
+                for name, inp in _tool_uses(msg):
+                    if name in _EDIT_TOOLS:
+                        fp = inp.get("file_path") or inp.get("path")
+                        if isinstance(fp, str) and fp:
+                            written.add(fp)
+            elif role == "user" and text and "<user_query>" not in text:
+                # tool output / injected context — feed the claim tracker as evidence when present
+                tracker.tool_result(text)
+    tracker.close()
 
     if not typed:
         raise ValueError(f"no typed <user_query> turns in {path}")
@@ -292,13 +308,27 @@ def parse_cursor_session(path: str, athlete: str = "you") -> dict:
     for i in range(typed):
         rhythm[min(buckets - 1, i * buckets // typed)] += 1
 
+    # produced: paths the agent named in a Write/Edit that exist on disk NOW. Relative paths are
+    # resolved against cwd of the process (usually the clone), not the stranger's project — so a
+    # miss is common and must not invent a zero for "promised".
+    artifacts_produced = sum(1 for fp in written if os.path.exists(fp))
+    produced_reason = None
+    if not written:
+        artifacts_produced = None
+        produced_reason = ("not measured yet: this Cursor transcript named no Write/Edit paths, "
+                           "so produced cannot be counted")
+
     proj = project_label(os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(path)))))
     title = (first_prompt[:60] + "…") if first_prompt and len(first_prompt) > 60 else (first_prompt or f"{proj} session")
     return {
         "athlete": athlete, "title": title, "harness": "Cursor", "project": proj,
         "started": (min(pts).isoformat() if pts else None),
         "duration_s": dur, "turns_typed": typed, "tool_calls": tool_calls,
-        "files_touched": None, "commits": None, "rhythm": rhythm,
+        "files_touched": len(written) if written else None, "commits": None, "rhythm": rhythm,
+        "claims": tracker.claims, "claims_verified": tracker.verified,
+        "artifacts_produced": artifacts_produced, "artifacts_promised": None,
+        "corrections": None,
+        "produced_reason": produced_reason,
         # this harness cannot supply reach, and the dash says which fact is missing
         "reach": None, "reach_reason": reachmod.HARNESS_LIMIT["Cursor"],
     }
@@ -356,19 +386,64 @@ def _codex_count(path: str) -> tuple[int, int] | None:
 
 
 def parse_codex_session(path: str, athlete: str = "you") -> dict:
-    hit = _codex_count(path)
-    if not hit:
-        raise ValueError(f"no human user_message turns in {path}")
-    typed, tool_calls = hit
+    """Read a Codex rollout. Counts typed turns, tool calls, and the claim rule over assistant text.
+
+    Codex rollouts do not carry Edit/Write paths we can resolve, and they stamp no times, so
+    artifacts_produced and reach stay None with reasons. Claims are scored because the assistant
+    text is on the object.
+    """
+    typed = 0
+    tool_calls = 0
+    tracker = ClaimTracker()
     cwd = None
     try:
         with open(path, encoding="utf-8") as fh:
-            head = fh.readline()
-        o = json.loads(head)
-        if o.get("type") == "session_meta":
-            cwd = (o.get("payload") or {}).get("cwd")
-    except (OSError, ValueError, json.JSONDecodeError):
-        pass
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    o = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if o.get("type") == "session_meta":
+                    cwd = (o.get("payload") or {}).get("cwd") or cwd
+                    continue
+                if o.get("type") == "user_message" or (
+                        isinstance(o.get("content"), str) and o.get("type") == "user_message"):
+                    content = o.get("content") or ""
+                    if isinstance(content, str) and content and not any(
+                            m in content for m in _INJECT_MARKERS):
+                        tracker.typed_turn()
+                        typed += 1
+                    continue
+                # assistant rows: role=assistant with content blocks, or event shapes
+                role = o.get("role")
+                if role == "assistant" or o.get("type") in ("agent_message", "assistant"):
+                    content = o.get("content")
+                    texts = []
+                    if isinstance(content, str):
+                        texts.append(content)
+                    elif isinstance(content, list):
+                        for b in content:
+                            if not isinstance(b, dict):
+                                continue
+                            if b.get("type") == "text" and b.get("text"):
+                                texts.append(b["text"])
+                            if b.get("type") == "tool_use":
+                                tool_calls += 1
+                    if texts:
+                        tracker.assistant_text("\n".join(texts))
+    except OSError as e:
+        raise ValueError(f"cannot read {path}: {e}") from e
+
+    if not typed:
+        # fall back to the cheap counter so a shape we have not seen still reports turns
+        hit = _codex_count(path)
+        if not hit:
+            raise ValueError(f"no human user_message turns in {path}")
+        typed, tool_calls = hit
+    tracker.close()
 
     buckets = min(24, max(1, typed))
     rhythm = [0] * buckets
@@ -389,6 +464,13 @@ def parse_codex_session(path: str, athlete: str = "you") -> dict:
         "files_touched": None,
         "commits": None,
         "rhythm": rhythm,
+        "claims": tracker.claims,
+        "claims_verified": tracker.verified,
+        "artifacts_produced": None,
+        "artifacts_promised": None,
+        "corrections": None,
+        "produced_reason": ("not measured yet: Codex rollouts on this machine do not name "
+                            "Write/Edit paths that can be checked on disk"),
         "reach": None,
         "reach_reason": reachmod.HARNESS_LIMIT["Codex"],
     }

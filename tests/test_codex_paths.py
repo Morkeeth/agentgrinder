@@ -61,6 +61,9 @@ def test_a_fresh_codex_user_with_only_live_sessions_gets_a_parsed_run(tmp_path, 
     assert not (home / ".codex" / "archived_sessions").exists()
     run = ingest.parse_codex_session(latest_codex_session())
     assert run["harness"] == "Codex" and run["turns_typed"] == 1
+    assert run["claims"] is not None and run["claims_verified"] is not None
+    assert run["artifacts_produced"] is None
+    assert "Write/Edit" in (run.get("produced_reason") or "")
 
 
 def test_no_codex_at_all_is_an_empty_list_not_a_crash(tmp_path, monkeypatch):

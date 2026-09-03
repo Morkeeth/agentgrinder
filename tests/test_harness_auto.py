@@ -98,6 +98,41 @@ def test_every_harness_flag_that_takes_a_choice_knows_codex_exists():
             assert '"codex"' in line, line
 
 
+def test_a_cursor_session_with_write_and_a_claim_feeds_the_five_numbers(tmp_path, monkeypatch):
+    """Open the Cursor object: assistant text is scored; Write paths that exist count as produced."""
+    home = tmp_path
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setattr(os.path, "expanduser", lambda p: p.replace("~", str(home), 1))
+    d = home / ".cursor" / "projects" / "tmp-app" / "agent-transcripts" / "aaaa"
+    d.mkdir(parents=True)
+    note = "samples/fixture-project/notes.md"
+    assert os.path.exists(os.path.join(REPO, note))
+    rows = [
+        {"role": "user", "message": {"content":
+            "<timestamp>Thursday, Sep 04, 2026, 10:00 AM</timestamp>"
+            "<user_query>build it</user_query>"}},
+        {"role": "assistant", "message": {"content": [
+            {"type": "tool_use", "name": "Write", "input": {"path": note}},
+            {"type": "text", "text": f"Added {note} and the suite is green at 12 tests."},
+        ]}},
+    ]
+    (d / "t.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
+    from agentgrinder.ingest import parse_cursor_session, latest_cursor_session
+    old = os.getcwd()
+    try:
+        os.chdir(REPO)
+        run = parse_cursor_session(latest_cursor_session())
+    finally:
+        os.chdir(old)
+    assert run["harness"] == "Cursor"
+    assert run["turns_typed"] == 1
+    assert run["claims"] >= 1
+    assert run["artifacts_produced"] == 1
+    assert run["corrections"] is None and run["artifacts_promised"] is None
+    assert run["reach"] is None
+    assert "repository" in (run.get("reach_reason") or "")
+
+
 def test_asking_for_claude_explicitly_still_reads_claude(tmp_path):
     """The default changed; the explicit path must not have."""
     home = tmp_path / "home"

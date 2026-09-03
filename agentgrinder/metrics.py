@@ -155,7 +155,8 @@ def five_cells(run: dict) -> list[Cell]:
              (f"{verified}/{claims}" if verified is not None and claims is not None else "—"),
              SOURCES["verified_share"]),
         Cell("correction rate", f"{corr:.0%}" if corr is not None else "—", SOURCES["correction_rate"]),
-        Cell("produced ÷ promised", f"{_n(produced)} ÷ {_n(promised)}", SOURCES["produced_over_promised"]),
+        Cell("produced ÷ promised", f"{_n(produced)} ÷ {_n(promised)}",
+             run.get("produced_reason") or SOURCES["produced_over_promised"]),
         # the reach dash carries the sentence the probe wrote for THIS run ("no commit landed
         # inside this window…"), and falls back to the definition when a run predates the probe.
         Cell("reach", ("yes" if reach else "no") if reach is not None else "—",

@@ -594,10 +594,12 @@ def _grind(args) -> int:
         if not path:
             print("no Cursor session under ~/.cursor/projects/*/agent-transcripts"); return 1
         run = parse_cursor_session(path, athlete=args.athlete)
+        if args.as_json:
+            print(json.dumps(run, indent=2)); return 0
         out = Path(args.out)
         out.write_text(render_card(build_activity(run)), encoding="utf-8")
-        print(f"\n  Cursor transcripts carry no file paths and no commits, so the grind trace"
-              f"\n  cannot be drawn for them. The v1 card is rendered instead -> {out}\n")
+        print(f"\n  Cursor card -> {out}"
+              f"\n  (no grind-trace map: Cursor transcripts do not carry commit membership)\n")
         if getattr(args, "coach", None) is not None:
             # asked for explicitly and cannot be delivered: say which fields are missing, and do
             # not push. Publishing a run the person asked to have coached, uncoached, is the
@@ -629,9 +631,12 @@ def _grind(args) -> int:
                 print(f"      {g}")
             print("\n  try:  python3 -m agentgrinder demo\n"); return 1
         run = parse_codex_session(path, athlete=args.athlete)
+        if args.as_json:
+            print(json.dumps(run, indent=2)); return 0
         out = Path(args.out)
         out.write_text(render_card(build_activity(run)), encoding="utf-8")
-        print(f"\n  Codex rollouts carry no file-route trace yet — v1 card with real prompt/tool counts -> {out}\n")
+        print(f"\n  Codex card -> {out}"
+              f"\n  (no grind-trace map yet — counts and the claim rule only)\n")
         if getattr(args, "coach", None) is not None:
             print(coach_degraded_banner("Codex", run)); return 1
         if args.push:

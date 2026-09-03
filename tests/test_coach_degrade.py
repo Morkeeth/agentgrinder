@@ -5,13 +5,15 @@ The defect this file pins, measured 3 Sep 2026 in a 3.12 venv with the Strands S
 verdict, no warning, and exited 0. This was not a missing dependency; the coach had no inputs. The
 README's own claim is "it never degrades quietly", and this was the one place it did.
 
-A Cursor or Codex transcript carries no file paths, no commits and no claim lines, so three of the
-coach's five tools have nothing to read. The fix names those fields and exits non-zero. Nothing
-about either harness is fabricated to make the coach run.
+Cursor and Codex now score the claim rule over assistant text (4 Sep). They still cannot feed
+every coach input: commits are absent on both, Write/Edit paths are often absent, and without
+those the coach stays degraded. The banner names the fields the *parsed run* actually lacks —
+not a frozen list — and exits non-zero. Nothing about either harness is fabricated to make the
+coach run.
 """
 import os
-import subprocess
-import sys
+import tempfile
+from pathlib import Path
 
 from agentgrinder.cli import COACH_NEEDS, coach_degraded_banner
 
@@ -37,8 +39,8 @@ def test_cursor_plus_coach_exits_non_zero_and_says_which_fields_are_missing(tmp_
     proc = run_grind(cursor_home(tmp_path / "home"), tmp_path, "--coach")
     assert proc.returncode != 0, proc.stdout
     assert "DEGRADED" in proc.stdout
-    for field in ("files_touched", "commits", "claims", "claims_verified", "artifacts_produced"):
-        assert field in proc.stdout, field
+    # Minimal cursor fixture has no Write paths and no commits — those stay missing.
+    assert "commits" in proc.stdout
     assert (tmp_path / "card.html").exists()   # the card the run did produce is still written
 
 
@@ -69,12 +71,43 @@ def test_a_degraded_coach_request_does_not_push(tmp_path):
     assert "#import=" not in proc.stdout
 
 
-def test_no_cursor_or_codex_field_is_invented_to_feed_the_coach():
-    """The parsers still return None for what the transcript does not contain."""
+def test_no_cursor_or_codex_field_is_invented_when_the_transcript_lacks_it():
+    """Parsers return None for what that transcript does not contain — verified by running them."""
     from agentgrinder import ingest
-    src = open(os.path.join(REPO, "agentgrinder", "ingest.py"), encoding="utf-8").read()
-    for fn in ("parse_cursor_session", "parse_codex_session"):
-        body = src[src.index(f"def {fn}("):]
-        body = body[:body.index("\n\n\n")] if "\n\n\n" in body else body
-        assert '"files_touched": None' in body, fn
-        assert '"commits": None' in body, fn
+
+    home = Path(tempfile.mkdtemp())
+    d = home / ".cursor" / "projects" / "x" / "agent-transcripts" / "a"
+    d.mkdir(parents=True)
+    (d / "t.jsonl").write_text(
+        '{"role":"user","message":{"content":"<timestamp>Wednesday, Sep 03, 2026, 10:00 AM</timestamp>'
+        '<user_query>build the thing</user_query>"}}\n'
+        '{"role":"assistant","message":{"content":[{"type":"tool_use"},{"type":"text","text":"ok"}]}}\n',
+        encoding="utf-8")
+    c = home / ".codex" / "sessions" / "2026" / "09" / "03"
+    c.mkdir(parents=True)
+    (c / "rollout.jsonl").write_text(
+        '{"type":"session_meta","payload":{"cwd":"/tmp/proj"}}\n'
+        '{"type":"user_message","content":"do the thing"}\n'
+        '{"role":"assistant","content":[{"type":"tool_use"}]}\n',
+        encoding="utf-8")
+
+    old_home = os.environ.get("HOME")
+    os.environ["HOME"] = str(home)
+    old_exp = os.path.expanduser
+    os.path.expanduser = lambda p, _h=str(home): p.replace("~", _h, 1)
+    try:
+        cur = ingest.parse_cursor_session(ingest.latest_cursor_session())
+        cod = ingest.parse_codex_session(ingest.latest_codex_session())
+    finally:
+        if old_home is None:
+            os.environ.pop("HOME", None)
+        else:
+            os.environ["HOME"] = old_home
+        os.path.expanduser = old_exp
+
+    assert cur["commits"] is None and cur["artifacts_promised"] is None and cur["corrections"] is None
+    assert cur["artifacts_produced"] is None   # no Write path in this fixture
+    assert cur["files_touched"] is None
+    assert cod["commits"] is None and cod["files_touched"] is None
+    assert cod["artifacts_produced"] is None and "Write/Edit" in (cod.get("produced_reason") or "")
+    assert isinstance(cur["claims"], int) and isinstance(cod["claims"], int)
