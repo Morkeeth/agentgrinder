@@ -21,4 +21,8 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["agentgrinder"]
+# every subpackage, named. `packages = ["agentgrinder"]` alone shipped a wheel with no
+# agentgrinder.coach and no agentgrinder.engine in it: `pip install .` then answered `agentgrinder
+# coach` with "the coach needs the Strands SDK" while the SDK was installed. Caught by a stranger
+# pass on a fresh clone, 3 Sep 2026.
+packages = ["agentgrinder", "agentgrinder.coach", "agentgrinder.engine"]

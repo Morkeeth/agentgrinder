@@ -18,8 +18,12 @@ python3 -m agentgrinder grind        # your most recent session -> grind.html
 No install, no dependencies, no key, no server. If you would rather have it on your `$PATH`:
 
 ```bash
-pip install .          # then `agentgrinder grind` works from any directory
+pip install -e .       # then `agentgrinder grind` works from any directory
 ```
+
+Editable on purpose. `demo` renders the transcript in `samples/`, which lives in the clone and not
+in the wheel, so a non-editable `pip install .` gives you a working `grind` from anywhere and a
+`demo` that cannot find its sample. Measured on a fresh clone, 3 Sep 2026.
 
 **Python 3.9 or newer**, which is what macOS already ships — checked by running every command
 under `/usr/bin/python3` (3.9.6) and under 3.12.5, 31 Aug. The manifest said 3.10 until that was
