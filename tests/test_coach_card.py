@@ -1,0 +1,72 @@
+"""The verdict block on the solo card, the export, and the hosted card's paths. Null-safe both ways."""
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from agentgrinder.push import export_run
+from agentgrinder.solo import parse_solo
+from agentgrinder.solocard import _verdict_block, render_solo_card
+from tests.test_coach_tools import _sitting
+
+REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def test_card_without_coach_or_series_draws_no_verdict_block(tmp_path):
+    run = parse_solo(_sitting(tmp_path)[0], athlete="t")
+    html = render_solo_card(run)
+    assert 'class="verdict"' not in html
+    assert _verdict_block({}) == ""
+
+
+def test_card_with_coach_and_series_draws_both(tmp_path):
+    run = parse_solo(_sitting(tmp_path)[0], athlete="t")
+    run.update(coach_verdict="1 of 2 claims had evidence in their own turn.", coach_plan="Name the test\nCommit out.md",
+               coach_tool_calls=6, coach_mode="strands agent loop · local scripted model (no network, no spend)",
+               progress=dict(verdict="helped", delta=0.5, prediction="ships 2 files"),
+               progress_line="helped vs your last grind on p: verified per turn up +0.50 (0.50 -> 1.00), previous x, 2 grinds on this project.")
+    html = render_solo_card(run)
+    assert "verdict produced by <b>6</b> tool calls" in html
+    assert "1 of 2 claims had evidence" in html
+    assert "<li>Name the test</li><li>Commit out.md</li>" in html
+    assert "<b>helped</b>" in html and "you predicted: ships 2 files" in html
+    # the block sits between the five row and the cost group, so the verdict reads before the cost
+    assert html.index('class="fiverow"') < html.index('class="verdict"') < html.index("Cost — what the grind spent")
+
+
+def test_series_alone_draws_the_progress_line(tmp_path):
+    run = parse_solo(_sitting(tmp_path)[0], athlete="t")
+    run.update(progress=dict(verdict="baseline", delta=None, prediction=None),
+               progress_line="baseline on p: this is the first grind recorded on it. Two measured grinds give a verdict.")
+    html = render_solo_card(run)
+    assert "<b>baseline</b>" in html and "The coach" not in html
+
+
+def test_export_run_carries_the_coach_and_progress_fields_and_drops_nulls():
+    run = dict(project="p", turns_typed=3, claims=2, claims_verified=1, artifacts_produced=1,
+               coach_verdict="v", coach_plan="a\nb", coach_tool_calls=8,
+               progress=dict(verdict="helped", delta=0.5))
+    out = export_run(run)
+    assert out["coach_verdict"] == "v" and out["coach_plan"] == "a\nb" and out["coach_tool_calls"] == 8
+    assert out["progress_verdict"] == "helped" and out["progress_delta"] == 0.5
+    bare = export_run(dict(project="p", turns_typed=3))
+    assert "coach_verdict" not in bare and "progress_verdict" not in bare
+
+
+def test_site_reads_writes_and_renders_the_coach_fields_null_safe():
+    html = open(os.path.join(REPO, "site", "index.html"), encoding="utf-8").read()
+    for col in ("claims", "claims_verified", "artifacts_produced", "coach_verdict", "coach_plan",
+                "coach_tool_calls", "progress_verdict"):
+        assert f"{col}:run.{col}??null" in html, col          # the insert carries it
+    assert "function coachBlock(r)" in html and "${coachBlock(r)}" in html
+    assert "if(!v&&!pv) return '';" in html                    # null-safe: no verdict, no block
+    assert "column|schema cache" in html                       # unmigrated database: retry without
+
+
+def test_migration_is_additive_and_nullable():
+    sql = open(os.path.join(REPO, "supabase", "migrations", "2026-09-03-coach.sql"), encoding="utf-8").read().lower()
+    for col in ("claims", "claims_verified", "artifacts_produced", "coach_verdict", "coach_plan",
+                "coach_tool_calls", "progress_verdict"):
+        assert f"add column if not exists {col}" in sql, col
+    for bad in ("drop ", "not null", "delete ", "truncate", "rename"):
+        assert bad not in sql.replace("nothing here drops, renames", ""), bad

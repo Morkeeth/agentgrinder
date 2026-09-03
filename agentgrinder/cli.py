@@ -66,6 +66,8 @@ def main(argv=None) -> int:
                    help="with --push, include MCP server names in your shared rig (opt-in)")
     g.add_argument("--push-url", default=None,
                    help="web app base URL for --push (default: AGENTGRINDER_URL or agentgrinder.vercel.app)")
+    g.add_argument("--no-series", action="store_true",
+                   help="do not record this grind in the local per-project series (~/.agentgrinder/series.db)")
     g.add_argument("--coach", nargs="?", const="local", choices=["local", "bedrock", "none"], default=None,
                    help="run the grind coach on this sitting before drawing the card. Default mode "
                         "local: a real Strands agent loop over a scripted model, keyless, nothing "
@@ -81,6 +83,9 @@ def main(argv=None) -> int:
     co.add_argument("--athlete", default="you")
     co.add_argument("--json", dest="as_json", action="store_true",
                     help="print the run with the verdict attached, as JSON (counts only, no prompt text)")
+    pd = sub.add_parser("predict", help="write down what your next grind on a project will do, before it happens")
+    pd.add_argument("text", help="the prediction, in your words, e.g. 'ships 2 files, every claim verified'")
+    pd.add_argument("--project", default=None, help="project name (default: the git repository of the current directory)")
     fl = sub.add_parser("flex", help="compare your real runs across agents on this machine")
     fl.add_argument("--json", dest="as_json", action="store_true")
     sh = sub.add_parser("share", help="fun share card — claim-your-handle vibe, screenshot-ready")
@@ -332,6 +337,20 @@ def main(argv=None) -> int:
         return _grind(args)
     if args.cmd == "coach":
         return _coach(args)
+    if args.cmd == "predict":
+        from . import gitwork
+        from .engine import log as series_log
+        import os as _os
+        project = args.project
+        if not project:
+            repo = gitwork.repo_of(_os.getcwd())
+            project = repo[0] if repo else _os.path.basename(_os.getcwd())
+        conn = series_log.connect()
+        row = series_log.predict(conn, project, args.text)
+        conn.close()
+        print(f"\n  predicted for {project}: {row['text']}"
+              f"\n  the next grind on {project} shows it beside its verdict\n")
+        return 0
     if args.cmd == "history":
         from .history import load, MEASURES
         h = load()
@@ -582,6 +601,11 @@ def _grind(args) -> int:
     coach_text = None
     if getattr(args, "coach", None):
         coach_text = _run_coach_into(run, path, pick, args.gap * 60, args.coach, args.athlete)
+    # the series: this grind recorded locally against your previous grind on the same project
+    # (~/.agentgrinder/series.db, counts only). Baseline under two; helped/hurt after.
+    if not getattr(args, "no_series", False):
+        from .engine.series import record_and_attach
+        record_and_attach(run)
     if args.as_json:
         print(json.dumps(run, indent=2)); return 0
 
@@ -619,6 +643,10 @@ def _grind(args) -> int:
         from .history import best_rank
         br = best_rank(ranks)
         print(f"\n  #{br[0]} of {br[1]:,} grinds on this machine by {br[2]}")
+    if run.get("progress_line"):
+        print(f"\n  {run['progress_line']}")
+        if (run.get("progress") or {}).get("prediction"):
+            print(f"  you predicted: {run['progress']['prediction']}")
     if coach_text:
         print()
         print(coach_text)

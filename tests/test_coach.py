@@ -191,12 +191,14 @@ def test_cli_coach_on_the_bundled_fixture_is_keyless_and_exits_zero():
     assert "DEGRADED" not in proc.stdout
 
 
-def test_cli_grind_coach_json_carries_the_verdict_fields():
+def test_cli_grind_coach_json_carries_the_verdict_fields(tmp_path):
+    env = dict(os.environ, AGENTGRINDER_SERIES=str(tmp_path / "series.db"))   # never the real series
     proc = subprocess.run([sys.executable, "-m", "agentgrinder", "grind", "samples/sample_session.jsonl",
-                           "--coach", "--json"], cwd=REPO, capture_output=True, text=True)
+                           "--coach", "--json"], cwd=REPO, capture_output=True, text=True, env=env)
     assert proc.returncode == 0, proc.stderr
     run = json.loads(proc.stdout)
     assert run["coach_tool_calls"] == 8
     assert run["coach_numbers"] == dict(turns_typed=3, claims=2, claims_verified=1, artifacts_produced=1, commits=0)
     assert run["coach_verdict"] and run["coach_plan"]
     assert "strands agent loop" in run["coach_mode"]
+    assert run["progress"]["verdict"] == "baseline" and "baseline on agentgrinder" in run["progress_line"]

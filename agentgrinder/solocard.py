@@ -132,6 +132,37 @@ def headline(run: dict) -> tuple[str, str]:
             f'<b>{typed}</b> typed prompt{"" if typed == 1 else "s"} in <b>{wall_m}</b> minutes.')
 
 
+def _verdict_block(run: dict) -> str:
+    """The coach's verdict and the series line. Null-safe: a run with neither draws nothing,
+    a run with one draws that one. Every sentence here was written from tool results or from
+    the local series, never from the transcript's prose."""
+    v = run.get("coach_verdict")
+    plan = run.get("coach_plan")
+    n = run.get("coach_tool_calls")
+    prog = run.get("progress") or {}
+    line = run.get("progress_line") or ""
+    if not v and not line:
+        return ""
+    parts = ['<div class="verdict">']
+    if v:
+        by = (f"verdict produced by <b>{n}</b> tool call{'' if n == 1 else 's'}" if n
+              else "verdict")
+        mode = (run.get("coach_mode") or "").split(" (")[0]
+        parts.append(f'<div class="who">The coach: {by}' + (f' · {_esc(mode)}' if mode else '') + '</div>')
+        parts.append(f'<div>{_esc(v)}</div>')
+        if plan:
+            items = "".join(f"<li>{_esc(p)}</li>" for p in str(plan).splitlines() if p.strip())
+            parts.append(f'<ul>{items}</ul>')
+    if line:
+        pred = prog.get("prediction")
+        # the line already leads with its verdict word; bold that word instead of repeating it
+        head, _, rest = line.partition(" ")
+        parts.append(f'<div class="prog"><b>{_esc(head)}</b> {_esc(rest)}'
+                     + (f'<div class="pred">you predicted: {_esc(pred)}</div>' if pred else '') + '</div>')
+    parts.append('</div>')
+    return "".join(parts)
+
+
 def render_solo_card(run: dict, title: str | None = None, ranks: dict | None = None) -> str:
     svg, m = render_route_svg(run)
     # The SAME numbers in a layout a 390px screen can hold: see soloroute.Geo for the measurement
@@ -302,6 +333,13 @@ def render_solo_card(run: dict, title: str | None = None, ranks: dict | None = N
   .costtag{{font-style:normal;display:inline-block;margin-left:4px;padding:0 4px;border-radius:4px;
     background:var(--line);color:var(--muted);font-size:9px;letter-spacing:.04em}}
   .grp{{padding:12px 22px 0;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.14em}}
+  .verdict{{padding:10px 22px 4px;font-size:13.5px;line-height:1.55}}
+  .verdict .who{{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.14em;margin-bottom:4px}}
+  .verdict .who b{{color:var(--ink);font-family:"Space Mono",ui-monospace,Menlo,monospace;text-transform:none;letter-spacing:0}}
+  .verdict ul{{margin:6px 0 0;padding-left:18px}} .verdict li{{margin:2px 0}}
+  .verdict .prog{{margin:8px 0 0;padding:8px 10px;border-left:3px solid var(--accent);background:var(--card);
+    color:var(--muted);font-size:12.5px}} .verdict .prog b{{color:var(--ink)}}
+  .verdict .pred{{color:var(--faint);font-style:italic}}
   .stats{{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
     border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-top:8px}}
   .stat{{background:var(--card);padding:14px 18px}}
@@ -425,6 +463,7 @@ def render_solo_card(run: dict, title: str | None = None, ranks: dict | None = N
       <div class="lbl">verified per turn<span class="f">{_esc(hl.formula)}</span></div>
     </div>
     <div class="fiverow">{five}</div>
+    {_verdict_block(run)}
 
     <div class="grp">Cost — what the grind spent</div>
     <div class="stats">

@@ -147,7 +147,15 @@ Three modes, and the mode is always printed:
   the report prints the reason and ends with `status DEGRADED`; it never degrades quietly.
 
 The card shows the verdict with "verdict produced by N tool calls", and N is the hook's count,
-not the plan's. Tested in `tests/test_coach.py`: the keyless path never constructs a Bedrock
+not the plan's.
+
+**The series.** Every `grind` also records its five numbers as one reading in a local per-project
+series (`~/.agentgrinder/series.db`, counts only, `--no-series` to skip). The card then says how
+this grind compares with your previous grind on the same project by verified per turn: `baseline`
+under two measured readings (a first reading is not a trend), then `helped`, `hurt` or
+`unchanged`. `agentgrinder predict "ships 2 files"` writes down what you expect before you sit
+down; the next grind on that project prints the prediction beside its verdict. The rule is in
+`agentgrinder/engine/reporter.py`. Tested in `tests/test_coach.py`: the keyless path never constructs a Bedrock
 model and opens no internet socket; a policy that writes a wrong number is refused.
 
 ## The lexicon
@@ -170,6 +178,7 @@ Retired, and not used here: Loop, Push, Builder's Diary, LOOPMAXXER, run/route/l
 | | |
 |---|---|
 | `coach` · `grind --coach` | the grind coach: a Strands agent checks every claim and file, then writes the verdict (keyless by default) |
+| `predict` | write down what your next grind on a project will do; the next card shows it beside the verdict |
 | `grind` | one sitting → the grind card (`run` is kept as an alias; `--harness auto` picks freshest agent) |
 | `flex` | compare your real runs across Claude, Cursor, and Codex on this machine |
 | `share` | screenshot-ready share card with claim-your-handle stub (`--vibe` `--roast`) |

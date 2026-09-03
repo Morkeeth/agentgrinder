@@ -420,6 +420,20 @@ function routeMap(route){ if(!route||!route.length) return '';
   let dots=route.map((r,i)=>`<circle cx="${x(i).toFixed(1)}" cy="${y(r).toFixed(1)}" r="3" fill="${cols[r%cols.length]}" class="rdot" style="animation-delay:${(i*0.04).toFixed(2)}s"/>`).join('');
   return `<div style="padding:2px 0 0"><svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="display:block;width:100%;height:118px;background:linear-gradient(180deg,#fff,#fafcfb)">${bands}<polyline class="rline" points="${pts}" fill="none" stroke="var(--ink)" stroke-opacity="0.5" stroke-width="2" stroke-linejoin="round"/>${dots}</svg><div style="display:flex;gap:12px;padding:6px 17px 0;flex-wrap:wrap;font-size:11.5px;color:var(--muted)">${route.reduce((a,r)=>a.includes(r)?a:a.concat(r),[]).sort((a,b)=>a-b).map(r=>`<span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${cols[r%cols.length]};margin-right:4px"></span>region ${r+1}</span>`).join('')}</div></div>`; }
 
+// THE COACH'S VERDICT on the hosted card. Null-safe: a run posted before the coach columns
+// existed (or without --coach) has no verdict and draws nothing here; the five row above already
+// shows a dash for each number the database does not hold.
+function coachBlock(r){
+  if(!r) return '';
+  const v=r.coach_verdict, plan=r.coach_plan, n=r.coach_tool_calls, pv=r.progress_verdict;
+  if(!v&&!pv) return '';
+  const who=v?`<div class="grp">the coach · ${n?`verdict produced by <b>${esc(String(n))}</b> tool call${n==1?'':'s'}`:'verdict'}</div>`:'';
+  const para=v?`<div style="padding:8px 17px 0;font-size:13.5px;line-height:1.55">${esc(String(v))}</div>`:'';
+  const items=plan?String(plan).split('\n').filter(x=>x.trim()).map(x=>`<li>${esc(x)}</li>`).join(''):'';
+  const ul=items?`<ul style="margin:6px 17px 0;padding-left:18px;font-size:13px;line-height:1.5">${items}</ul>`:'';
+  const prog=pv?`<div style="margin:8px 17px 0;padding:6px 10px;border-left:3px solid var(--accent);font-size:12.5px;color:var(--muted)"><b style="color:var(--ink)">${esc(String(pv))}</b> vs your last grind on this project</div>`:'';
+  return who+para+ul+prog; }
+
 function runCard(r,acked,count,opts={}){ const att=runAttribution(r),h=att.handle,p={name:att.name};
   const selfAck=ME&&ME.id===r.profile_id;
   const ackBtn=selfAck?'':`<button class="kudo ${acked?'on':''}" data-run="${r.id}" data-to="${r.profile_id}">${acked?'ACKed':'ACK'} <span class="n num">${count||''}</span></button>`;
@@ -437,6 +451,7 @@ function runCard(r,acked,count,opts={}){ const att=runAttribution(r),h=att.handl
     ${r.note?`<div style="padding:0 17px 12px;font-size:14px">${esc(r.note)}</div>`:''}
     ${vptHtml(r)}
     ${fiveRow(r)}
+    ${coachBlock(r)}
     <div class="grp">cost — what the grind spent</div>
     <div class="stats num">
       <div class="stat"><div class="v">${r.prompts??'-'}</div><div class="k">prompts · cost</div></div>
@@ -872,11 +887,14 @@ function importRun(){
     ['minutes',run.duration_s?Math.round(run.duration_s/60):null],['tool calls',run.tool_calls],
     ['files',run.files_touched],['commits',run.commits],
     ['verified claims',run.claims_verified!=null&&run.claims!=null?`${run.claims_verified}/${run.claims}`:null],
-    ['artifacts produced',run.artifacts_produced]].filter(r=>r[1]!=null&&r[1]!=='');
-  // NOT SAVED YET: the runs table has no column for verified claims / artifacts produced
-  // (checked 3 Sep: prompts, tool_calls, files_touched, commits, rhythm, route). Until a
-  // migration adds them, a published run shows an em-dash headline with the source tooltip.
-  const unsaved=(run.claims_verified!=null||run.artifacts_produced!=null)?`<p class="hint" style="margin:-6px 0 12px">verified claims / artifacts produced are shown here but <b>not stored yet</b> — the web app has no column for them, so the published card's headline reads — until it does.</p>`:'';
+    ['artifacts produced',run.artifacts_produced],
+    ['coach verdict',run.coach_verdict?String(run.coach_verdict).slice(0,160):null],
+    ['coach tool calls',run.coach_tool_calls],
+    ['vs your last grind',run.progress_verdict]].filter(r=>r[1]!=null&&r[1]!=='');
+  // The five-number parts and the coach verdict are saved when the runs table has their columns
+  // (supabase/migrations/2026-09-03-coach.sql). On a database without them the insert is retried
+  // without those fields and the card says so; nothing is invented and nothing fails silently.
+  const unsaved='';
   app.innerHTML=`<div class="panel"><h3>Publish this run?</h3>
     <p class="hint" style="margin:-4px 0 12px">Exactly these numbers will be saved. No prompt text, no code, you can see everything below.</p>
     <div style="border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:14px">
@@ -891,10 +909,18 @@ function importRun(){
     <button id="i_pub">${ME?'Publish':'Sign in to publish'}</button></div></div>`;
   $('i_pub').addEventListener('click',async()=>{
     if(!ME){ sb.auth.signInWithOAuth({provider:'github',options:{redirectTo:location.href}}); return; }
-    const {error}=await sb.from('runs').insert({profile_id:ME.id,title:$('i_title').value||'Untitled run',
+    const base={profile_id:ME.id,title:$('i_title').value||'Untitled run',
       project:run.project||null,harness:run.harness||null,prompts:run.turns_typed||null,duration_s:run.duration_s||null,
       commits:run.commits||null,tool_calls:run.tool_calls||null,files_touched:run.files_touched||null,
-      rhythm:run.rhythm||null,note:$('i_note').value||null,visibility:$('i_vis').value,started_at:run.started||new Date().toISOString()});
+      rhythm:run.rhythm||null,note:$('i_note').value||null,visibility:$('i_vis').value,started_at:run.started||new Date().toISOString()};
+    // the coach columns (nullable; migration 2026-09-03-coach.sql). Retry without them on a
+    // database that does not have them yet, and say so.
+    const coach={claims:run.claims??null,claims_verified:run.claims_verified??null,artifacts_produced:run.artifacts_produced??null,
+      coach_verdict:run.coach_verdict??null,coach_plan:run.coach_plan??null,coach_tool_calls:run.coach_tool_calls??null,
+      progress_verdict:run.progress_verdict??null};
+    let {error}=await sb.from('runs').insert({...base,...coach});
+    let partial=false;
+    if(error&&/column|schema cache/i.test(error.message||'')){ ({error}=await sb.from('runs').insert(base)); partial=!error; }
     if(!error){
       const rig={...(ME.rig||{})};
       if(run.rig_mcps!=null) rig.mcps=run.rig_mcps;
@@ -904,7 +930,7 @@ function importRun(){
       await sb.from('profiles').update({rig}).eq('id',ME.id);
     }
     if(error){status(error.message,true);return;}
-    history.replaceState(null,'','/'); status('Published to your grind.');
+    history.replaceState(null,'','/'); status(partial?'Published. The database has no coach columns yet, so verified claims and the verdict were shown but not stored.':'Published to your grind.');
     localStorage.setItem('ag_onboard_done','1'); viewMe();
   });
   return true;

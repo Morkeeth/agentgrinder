@@ -26,6 +26,14 @@ def export_run(run: dict) -> dict:
         "claims": run.get("claims"),
         "claims_verified": run.get("claims_verified"),
         "artifacts_produced": run.get("artifacts_produced"),
+        # the coach's verdict (agentgrinder/coach): a paragraph, a plan, and the hook's call count.
+        # Counts and sentences the coach wrote from tool results; no prompt text, no paths.
+        "coach_verdict": run.get("coach_verdict"),
+        "coach_plan": run.get("coach_plan"),
+        "coach_tool_calls": run.get("coach_tool_calls"),
+        # this grind vs your previous grind on the same project (agentgrinder/engine)
+        "progress_verdict": (run.get("progress") or {}).get("verdict"),
+        "progress_delta": (run.get("progress") or {}).get("delta"),
         "started": run.get("started"),
         "rhythm": rhythm,
         "route": run.get("route"),
