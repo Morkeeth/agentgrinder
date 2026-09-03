@@ -6,9 +6,12 @@ A 'run' JSON (see samples/) carries only counts read from a real session:
   rhythm  -> typed turns per time bucket (the 'route')
 and, optionally, the five numbers of a run (fleet-ops/METRICS-AGENTIC-ENGINEERING-2026-09-02.md):
   claims, claims_verified        -> verified-claims share (v0 rule in ingest.py; Helicon witness later)
-  corrections                    -> correction rate (Transcripto; not computed here yet)
-  artifacts_produced, artifacts_promised -> produced ÷ promised (promised needs ZUP)
-  reach                          -> 0/1: did the output cross to a person who is not the author
+  corrections                    -> correction rate (not measured yet: nothing labels a turn as
+                                    undoing the one before it)
+  artifacts_produced, artifacts_promised -> produced ÷ promised (produced is measured; promised is
+                                    not measured yet: nothing records what a run promised)
+  reach                          -> true/false/None: did the output cross to a person who is not
+                                    the author (reach.py, from git)
 
 THE HEADLINE is verified-per-turn = (claims_verified + artifacts_produced) ÷ turns_typed.
 Typed turns are a COST (the denominator), never the achievement. A card that headlines
@@ -16,8 +19,9 @@ Typed turns are a COST (the denominator), never the achievement. A card that hea
 they were 20% faster and measured 19% slower). Distance = verified output; prompts = cost.
 
 We never invent a number. If a field is missing, the derived stat is None and the card
-shows a dash, not a guess (Constitution rule 3). A dash carries a tooltip naming the
-tool that owns that number (SOURCES below).
+shows a dash, not a guess (Constitution rule 3). A dash carries a tooltip that says, in plain
+words, WHICH FACT is missing and whether the person reading it can supply that fact today
+(SOURCES below). It never names a tool a stranger cannot install.
 """
 from __future__ import annotations
 
@@ -40,14 +44,23 @@ def _fmt_pace(sec_per: float | None) -> str:
     return f"{m}:{s:02d} /prompt"
 
 
-# Who owns each of the five numbers when this repo cannot compute it alone. The tooltip on a
-# dash names the source, so a "—" is a pointer, never a shrug.
+# What each of the five numbers is, in words a stranger can act on. A cell that cannot be
+# computed says NOT MEASURED YET and names the fact that is missing, plus whether the person
+# reading it can supply that fact today. It never names a tool they cannot install.
 SOURCES = {
-    "typed_turns": "Transcripto export-run (authorship.py, vendored: typed OR queued, drops isMeta/isSidechain/tool_result)",
-    "verified_share": "Helicon witness (claim-witness log); local v0 = claims.py rule, which OVER-COUNTS (a ceiling)",
-    "correction_rate": "Transcripto export-run (coach classifier, inverse class — not built yet)",
-    "produced_over_promised": "produced = Edit/Write paths that exist at close (local v0); promised = ZUP artifact-detect",
-    "reach": "git remotes + gh + the launch log — did the output cross to a person who is not the author",
+    "typed_turns": "the turns you typed or queued, read from the transcript (authorship.py): "
+                   "tool results and injected context are not turns",
+    "verified_share": "claims that had matching evidence inside their own turn (the v0 rule in "
+                      "claims.py). It over-counts, so read it as a ceiling, not a score",
+    "correction_rate": "not measured yet: it needs every turn labelled as undoing the one before "
+                       "it, and no harness records that, so nothing on your machine can supply it "
+                       "today",
+    "produced_over_promised": "produced is measured here: files this run wrote that exist on disk. "
+                              "Promised is not measured yet: nothing records what a run said it "
+                              "would deliver, so you cannot supply it today",
+    "reach": "did the output cross to a person who is not the author: read from the commits in "
+             "this window, your remotes and their push refs (reach.py). A dash whenever the "
+             "machine cannot tell, and it says which fact was missing",
 }
 
 
@@ -139,7 +152,10 @@ def five_cells(run: dict) -> list[Cell]:
              SOURCES["verified_share"]),
         Cell("correction rate", f"{corr:.0%}" if corr is not None else "—", SOURCES["correction_rate"]),
         Cell("produced ÷ promised", f"{_n(produced)} ÷ {_n(promised)}", SOURCES["produced_over_promised"]),
-        Cell("reach", ("yes" if reach else "no") if reach is not None else "—", SOURCES["reach"]),
+        # the reach dash carries the sentence the probe wrote for THIS run ("no commit landed
+        # inside this window…"), and falls back to the definition when a run predates the probe.
+        Cell("reach", ("yes" if reach else "no") if reach is not None else "—",
+             run.get("reach_reason") or SOURCES["reach"]),
     ]
 
 
