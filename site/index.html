@@ -535,10 +535,10 @@ const fmtDur=m=>!m?'-':(m>=60?`${Math.floor(m/60)}h ${m%60}m`:`${m}m`);
 // prints an em-dash whose tooltip names who owns it; a missing part is never defaulted to 0.
 const VPT_TIP='verified per turn = (verified claims + artifacts produced) ÷ typed turns · local v0 rule over-counts, read it as a ceiling until Helicon witness replaces it';
 const VPT_SRC={
-  claims_verified:'Helicon witness (claim-witness log); local v0 = agentgrinder claims.py — not stored by the web app yet',
-  artifacts_produced:'Edit/Write paths that exist at close (agentgrinder v0); promised = ZUP artifact-detect — not stored by the web app yet',
-  corrections:'Transcripto export-run (coach classifier) — not built yet',
-  reach:'git remotes + gh + the launch log — did the output cross to a person who is not the author'};
+  claims_verified:'claims that had matching evidence inside their own turn (the v0 rule in agentgrinder claims.py). It over-counts, so read it as a ceiling, not a score',
+  artifacts_produced:'produced is measured: files the run wrote that exist on disk. Promised is not measured yet: nothing records what a run said it would deliver, so you cannot supply it today',
+  corrections:'not measured yet: it needs every turn labelled as undoing the one before it, and no harness records that, so nothing on your machine can supply it today',
+  reach:'did the output cross to a person who is not the author: read from the commits in the window, your remotes and their push refs. A dash whenever the machine cannot tell'};
 function vpt(r){
   const v=r.claims_verified, a=r.artifacts_produced, p=r.prompts;
   if(v==null||a==null||!p) return null;
@@ -560,7 +560,7 @@ function fiveRow(r){
   const prod=`${r.artifacts_produced??'—'} ÷ ${r.artifacts_promised??'—'}`;
   const reach=r.reach==null?'—':(r.reach?'yes':'no');
   const cell=(v,k,src,cost)=>`<div class="five${cost?' cost':''}"${v.startsWith('—')||v.includes(' —')?' data-missing="1"':''} title="${esc(src)}"><div class="k">${k}${cost?' <i class="costtag">· cost</i>':''}</div><div class="v num"${cnt(v)}>${esc(v)}</div></div>`;
-  return `<div class="fiverow">${cell(String(r.prompts??'—'),'typed turns','promptSource typed|queued (Transcripto rule, vendored)',true)}${cell(share,'verified claims',VPT_SRC.claims_verified)}${cell(corr,'correction rate',VPT_SRC.corrections)}${cell(prod,'produced ÷ promised',VPT_SRC.artifacts_produced)}${cell(reach,'reach',VPT_SRC.reach)}</div>`;
+  return `<div class="fiverow">${cell(String(r.prompts??'—'),'typed turns','the turns you typed or queued, read from the transcript: tool results and injected context are not turns',true)}${cell(share,'verified claims',VPT_SRC.claims_verified)}${cell(corr,'correction rate',VPT_SRC.corrections)}${cell(prod,'produced ÷ promised',VPT_SRC.artifacts_produced)}${cell(reach,'reach',r.reach_reason||VPT_SRC.reach)}</div>`;
 }
 const pace=(m,p)=>(!m||!p)?'-':`${Math.floor(Math.round(m*60/p)/60)}:${String(Math.round(m*60/p)%60).padStart(2,'0')}`;
 
@@ -1321,6 +1321,7 @@ function importRun(){
     ['files',run.files_touched],['commits',run.commits],
     ['verified claims',run.claims_verified!=null&&run.claims!=null?`${run.claims_verified}/${run.claims}`:null],
     ['artifacts produced',run.artifacts_produced],
+    ['reach',run.reach==null?null:(run.reach?'yes':'no')],
     ['coach verdict',run.coach_verdict?String(run.coach_verdict).slice(0,160):null],
     ['coach tool calls',run.coach_tool_calls],
     ['vs your last grind',run.progress_verdict]].filter(r=>r[1]!=null&&r[1]!=='');
@@ -1357,6 +1358,7 @@ function importRun(){
     // the coach columns (nullable; migration 2026-09-03-coach.sql). Retry without them on a
     // database that does not have them yet, and say so.
     const coach={claims:run.claims??null,claims_verified:run.claims_verified??null,artifacts_produced:run.artifacts_produced??null,
+      reach:run.reach??null,
       coach_verdict:run.coach_verdict??null,coach_plan:run.coach_plan??null,coach_tool_calls:run.coach_tool_calls??null,
       progress_verdict:run.progress_verdict??null};
     let {error}=await sb.from('runs').insert({...base,...coach});

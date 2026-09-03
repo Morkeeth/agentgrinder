@@ -26,6 +26,10 @@ def export_run(run: dict) -> dict:
         "claims": run.get("claims"),
         "claims_verified": run.get("claims_verified"),
         "artifacts_produced": run.get("artifacts_produced"),
+        # reach: True/False/None from git (agentgrinder/reach.py). The reason is one sentence with
+        # no paths, no owner names and no repository names, so it is safe to travel with the run.
+        "reach": run.get("reach"),
+        "reach_reason": run.get("reach_reason"),
         # the coach's verdict (agentgrinder/coach): a paragraph, a plan, and the hook's call count.
         # Counts and sentences the coach wrote from tool results; no prompt text, no paths.
         "coach_verdict": run.get("coach_verdict"),
