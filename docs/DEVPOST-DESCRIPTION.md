@@ -116,9 +116,10 @@ verdict. The rule lives in `agentgrinder/engine/reporter.py`.
 ```bash
 git clone https://github.com/Morkeeth/agentgrinder.git && cd agentgrinder
 python3 -m agentgrinder demo                                 # the card, no install, no key
-pip install -e ".[coach]"
+pip install -e ".[coach,dev]"
 python3 -m agentgrinder coach samples/sample_session.jsonl   # the agent, keyless, offline
-python3 -m pytest -q                                         # 54 passed
+python3 scripts/show-refusal.py                              # watch the verdict tool refuse
+python3 -m pytest -q                                         # 61 passed
 ```
 
 The bundled sample makes the coach deterministic: 3 typed turns, 2 claims of which 1 has evidence
@@ -195,16 +196,18 @@ app. No runtime dependencies for the local card path.
 
 ## The numbers, and the command behind each
 
-Every figure in the text above, run on 3 September 2026.
+Every figure in the text above, run on 3 September 2026 at commit `0fed2c7`. The three repository
+counts move as the repository does; the coach numbers on the bundled sample do not, because the
+keyless path is deterministic.
 
 | Number | Command | Result |
 |---|---|---|
 | 334 `type: "user"` records, 12 typed by a person, 3.6% | `python3 -m agentgrinder authorship` | `12 3.6% human` of `334 100.0% total`, parts sum to the total |
 | 8 tool calls on the sample, 3 typed turns, 1 of 2 claims verified, 1 of 2 files on disk, 0.67 verified per turn | `python3 -m agentgrinder coach samples/sample_session.jsonl` | exit 0, `tools dispatched 8 (by the Strands event loop; hook logged 8)` |
 | The refusal reasons | the five tools called in order, then `write_verdict(..., claims_verified=2, artifacts_produced=2, ...)` | `accepted: False`, two reasons, `tools_said` block |
-| 54 tests | `python3 -m pytest -q` | `54 passed in 2.76s` |
-| 122 tracked files | `git ls-files \| wc -l` | 122 |
-| 15 commits, first on 31 August 2026 | `git rev-list --count HEAD` | 15, first commit `2026-08-31 23:43:39 +0200` |
+| 61 tests | `python3 -m pytest -q` | `61 passed in 4.09s` |
+| 127 tracked files | `git ls-files \| wc -l` | 127 |
+| 23 commits, first on 31 August 2026 | `git rev-list --count HEAD` | 23, first commit `2026-08-31 23:43:39 +0200` |
 | 7 coach columns live on the hosted database | `information_schema.columns` on `public.runs` | `claims`, `claims_verified`, `artifacts_produced`, `coach_verdict`, `coach_plan`, `coach_tool_calls`, `progress_verdict`, all nullable |
 | Live site and hosted card reachable | `curl -o /dev/null -w "%{http_code}"` on `/` and on `/?run=<id>` | 200 and 200; headless render shows the card |
 | 7,262 participants in the field | `curl -sL https://agentsforhumans.devpost.com/` | `Participants (7262)` |
