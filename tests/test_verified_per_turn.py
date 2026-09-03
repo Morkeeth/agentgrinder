@@ -60,6 +60,16 @@ def test_activity_with_no_five_numbers_prints_dashes():
     assert [c.value for c in a.five] == ["12", "—", "—", "— ÷ —", "—"]
 
 
+def test_no_surface_points_a_stranger_at_a_project_only_the_author_can_run():
+    """The headline tooltip named a witness log by a private project's name on two surfaces the
+    terminal card does not use (the grind card and the profile), so the card test above missed
+    it. The rule is per SENTENCE, not per surface."""
+    from agentgrinder.metrics import HEADLINE_TIP, SOURCES
+    for text in [HEADLINE_TIP, *SOURCES.values()]:
+        for private in ("Transcripto", "ZUP", "Helicon"):
+            assert private not in text, text
+
+
 def test_card_headlines_verified_per_turn_not_prompts():
     run = json.load(open(os.path.join(os.path.dirname(__file__), "..", "samples", "sample_run.json")))
     html = render_card(build_activity(run))
@@ -236,7 +246,7 @@ def test_web_app_never_headlines_prompts():
     assert "if(v==null||a==null||!p) return null;" in src
     assert "not measured yet: it needs every turn labelled as undoing the one before it" in src
     assert "Promised is not measured yet" in src
-    five = src[src.index("const VPT_SRC="):src.index("const pace=")]
+    five = src[src.index("const VPT_TIP="):src.index("const pace=")]   # the headline tip too
     for private in ("Transcripto", "ZUP", "Helicon"):
         assert private not in five, private
     # the reach cell prints the sentence THIS run's probe wrote, when it carried one

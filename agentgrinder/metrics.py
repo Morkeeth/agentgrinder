@@ -5,7 +5,8 @@ A 'run' JSON (see samples/) carries only counts read from a real session:
   turns_typed, tool_calls, files_touched, commits,
   rhythm  -> typed turns per time bucket (the 'route')
 and, optionally, the five numbers of a run (fleet-ops/METRICS-AGENTIC-ENGINEERING-2026-09-02.md):
-  claims, claims_verified        -> verified-claims share (v0 rule in ingest.py; Helicon witness later)
+  claims, claims_verified        -> verified-claims share (v0 rule in ingest.py; a per-claim
+                                    witness log later)
   corrections                    -> correction rate (not measured yet: nothing labels a turn as
                                     undoing the one before it)
   artifacts_produced, artifacts_promised -> produced ÷ promised (produced is measured; promised is
@@ -117,7 +118,7 @@ class Activity:
 
 HEADLINE_TIP = ("verified per turn = (verified claims + artifacts produced) ÷ typed turns. "
                 "Local v0: claims.py rule + Edit/Write paths on disk — it over-counts, read it as a "
-                "ceiling until Helicon witness replaces it")
+                "ceiling until a per-claim witness log replaces it")
 
 
 @dataclass

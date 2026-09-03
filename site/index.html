@@ -533,7 +533,7 @@ const fmtDur=m=>!m?'-':(m>=60?`${Math.floor(m/60)}h ${m%60}m`:`${m}m`);
 // VERIFIED PER TURN — the headline. (verified claims + artifacts produced) ÷ prompts typed.
 // Prompts are the COST (the denominator), never the headline. A part the row does not carry
 // prints an em-dash whose tooltip names who owns it; a missing part is never defaulted to 0.
-const VPT_TIP='verified per turn = (verified claims + artifacts produced) ÷ typed turns · local v0 rule over-counts, read it as a ceiling until Helicon witness replaces it';
+const VPT_TIP='verified per turn = (verified claims + artifacts produced) ÷ typed turns · local v0 rule over-counts, read it as a ceiling until a per-claim witness log replaces it';
 const VPT_SRC={
   claims_verified:'claims that had matching evidence inside their own turn (the v0 rule in agentgrinder claims.py). It over-counts, so read it as a ceiling, not a score',
   artifacts_produced:'produced is measured: files the run wrote that exist on disk. Promised is not measured yet: nothing records what a run said it would deliver, so you cannot supply it today',
