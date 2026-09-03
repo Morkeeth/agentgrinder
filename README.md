@@ -15,11 +15,19 @@ python3 -m agentgrinder grind        # your most recent session -> grind.html
 
 **Web:** [agentgrinder.vercel.app](https://agentgrinder.vercel.app)
 
-No install, no dependencies, no key, no server. If you would rather have it on your `$PATH`:
+No install, no dependencies, no key, no server. **The line above is the whole install**, and it is
+what the website's copy button hands you.
+
+If you would rather have it on your `$PATH`, that needs a venv, not the stock python:
 
 ```bash
-pip install -e .       # then `agentgrinder grind` works from any directory
+python3.12 -m venv .venv               # any python3.10+ you have
+.venv/bin/pip install -e .             # then `.venv/bin/agentgrinder grind` works from any directory
 ```
+
+`pip install -e .` under macOS `/usr/bin/python3` **fails**: that pip is 21.2.4, it predates PEP 660,
+and it refuses an editable install of a pyproject-only project. Measured 3 Sep 2026. The site used to
+print that command as step one; it does not any more.
 
 Editable on purpose. `demo` renders the transcript in `samples/`, which lives in the clone and not
 in the wheel, so a non-editable `pip install .` gives you a working `grind` from anywhere and a
@@ -121,9 +129,9 @@ wrote exists, asks git which of them landed, and only then writes the verdict bl
 next-session plan. It cannot write a number a tool did not return: `write_verdict` refuses it.
 
 ```bash
-pip install -e ".[coach]"                                    # Strands SDK, Python 3.10 or newer
-python3 -m agentgrinder coach samples/sample_session.jsonl   # keyless, nothing leaves the machine
-python3 -m agentgrinder grind --coach                        # your last sitting, verdict on the card
+python3.12 -m venv .venv && .venv/bin/pip install -e ".[coach]"   # Strands SDK, Python 3.10 or newer
+.venv/bin/agentgrinder coach samples/sample_session.jsonl        # keyless, nothing leaves the machine
+.venv/bin/agentgrinder grind --coach                             # your last sitting, verdict on the card
 ```
 
 The five tools, in `agentgrinder/coach/tools.py`:

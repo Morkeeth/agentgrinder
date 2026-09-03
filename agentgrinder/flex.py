@@ -5,7 +5,7 @@ import glob
 import os
 
 from . import history
-from .ingest import _codex_count, latest_cursor_session, latest_codex_session, latest_session, parse_cursor_session, parse_codex_session
+from .ingest import CURSOR_GLOB, _codex_count, codex_session_files, latest_cursor_session, latest_codex_session, latest_session, parse_cursor_session, parse_codex_session
 
 HARNESS_ORDER = ("Claude Code", "Cursor", "Fleet", "Codex")
 
@@ -26,7 +26,7 @@ def _claude_stats() -> dict:
 
 def _cursor_stats(scan: int = 80) -> dict:
     files = sorted(
-        glob.glob(os.path.expanduser("~/.cursor/projects/*/agent-transcripts/*/*.jsonl")),
+        glob.glob(os.path.expanduser(CURSOR_GLOB)),
         key=os.path.getmtime,
         reverse=True,
     )[:scan]
@@ -50,11 +50,7 @@ def _cursor_stats(scan: int = 80) -> dict:
 
 
 def _codex_stats(scan: int = 5) -> dict:
-    files = sorted(
-        glob.glob(os.path.expanduser("~/.codex/archived_sessions/*.jsonl")),
-        key=os.path.getmtime,
-        reverse=True,
-    )[:scan]
+    files = codex_session_files()[:scan]   # both trees; see ingest.CODEX_GLOBS
     grinds = prompts = tools = 0
     for f in files:
         hit = _codex_count(f)
@@ -101,7 +97,7 @@ def latest_any() -> tuple[str, str] | None:
 def format_flex(rows: list[dict] | None = None) -> str:
     rows = rows if rows is not None else local_flex()
     if not rows:
-        return "No grinds found — run agentgrinder grind after a Claude or Cursor session."
+        return "No grinds found — run agentgrinder grind after a Claude, Cursor or Codex session."
     lines = ["\n  flex · your real runs across agents\n"]
     for r in rows:
         h = r["harness"]

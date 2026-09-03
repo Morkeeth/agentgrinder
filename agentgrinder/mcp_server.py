@@ -11,7 +11,9 @@ Add to Claude Code (~/.claude.json) or Cursor (.cursor/mcp.json):
 from __future__ import annotations
 
 import json
+import os
 import sys
+from datetime import datetime
 
 from . import ingest
 from .a2a import export_grind, onboarding_text
@@ -41,7 +43,7 @@ TOOLS = [
         "inputSchema": {
             "type": "object",
             "properties": {
-                "harness": {"type": "string", "enum": ["claude", "cursor"]},
+                "harness": {"type": "string", "enum": ["claude", "cursor", "codex"]},
             },
         },
     },
@@ -51,7 +53,7 @@ TOOLS = [
         "inputSchema": {
             "type": "object",
             "properties": {
-                "harness": {"type": "string", "enum": ["claude", "cursor"]},
+                "harness": {"type": "string", "enum": ["claude", "cursor", "codex"]},
                 "athlete_handle": {"type": "string", "description": "GitHub handle if known"},
             },
         },
@@ -62,7 +64,7 @@ TOOLS = [
         "inputSchema": {
             "type": "object",
             "properties": {
-                "harness": {"type": "string", "enum": ["claude", "cursor"]},
+                "harness": {"type": "string", "enum": ["claude", "cursor", "codex"]},
                 "web_base": {"type": "string", "description": "e.g. https://agentgrinder.vercel.app"},
             },
         },
@@ -133,6 +135,11 @@ def _load_run(harness: str = "claude") -> tuple[dict, str]:
         if not path:
             raise FileNotFoundError("no Cursor session")
         return ingest.parse_cursor_session(path), path
+    if harness == "codex":
+        path = ingest.latest_codex_session()
+        if not path:
+            raise FileNotFoundError("no Codex session")
+        return ingest.parse_codex_session(path), path
     path = ingest.latest_session()
     if not path:
         raise FileNotFoundError("no Claude Code session")
@@ -140,14 +147,31 @@ def _load_run(harness: str = "claude") -> tuple[dict, str]:
 
 
 def list_sessions() -> str:
+    """The harnesses that have something to read, by name — never by path.
+
+    a2a.py's own hard rules, which the agent reads in a2a_onboard before it calls anything, say
+    "NEVER include prompt text, code, or file paths in A2A payloads". This tool used to return
+    the absolute path of every transcript, home directory and project directory included: the
+    second tool in the list broke the rule stated in the first. Measured 3 Sep 2026.
+
+    A name and a filename are enough to choose a harness; nothing downstream needs the path,
+    because every reader resolves its own.
+    """
     out = []
-    c = ingest.latest_session()
-    if c:
-        out.append(f"Claude Code (latest): {c}")
-    cu = ingest.latest_cursor_session()
-    if cu:
-        out.append(f"Cursor (latest): {cu}")
-    return "\n".join(out) or "No local sessions under ~/.claude/projects or ~/.cursor/projects."
+    for label, path in (("Claude Code", ingest.latest_session()),
+                        ("Cursor", ingest.latest_cursor_session()),
+                        ("Codex", ingest.latest_codex_session())):
+        if not path:
+            continue
+        try:
+            when = datetime.fromtimestamp(os.path.getmtime(path)).strftime("%Y-%m-%d %H:%M")
+        except OSError:
+            when = "unknown"
+        out.append(f"{label} (latest): {os.path.basename(path)}  ·  {when}")
+    if not out:
+        return ("No local sessions. Searched: "
+                + ", ".join(ingest.searched_paths()))
+    return "\n".join(out) + "\n\nPaths are not returned: A2A payloads carry no file paths."
 
 
 def preview_run(harness: str = "claude") -> str:

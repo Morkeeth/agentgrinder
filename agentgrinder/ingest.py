@@ -37,9 +37,22 @@ def _tool_uses(msg: dict):
                 yield b.get("name", ""), (b.get("input") or {})
 
 
+CLAUDE_GLOB = "~/.claude/projects/*/*.jsonl"
+CURSOR_GLOB = "~/.cursor/projects/*/agent-transcripts/*/*.jsonl"
+
+
 def latest_session() -> str | None:
-    files = glob.glob(os.path.expanduser("~/.claude/projects/*/*.jsonl"))
+    files = glob.glob(os.path.expanduser(CLAUDE_GLOB))
     return max(files, key=os.path.getmtime) if files else None
+
+
+def searched_paths() -> tuple:
+    """Every transcript location the tool reads, in the order it reads them.
+
+    An error that says "nothing found" without saying where it looked is untestable by the person
+    reading it. Every not-found message prints this list.
+    """
+    return (CLAUDE_GLOB, CURSOR_GLOB) + CODEX_GLOBS
 
 
 def parse_session(path: str, athlete: str = "you") -> dict:
@@ -190,8 +203,27 @@ def _cursor_tool_blocks(msg: dict) -> int:
     c = msg.get("content")
     return sum(1 for b in c if isinstance(b, dict) and b.get("type") not in (None, "text")) if isinstance(c, list) else 0
 
+# THE AUTHOR'S OWN USERNAME WAS BAKED INTO A PUBLIC TOOL. Until 3 Sep 2026 this was
+# `.replace("Users-morkeeth-", "")`: a hardcoded string that cleaned exactly one person's project
+# labels and left everyone else's raw. Measured that day — a stranger's Cursor project rendered on
+# the card as `Users-alice-code-myapp`, while the same fixture under a `Users-morkeeth-CODE-demo`
+# directory rendered as the clean `CODE-demo`.
+#
+# Cursor and Claude both name a project directory after the absolute path with the separators
+# flattened to dashes, so the home prefix is `Users-<whoever>-` on macOS and `home-<whoever>-` on
+# Linux. The prefix is derived from that shape, not from a name. `expanduser` is deliberately not
+# used: the label has to be right for a transcript copied from another machine, where the home
+# directory in the name is not the one this process is running under.
+_HOME_PREFIX = _re.compile(r"^-?(?:Users|home)-[^-]+-")
+
+
+def project_label(dirname: str) -> str:
+    """The project part of a flattened-path directory name, with any user's home prefix removed."""
+    return _HOME_PREFIX.sub("", dirname) or dirname
+
+
 def latest_cursor_session() -> str | None:
-    files = glob.glob(os.path.expanduser("~/.cursor/projects/*/agent-transcripts/*/*.jsonl"))
+    files = glob.glob(os.path.expanduser(CURSOR_GLOB))
     return max(files, key=os.path.getmtime) if files else None
 
 def parse_cursor_session(path: str, athlete: str = "you") -> dict:
@@ -245,7 +277,7 @@ def parse_cursor_session(path: str, athlete: str = "you") -> dict:
     for i in range(typed):
         rhythm[min(buckets - 1, i * buckets // typed)] += 1
 
-    proj = os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(path)))).replace("Users-morkeeth-", "")
+    proj = project_label(os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(path)))))
     title = (first_prompt[:60] + "…") if first_prompt and len(first_prompt) > 60 else (first_prompt or f"{proj} session")
     return {
         "athlete": athlete, "title": title, "harness": "Cursor", "project": proj,
@@ -256,13 +288,39 @@ def parse_cursor_session(path: str, athlete: str = "you") -> dict:
 
 
 # ---- Codex origin ------------------------------------------------------------
-# ~/.codex/archived_sessions/rollout-*.jsonl — event_msg user_message = human turn.
+# rollout-*.jsonl — event_msg user_message = human turn.
+#
+# WHERE CODEX ACTUALLY WRITES. Until 3 Sep 2026 this globbed `~/.codex/archived_sessions/*.jsonl`
+# only, flat and non-recursive. Codex CLI writes live sessions to
+# `~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl` and archives a fraction of them. Measured on the
+# author's own machine that day: the shipped glob saw 16 files, the real tree held 64. A person
+# who has just started with Codex has no archived sessions at all, so every Codex command
+# returned "nothing to read" while their transcripts sat on disk.
 _INJECT_MARKERS = ("<recommended_plugins>", "<environment_context>", "<turn_aborted>")
+
+CODEX_GLOBS = (
+    "~/.codex/sessions/**/*.jsonl",      # where live sessions land, nested by date
+    "~/.codex/archived_sessions/*.jsonl",  # where some of them are moved later
+)
+
+
+def codex_session_files() -> list[str]:
+    """Every Codex rollout on this machine, both trees, newest first, no duplicates."""
+    seen: dict[str, float] = {}
+    for pat in CODEX_GLOBS:
+        for f in glob.glob(os.path.expanduser(pat), recursive=True):
+            if f in seen or not os.path.isfile(f):
+                continue
+            try:
+                seen[f] = os.path.getmtime(f)
+            except OSError:
+                continue
+    return sorted(seen, key=lambda f: seen[f], reverse=True)
 
 
 def latest_codex_session() -> str | None:
-    files = glob.glob(os.path.expanduser("~/.codex/archived_sessions/*.jsonl"))
-    return max(files, key=os.path.getmtime) if files else None
+    files = codex_session_files()
+    return files[0] if files else None
 
 
 def _codex_count(path: str) -> tuple[int, int] | None:

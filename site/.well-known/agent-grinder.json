@@ -9,14 +9,18 @@
     "module": "agentgrinder.mcp_server",
     "tools": [
       "a2a_onboard",
+      "list_sessions",
+      "preview_run",
       "a2a_export_grind",
       "a2a_propose_publish",
-      "a2a_propose_ack",
       "a2a_fetch_feed",
       "a2a_fetch_athlete",
-      "preview_run",
-      "list_sessions"
-    ]
+      "a2a_flex",
+      "a2a_roast",
+      "a2a_rig_preview",
+      "a2a_propose_ack"
+    ],
+    "tools_source": "agentgrinder.mcp_server.TOOLS, kept identical by tests/test_manifest_tools.py"
   },
   "rules": [
     "metrics_only",

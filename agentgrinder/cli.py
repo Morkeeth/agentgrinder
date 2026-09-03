@@ -16,6 +16,77 @@ from .render import render_profile
 SAMPLE = Path(__file__).resolve().parent.parent / "samples" / "sample_run.json"
 
 
+# --coach ON A HARNESS THAT CANNOT FEED IT.
+#
+# The README says the tool "never degrades quietly". It did, in exactly one place: on a Cursor
+# run, `grind --coach` was accepted, printed no coach block, no verdict and no warning, and exited
+# 0. Measured 3 Sep 2026 in a 3.12 venv with the Strands SDK installed, so this was not a missing
+# dependency — the coach simply had no inputs and said nothing about it.
+#
+# The coach's five tools need what a Cursor or Codex transcript does not carry: claim lines to
+# check against their own turn, written file paths to test against the disk, and commits to ask
+# git about. Nothing here invents any of them. The banner names the fields that harness cannot
+# supply, read off the parsed run itself so the list cannot drift from the parser, and the command
+# exits non-zero because the thing that was asked for did not happen.
+COACH_NEEDS = ("files_touched", "commits", "claims", "claims_verified", "artifacts_produced")
+
+
+def coach_degraded_banner(harness: str, run: dict) -> str:
+    missing = [k for k in COACH_NEEDS if run.get(k) is None]
+    bar = "!" * 72
+    lines = [
+        "", bar,
+        f"!! DEGRADED — --coach was asked for and the coach cannot run on a {harness} transcript.",
+        f"!! {harness} sessions do not carry: {', '.join(missing)}.",
+        "!! The coach checks every claim against the evidence in its own turn, every written file",
+        "!! against the disk, and every file against git. None of those three has an input here,",
+        "!! and nothing was invented to fill them. The grind trace cannot be drawn either.",
+        "!!",
+        "!! The v1 card with the real prompt and tool counts was still written.",
+        "!! For a coached run:  python3 -m agentgrinder grind --harness claude --coach",
+        bar, "",
+    ]
+    return "\n".join(lines)
+
+
+# Nothing found, and where we looked.
+#
+# The old auto message said "no Claude or Cursor session found on this machine" and named no
+# path — while `_pick` right beside it already handled Codex. A stranger cannot check a claim
+# that names no object, so the message lists every location, every time.
+def no_session_message() -> str:
+    from .ingest import searched_paths
+    lines = ["", "  no agent session found on this machine. Searched:", ""]
+    lines += [f"      {g}" for g in searched_paths()]
+    lines += ["",
+              "  AGENT GRINDER only reads transcripts you already have. To see a card anyway:",
+              "",
+              "      python3 -m agentgrinder demo",
+              ""]
+    return "\n".join(lines)
+
+
+# The coach hint, in one place, because it was wrong in four.
+#
+# Until 3 Sep 2026 every coach-missing message said `pip install -e ".[coach]"`. On the python the
+# site and the README name — macOS `/usr/bin/python3`, 3.9.6 — that command cannot succeed twice
+# over: the bundled pip is 21.2.4, which predates PEP 660 and refuses an editable install of a
+# pyproject-only project, and `strands-agents` requires 3.10 or newer anyway. So the remedy the
+# tool printed was the command that had just failed. The hint now names a venv on a 3.10+
+# interpreter, and prints the version it is actually running under so the reason is on screen.
+def coach_install_hint() -> str:
+    v = f"{sys.version_info[0]}.{sys.version_info[1]}.{sys.version_info[2]}"
+    return (
+        f"\n  the coach needs the Strands SDK, which needs Python 3.10 or newer."
+        f"\n  This is Python {v}. From the repo root, with a 3.10+ interpreter:"
+        f"\n"
+        f"\n      python3.12 -m venv .venv          # any python3.10+ on your machine"
+        f'\n      .venv/bin/pip install -e ".[coach]"'
+        f"\n      .venv/bin/agentgrinder grind --coach"
+        f"\n"
+    )
+
+
 def _render(run: dict, out: Path, open_it: bool) -> None:
     a = build_activity(run)
     out.write_text(render_card(a), encoding="utf-8")
@@ -51,8 +122,11 @@ def main(argv=None) -> int:
     g.add_argument("--athlete", default="you")
     g.add_argument("-o", "--out", default="grind.html")
     g.add_argument("--json", dest="as_json", action="store_true")
-    g.add_argument("--harness", choices=["claude", "cursor", "codex", "auto"], default="claude",
-                   help="which agent's transcript (auto = freshest Claude or Cursor)")
+    # AUTO IS THE DEFAULT. It was `claude` until 3 Sep 2026, so a Cursor or Codex user running the
+    # advertised one-liner got "no Claude Code session with a human turn" — a wall, with no hint
+    # that either of the other two harnesses was supported at all. The site promises three.
+    g.add_argument("--harness", choices=["claude", "cursor", "codex", "auto"], default="auto",
+                   help="which agent's transcript (default auto = the freshest of Claude, Cursor, Codex)")
     g.add_argument("--no-rank", action="store_true",
                    help="skip the pass over your history (faster; drops the progression line)")
     g.add_argument("--show-paths", action="store_true",
@@ -101,7 +175,7 @@ def main(argv=None) -> int:
     sh.add_argument("--roast", action="store_true", help="add roast-shape lines to the card")
     vb = sub.add_parser("vibe", help="meme label for a grind — real numbers, no streaks")
     vb.add_argument("session", nargs="?", help="run JSON (default: latest grind)")
-    vb.add_argument("--harness", choices=["claude", "cursor", "auto"], default="auto")
+    vb.add_argument("--harness", choices=["claude", "cursor", "codex", "auto"], default="auto")
     vb.add_argument("--json", dest="as_json", action="store_true")
     rb = sub.add_parser("roast", help="roast your grind shape — receipts only, no streaks")
     rb.add_argument("session", nargs="?", help="run JSON (default: latest grind)")
@@ -126,7 +200,7 @@ def main(argv=None) -> int:
     a2sub = a2.add_subparsers(dest="a2cmd", required=True)
     a2sub.add_parser("onboard", help="print A2A agent onboarding (for MCP agents)")
     ex = a2sub.add_parser("export", help="export latest grind as A2A JSON")
-    ex.add_argument("--harness", choices=["claude", "cursor"], default="claude")
+    ex.add_argument("--harness", choices=["claude", "cursor", "codex"], default="claude")
     ex.add_argument("--handle", default="you")
     fd = a2sub.add_parser("feed", help="fetch public grinds (network)")
     fd.add_argument("--handle", default=None, help="athlete GitHub handle")
@@ -140,7 +214,7 @@ def main(argv=None) -> int:
     akls.add_argument("run_id")
     r = sub.add_parser("v1card", help="the v1 sparkline card (kept for the bundled sample)")
     r.add_argument("session", nargs="?")
-    r.add_argument("--harness", choices=["claude", "cursor"], default="claude")
+    r.add_argument("--harness", choices=["claude", "cursor", "codex"], default="claude")
     r.add_argument("--athlete", default="you")
     r.add_argument("-o", "--out", default="card.html")
     r.add_argument("--no-open", action="store_true")
@@ -503,11 +577,14 @@ def _grind(args) -> int:
         from .flex import latest_any
         picked = latest_any()
         if not picked:
-            print("\n  no Claude or Cursor session found on this machine."
-                  "\n  try:  python3 -m agentgrinder demo\n"); return 1
+            print(no_session_message()); return 1
         harness, auto_path = picked
-        args.session = auto_path
         print(f"  auto -> {harness} ({Path(auto_path).name})")
+        # For Claude, leave args.session unset: latest_grind() below picks the SITTING inside the
+        # transcript, and pinning the path here would silently switch every Claude user's default
+        # card to the last sitting (pick=-1) instead of the one that rule chooses.
+        if harness != "claude":
+            args.session = auto_path
 
     if harness == "cursor":
         from .ingest import parse_cursor_session, latest_cursor_session
@@ -521,6 +598,11 @@ def _grind(args) -> int:
         out.write_text(render_card(build_activity(run)), encoding="utf-8")
         print(f"\n  Cursor transcripts carry no file paths and no commits, so the grind trace"
               f"\n  cannot be drawn for them. The v1 card is rendered instead -> {out}\n")
+        if getattr(args, "coach", None) is not None:
+            # asked for explicitly and cannot be delivered: say which fields are missing, and do
+            # not push. Publishing a run the person asked to have coached, uncoached, is the
+            # quiet degrade wearing a different hat.
+            print(coach_degraded_banner("Cursor", run)); return 1
         if args.push:
             from .push import import_url
             from .ingest import detect_rig
@@ -541,11 +623,17 @@ def _grind(args) -> int:
         from .render import render_card
         path = args.session or latest_codex_session()
         if not path:
-            print("no Codex session under ~/.codex/archived_sessions"); return 1
+            from .ingest import CODEX_GLOBS
+            print("\n  no Codex session found. Searched:")
+            for g in CODEX_GLOBS:
+                print(f"      {g}")
+            print("\n  try:  python3 -m agentgrinder demo\n"); return 1
         run = parse_codex_session(path, athlete=args.athlete)
         out = Path(args.out)
         out.write_text(render_card(build_activity(run)), encoding="utf-8")
         print(f"\n  Codex rollouts carry no file-route trace yet — v1 card with real prompt/tool counts -> {out}\n")
+        if getattr(args, "coach", None) is not None:
+            print(coach_degraded_banner("Codex", run)); return 1
         if args.push:
             from .push import import_url
             from .ingest import detect_rig
@@ -682,7 +770,7 @@ def _run_coach_into(run: dict, path: str, pick: int, gap_s: int, mode: str, athl
     try:
         ctx, text = run_coach(path, pick=pick, gap=gap_s, mode=mode, athlete=athlete)
     except ImportError as e:
-        print(f"\n  the coach needs the Strands SDK for --coach {mode}: pip install -e \".[coach]\"  ({e})")
+        print(coach_install_hint() + f"  ({e})\n")
         return None
     for k in ("coach_mode", "coach_tool_calls", "coach_verdict", "coach_plan", "coach_numbers"):
         run[k] = ctx.run.get(k)
@@ -710,13 +798,13 @@ def _coach(args) -> int:
     try:
         from .coach.agent import run_coach
     except ImportError as e:
-        print(f'\n  the coach needs the Strands SDK: pip install -e ".[coach]"   ({e})\n'); return 1
+        print(coach_install_hint() + f"  ({e})\n"); return 1
     try:
         ctx, text = run_coach(path, pick=pick, gap=args.gap * 60, mode=args.model, athlete=args.athlete)
     except ValueError as e:
         print(f"  {e}"); return 1
     except ImportError as e:
-        print(f'\n  the coach needs the Strands SDK for --model {args.model}: pip install -e ".[coach]"   ({e})\n')
+        print(coach_install_hint() + f"  ({e})\n")
         return 1
     if args.as_json:
         print(json.dumps(ctx.run, indent=2, default=str)); return 0

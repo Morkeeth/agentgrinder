@@ -201,4 +201,8 @@ def test_cli_grind_coach_json_carries_the_verdict_fields(tmp_path):
     assert run["coach_numbers"] == dict(turns_typed=3, claims=2, claims_verified=1, artifacts_produced=1, commits=0)
     assert run["coach_verdict"] and run["coach_plan"]
     assert "strands agent loop" in run["coach_mode"]
-    assert run["progress"]["verdict"] == "baseline" and "baseline on agentgrinder" in run["progress_line"]
+    # the project label is the checkout's own directory name, not the literal "agentgrinder": a
+    # clone into any other folder used to red this one test and nothing else, so a contributor's
+    # first `pytest` was 60 passed, 1 failed. Measured 3 Sep 2026 in ./clone1.
+    assert run["progress"]["verdict"] == "baseline"
+    assert f"baseline on {os.path.basename(REPO)}" in run["progress_line"]
