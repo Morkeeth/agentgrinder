@@ -99,7 +99,7 @@ fewest human decisions into the most verified, delivered work — distance = ver
 |---|---|---|---|---|
 | **Verified per turn** | **headline** | (verified claims + artifacts produced) ÷ typed turns | yes, when its three parts exist | — |
 | Typed turns | cost | human-authored turns (`authorship.py`: typed OR queued, drops isMeta / isSidechain / tool_result) | yes | — |
-| Verified-claims share | run number | of the agent's claims, the fraction with tool evidence in the same trace | **v0** (`claims.py`, rule below) | a per-claim witness log. The v0 rule over-counts, so read it as a ceiling |
+| Verified-claims share | run number | of the agent's claims, the fraction with tool evidence in the same trace | **yes**, and calibrated (`claims.py`, rule below): the claim side reads precision 0.63, recall 0.66 on a held-out hand-labelled set | the evidence side has no label set yet, so the share carries one measured error and one unmeasured one |
 | Correction rate | run number | typed turns that correct the agent ÷ typed turns | **not measured yet** — prints `—` | every turn labelled as undoing the one before it. No harness records that, so nothing on your machine can supply it today |
 | Produced ÷ promised | run number | deliverables that exist at their path ÷ deliverables the run named | produced **v0**; promised **not measured yet**, prints `—` | a record of what the run said it would deliver. Nothing records it, so you cannot supply it today |
 | Reach | run number | did the output cross to a person who is not the author | **yes on Claude Code** (`reach.py`): true, false, or `—` when the machine cannot tell | on Cursor and Codex: the repository and the session window their transcripts do not carry |
@@ -129,18 +129,30 @@ network for the negative case:
   reached only your OWN remote, because a repository you own is not another person and this disk
   cannot say who read it.
 
-**The v0 claim rule** (`agentgrinder/claims.py`, a stand-in until `helicon witness` is wired):
-a *claim* is a line of assistant text matching `passes|passed|fixed|done|deployed|works|green|verified|ship(s|ped)`.
-It is *verified* when a tool result **in the same human turn** (the span between two typed turns,
-before or after the claim) carries a matching token: a `test_*` name or file path from the claim
-line, or a generic success token (`N passed`, a line starting `OK`, `exit 0`) that is not
-contradicted by `N failed` / `FAILED` / `Traceback` in the same result. *Artifacts produced* v0 =
-distinct Edit/Write paths that exist on disk when the transcript is parsed. Known blind spots are
-listed in the module docstring. Sampled 2 Sep over the 11 most recent sittings on this machine:
-1–3 typed turns each (fleet lanes), 1–42 claims, verified share 0–100% (most 100%), verified per
-turn 1.0–18.5 — the rule **over-counts**: `done` and `ship` match prose, and one `N passed` in a
-turn verifies every claim beside it. Read the share as a ceiling until Helicon witness replaces
-it; that is why the claim count sits on the card next to the headline instead of inside it.
+**The claim rule** (`agentgrinder/claims.py`, measured 3 Sep 2026):
+a *claim* is a line of assistant text whose sentences assert, as accomplished fact, that work in
+this session is finished, correct, or checked. Headings, table rows, labels that introduce a list,
+questions, plans, conditions, imperatives, quoted output and descriptions of how a thing behaves are
+not claims. It is *verified* when a tool result **in the same human turn** (the span between two
+typed turns, before or after the claim) carries a matching token: a `test_*` name or file path from
+the claim line, or a generic success token (`N passed`, a line starting `OK`, `exit 0`) that is not
+contradicted by `N failed` / `FAILED` / `Traceback` in the same result. *Artifacts produced* =
+distinct Edit/Write paths that exist on disk when the transcript is parsed.
+
+**The rule publishes its own error bar.** 396 lines of assistant text from real sessions were hand
+labelled against a rubric written before the sample was opened, split by session into a tuning half
+and a held-out half. On the held-out half the rule reads **precision 0.63 and recall 0.66**, against
+0.32 and 0.37 for the vocabulary regex it replaces. We aimed for precision above 0.8 and did not
+reach it. Method, intervals, per-cell counts and what it still gets wrong:
+[`docs/CLAIM-RULE-CALIBRATION-2026-09-03.md`](docs/CLAIM-RULE-CALIBRATION-2026-09-03.md) and
+[`docs/claim-calibration.json`](docs/claim-calibration.json). What is **not** measured: whether a
+claim was matched to the *right* evidence. A generic `N passed` in a turn still verifies any claim
+beside it, so read the share as one measured half and one unmeasured half.
+
+**Why the headline is a rate, not a count.** Over 308 held-out sittings the claim count correlates
++0.80 with how many tokens the agent wrote, and counting distinct verified artefacts instead does
+not fix it (+0.56). Verified per turn reads +0.32 and the verified share +0.20, because
+talkativeness sits in both halves of a ratio and divides out.
 
 ## The grind coach: an agent owns the numbers
 

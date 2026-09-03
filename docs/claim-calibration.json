@@ -1,0 +1,314 @@
+{
+  "cells": {
+    "shipped": {
+      "holdout|A|claude": {
+        "fn": 4,
+        "fp": 4,
+        "n": 42,
+        "pop": 3850,
+        "tn": 20,
+        "tp": 14
+      },
+      "holdout|A|codex": {
+        "fn": 1,
+        "fp": 1,
+        "n": 17,
+        "pop": 70,
+        "tn": 9,
+        "tp": 6
+      },
+      "holdout|A|cursor": {
+        "fn": 2,
+        "fp": 0,
+        "n": 10,
+        "pop": 1414,
+        "tn": 8,
+        "tp": 0
+      },
+      "holdout|B|claude": {
+        "fn": 4,
+        "fp": 2,
+        "n": 27,
+        "pop": 5083,
+        "tn": 11,
+        "tp": 10
+      },
+      "holdout|B|codex": {
+        "fn": 1,
+        "fp": 0,
+        "n": 11,
+        "pop": 124,
+        "tn": 10,
+        "tp": 0
+      },
+      "holdout|B|cursor": {
+        "fn": 1,
+        "fp": 2,
+        "n": 6,
+        "pop": 1976,
+        "tn": 3,
+        "tp": 0
+      },
+      "holdout|C|claude": {
+        "fn": 2,
+        "fp": 2,
+        "n": 45,
+        "pop": 26100,
+        "tn": 38,
+        "tp": 3
+      },
+      "holdout|C|codex": {
+        "fn": 0,
+        "fp": 0,
+        "n": 16,
+        "pop": 1027,
+        "tn": 16,
+        "tp": 0
+      },
+      "holdout|C|cursor": {
+        "fn": 0,
+        "fp": 1,
+        "n": 24,
+        "pop": 16013,
+        "tn": 22,
+        "tp": 1
+      },
+      "train|A|claude": {
+        "fn": 0,
+        "fp": 4,
+        "n": 42,
+        "pop": 4506,
+        "tn": 19,
+        "tp": 19
+      },
+      "train|A|codex": {
+        "fn": 0,
+        "fp": 3,
+        "n": 17,
+        "pop": 404,
+        "tn": 9,
+        "tp": 5
+      },
+      "train|A|cursor": {
+        "fn": 0,
+        "fp": 0,
+        "n": 10,
+        "pop": 1864,
+        "tn": 7,
+        "tp": 3
+      },
+      "train|B|claude": {
+        "fn": 1,
+        "fp": 1,
+        "n": 27,
+        "pop": 6210,
+        "tn": 13,
+        "tp": 12
+      },
+      "train|B|codex": {
+        "fn": 2,
+        "fp": 1,
+        "n": 11,
+        "pop": 623,
+        "tn": 4,
+        "tp": 4
+      },
+      "train|B|cursor": {
+        "fn": 0,
+        "fp": 0,
+        "n": 6,
+        "pop": 1914,
+        "tn": 6,
+        "tp": 0
+      },
+      "train|C|claude": {
+        "fn": 3,
+        "fp": 1,
+        "n": 45,
+        "pop": 30138,
+        "tn": 38,
+        "tp": 3
+      },
+      "train|C|codex": {
+        "fn": 1,
+        "fp": 0,
+        "n": 16,
+        "pop": 6444,
+        "tn": 15,
+        "tp": 0
+      },
+      "train|C|cursor": {
+        "fn": 0,
+        "fp": 0,
+        "n": 24,
+        "pop": 20695,
+        "tn": 23,
+        "tp": 1
+      }
+    },
+    "v0": {
+      "holdout|A|claude": {
+        "fn": 0,
+        "fp": 24,
+        "n": 42,
+        "pop": 3850,
+        "tn": 0,
+        "tp": 18
+      },
+      "holdout|A|codex": {
+        "fn": 0,
+        "fp": 10,
+        "n": 17,
+        "pop": 70,
+        "tn": 0,
+        "tp": 7
+      },
+      "holdout|A|cursor": {
+        "fn": 0,
+        "fp": 8,
+        "n": 10,
+        "pop": 1414,
+        "tn": 0,
+        "tp": 2
+      },
+      "holdout|B|claude": {
+        "fn": 14,
+        "fp": 0,
+        "n": 27,
+        "pop": 5083,
+        "tn": 13,
+        "tp": 0
+      },
+      "holdout|B|codex": {
+        "fn": 1,
+        "fp": 0,
+        "n": 11,
+        "pop": 124,
+        "tn": 10,
+        "tp": 0
+      },
+      "holdout|B|cursor": {
+        "fn": 1,
+        "fp": 0,
+        "n": 6,
+        "pop": 1976,
+        "tn": 5,
+        "tp": 0
+      },
+      "holdout|C|claude": {
+        "fn": 3,
+        "fp": 2,
+        "n": 45,
+        "pop": 26100,
+        "tn": 38,
+        "tp": 2
+      },
+      "holdout|C|codex": {
+        "fn": 0,
+        "fp": 0,
+        "n": 16,
+        "pop": 1027,
+        "tn": 16,
+        "tp": 0
+      },
+      "holdout|C|cursor": {
+        "fn": 1,
+        "fp": 3,
+        "n": 24,
+        "pop": 16013,
+        "tn": 20,
+        "tp": 0
+      },
+      "train|A|claude": {
+        "fn": 0,
+        "fp": 23,
+        "n": 42,
+        "pop": 4506,
+        "tn": 0,
+        "tp": 19
+      },
+      "train|A|codex": {
+        "fn": 0,
+        "fp": 12,
+        "n": 17,
+        "pop": 404,
+        "tn": 0,
+        "tp": 5
+      },
+      "train|A|cursor": {
+        "fn": 0,
+        "fp": 7,
+        "n": 10,
+        "pop": 1864,
+        "tn": 0,
+        "tp": 3
+      },
+      "train|B|claude": {
+        "fn": 13,
+        "fp": 0,
+        "n": 27,
+        "pop": 6210,
+        "tn": 14,
+        "tp": 0
+      },
+      "train|B|codex": {
+        "fn": 6,
+        "fp": 0,
+        "n": 11,
+        "pop": 623,
+        "tn": 5,
+        "tp": 0
+      },
+      "train|B|cursor": {
+        "fn": 0,
+        "fp": 0,
+        "n": 6,
+        "pop": 1914,
+        "tn": 6,
+        "tp": 0
+      },
+      "train|C|claude": {
+        "fn": 3,
+        "fp": 3,
+        "n": 45,
+        "pop": 30138,
+        "tn": 36,
+        "tp": 3
+      },
+      "train|C|codex": {
+        "fn": 1,
+        "fp": 0,
+        "n": 16,
+        "pop": 6444,
+        "tn": 15,
+        "tp": 0
+      },
+      "train|C|cursor": {
+        "fn": 1,
+        "fp": 0,
+        "n": 24,
+        "pop": 20695,
+        "tn": 23,
+        "tp": 0
+      }
+    }
+  },
+  "labelled_lines": 396,
+  "measured": "2026-09-03",
+  "note": "pop = lines in that cell across the corpus; n = lines sampled and hand-labelled from it. Weighted precision and recall are Horvitz-Thompson estimates with weight pop/n. No line of the corpus is reproduced here.",
+  "positive_class": "a claim about work done (label W in the rubric)",
+  "rule_fingerprint": "e49d8713c3c2df38",
+  "sittings_scanned": 646,
+  "unit": "one stripped, non-empty line of assistant text",
+  "verbosity": {
+    "basis": "308 held-out sittings, Claude Code transcripts, correlation with assistant output tokens",
+    "claim_count_shipped": 0.8,
+    "claim_count_v0": 0.81,
+    "distinct_verified_artefacts_shipped": 0.56,
+    "headline_verified_per_turn_shipped": 0.32,
+    "headline_verified_per_turn_v0": 0.33,
+    "honesty_share_shipped": 0.2,
+    "honesty_share_v0": 0.2,
+    "verified_claim_count_shipped": 0.65
+  }
+}

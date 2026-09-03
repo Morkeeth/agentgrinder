@@ -18,11 +18,12 @@ What leaves a tool, and what never does:
   write_verdict    accepts five numbers, one paragraph and a plan; refuses any number that no
                    tool in this context returned, or that does not match what the tools said.
 
-The claim rule is the v0 rule from `claims.py`, lifted into a tool the agent calls per claim:
-evidence is a tool result in the SAME human turn, before or after the claim, carrying a token
-from the claim line (a test name, a path) or a generic success token not contradicted in the
-same result. The rule over-counts and says so in its own docstring; the coach adds per-claim
-judgement (which token, which turn) and a refusal to write a number it did not check.
+The claim rule is the calibrated rule from `claims.py`, lifted into a tool the agent calls per
+claim: evidence is a tool result in the SAME human turn, before or after the claim, carrying a
+token from the claim line (a test name, a path) or a generic success token not contradicted in
+the same result. The claim side is measured (precision 0.63, recall 0.66 on a held-out set); the
+evidence side is not. The coach adds per-claim judgement (which token, which turn) and a refusal
+to write a number it did not check.
 """
 from __future__ import annotations
 
@@ -139,7 +140,8 @@ def read_run(ctx: CoachContext) -> dict:
         results_per_turn={str(t): len(v) for t, v in sorted(ctx.results.items())},
         artifacts=[dict(id=a["id"], label=a["label"], where=a["where"]) for a in ctx.artifacts],
         rule="a claim is verified by a tool result in the same human turn carrying a token from "
-             "the claim line, or an uncontradicted success token (claims.py, v0, over-counts)",
+             "the claim line, or an uncontradicted success token (claims.py; the claim side is "
+             "calibrated, the evidence side is not)",
     )
 
 

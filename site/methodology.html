@@ -26,6 +26,35 @@ you see instead is your <b>verify-and-ship rate</b> and real, cited signals.</p>
 <tr><td>Session sprawls, low depth</td><td>One bounded objective per session.</td></tr>
 </table>
 
+<h2>How the claim rule was calibrated</h2>
+<p>The card counts <b>claims</b> your agent made and how many carried evidence in the same turn. A
+rule decides what a claim is, so that rule has an error rate, and until 3 September 2026 nobody had
+measured it. Now it is measured, and the number is published here whether or not it flatters us.</p>
+<p><b>Method.</b> 396 lines of assistant text were drawn from real sessions on one machine, in three
+strata so that both false alarms and misses are measurable, and hand-labelled against a rubric
+written <i>before</i> the sample was opened. Sessions were split into a tuning half and a held-out
+half by a seeded hash before a single line was read. The rule was iterated on the tuning half only.
+The held-out half was scored once, after the rule was frozen.</p>
+<table>
+<tr><td><b>held-out set</b></td><td><b>precision</b></td><td><b>recall</b></td></tr>
+<tr><td>the old rule: one list of completion words, matched against a whole line</td><td class="mono">0.32</td><td class="mono">0.37</td></tr>
+<tr><td>the rule shipping today: sentence-level, with the shapes that assert nothing rejected</td><td class="mono">0.63</td><td class="mono">0.66</td></tr>
+</table>
+<p class="mono" style="font-size:13px">198 held-out lines · 95% intervals 0.43&ndash;0.83 (precision) and
+0.46&ndash;0.83 (recall) · measured 2026-09-03 · rule digest e49d8713c3c2df38</p>
+<p>Read that plainly: the old rule was wrong about roughly two of every three lines it called a
+claim. The new one is wrong about one in three, and misses one in three. We aimed for precision
+above 0.8 and did not reach it. Counts and per-cell numbers:
+<code>docs/claim-calibration.json</code>; the full write-up, including what the rule still gets wrong,
+is <code>docs/CLAIM-RULE-CALIBRATION-2026-09-03.md</code>.</p>
+<p><b>Why the headline is a rate.</b> A count of claims moves with how much your agent talks
+(correlation +0.80 with assistant tokens over 308 held-out sittings). Counting distinct verified
+artefacts instead does not fix it (+0.56). The card's headline is a rate, and it reads +0.32, because
+talkativeness sits in both halves of a ratio and divides out.</p>
+<p><b>Still unmeasured, so you know.</b> Whether a claim was matched to the <i>right</i> evidence has
+no label set yet. The claim count now carries a measured error; the verified share carries that plus
+one we have not measured.</p>
+
 <h2>What we will not fake</h2>
 <p>We never compare your metrics to a top engineer's <i>session</i> metrics, because those are private,
 nobody has them. Any "beat Karpathy's cadence" would be fabricated. We don't quote a number without
