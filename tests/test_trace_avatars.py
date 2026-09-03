@@ -93,7 +93,9 @@ const esc=s=>(s||'').replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]
 const out={};
 // an account this page looked for and found nothing for
 noteLooked(['nobody']);
+noteLooked(['owner'],'all');   // your own view reads your private runs too
 out.empty=avatar('nobody');
+out.mine=avatar('owner');
 // an account with two runs: the newest one is the mark
 noteTraces([
   {visibility:'public',created_at:'2026-09-01T00:00:00Z',rhythm:[1,1,1,1],profiles:{github_handle:'Morkeeth'}},
@@ -125,10 +127,19 @@ def test_an_account_with_no_runs_renders_the_empty_hairline_and_says_so():
     o = render()
     assert '<line class="trace empty"' in o["empty"]
     assert "<polyline" not in o["empty"]
-    assert 'title="no grind yet"' in o["empty"]
-    assert 'aria-label="@nobody, no grind yet"' in o["empty"]
+    # a logged out visitor can only read public runs, so the tile says exactly that
+    assert 'title="no public grind yet"' in o["empty"]
+    assert 'aria-label="@nobody, no public grind yet"' in o["empty"]
     # a flat line, drawn once across the middle of a 26px tile
     assert 'y1="13.0" x2="23.5" y2="13.0"' in o["empty"]
+
+
+def test_only_your_own_view_may_say_no_grind_at_all():
+    # every other view reads public runs only, so "no grind yet" there would be a claim the
+    # query could not support: someone with private runs is not someone with no runs.
+    o = render()
+    assert 'title="no grind yet"' in o["mine"]
+    assert "public" not in o["mine"]
 
 
 def test_an_account_with_runs_draws_its_newest_rhythm_and_no_letter():
@@ -155,7 +166,7 @@ def test_an_anonymous_grind_leaves_no_mark_on_anyone():
     assert '<line class="trace empty"' in o["anon"]      # the ghost's author keeps no shape
     assert '<line class="trace empty"' in o["ghost"]
     assert 'aria-label="anonymous grinder, no trace"' in o["ghost"]
-    assert "no grind yet" not in o["ghost"]              # we never looked, so we never claim
+    assert "grind yet" not in o["ghost"]                # we never looked, so we never claim
 
 
 def test_an_agent_account_is_one_extra_hairline_not_a_badge_or_a_colour():

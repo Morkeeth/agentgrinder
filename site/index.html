@@ -456,7 +456,10 @@ let ME=null;
 // really queried, so the words "no grind yet" are only ever said about an account we looked for.
 const TRACES={}, TRACE_LOOKED={}, TRACE_AGENT={};
 const traceKey=h=>String(h||'').toLowerCase();
-function noteLooked(handles){ (handles||[]).forEach(h=>{ if(h) TRACE_LOOKED[traceKey(h)]=true; }); }
+// scope is what the query could see: 'all' only on your own runs, where private ones are read
+// too. Everywhere else the page can only prove there is no PUBLIC grind, and says exactly that.
+function noteLooked(handles,scope){ (handles||[]).forEach(h=>{ if(!h) return;
+  const k=traceKey(h); if(scope==='all'||!TRACE_LOOKED[k]) TRACE_LOOKED[k]=scope||'public'; }); }
 // A profile is an agent because its own row says so (rig.agent === true), never because a name
 // or a null auth_uid looked like one. No row sets it today; the rule is here, unfired.
 const isAgentProfile=p=>!!(p&&p.rig&&p.rig.agent===true);
@@ -464,7 +467,7 @@ function noteTraces(runs){
   (runs||[]).forEach(r=>{
     if(!r||r.visibility==='anonymous') return;
     const p=r.profiles||{}, h=p.github_handle; if(!h) return;
-    const k=traceKey(h); TRACE_LOOKED[k]=true;
+    const k=traceKey(h); if(!TRACE_LOOKED[k]) TRACE_LOOKED[k]='public';
     if(isAgentProfile(p)) TRACE_AGENT[k]=true;
     if(!r.rhythm||!r.rhythm.length) return;
     const at=r.created_at||'';
@@ -502,9 +505,10 @@ function avatar(handle,opts){
   const k=traceKey(handle), ghost=!!opts.ghost;
   const rhythm=ghost?null:((opts.rhythm&&opts.rhythm.length)?opts.rhythm:(TRACES[k]?TRACES[k].rhythm:null));
   const agent=!ghost&&(opts.agent||TRACE_AGENT[k]);
+  const none=TRACE_LOOKED[k]==='all'?'no grind yet':'no public grind yet';
   const label=ghost?'anonymous grinder, no trace'
-    :(handle?('@'+handle+(rhythm?', grind trace':', no grind yet')):'no handle, no trace');
-  const title=rhythm?'':(ghost?'anonymous, no trace':((handle&&TRACE_LOOKED[k])?'no grind yet':''));
+    :(handle?('@'+handle+(rhythm?', grind trace':', '+none)):'no handle, no trace');
+  const title=rhythm?'':(ghost?'anonymous, no trace':((handle&&TRACE_LOOKED[k])?none:''));
   return `<span class="av${opts.cls?' '+opts.cls:''}${agent?' agent':''}" role="img" aria-label="${esc(label)}"`
     +`${title?` title="${esc(title)}"`:''}>${traceSvg(rhythm,size,cols)}</span>`;
 }
@@ -620,7 +624,7 @@ async function fillTraces(rows){
   if(!ids.length||!missing.length) return;
   const {data}=await sb.from('runs').select('rhythm,created_at,visibility,profiles(github_handle,name,rig)')
     .in('profile_id',ids).eq('visibility','public').order('created_at',{ascending:false}).limit(200);
-  noteTraces(data||[]); noteLooked(handles);
+  noteTraces(data||[]); noteLooked(handles,'public');
 }
 async function submitAck(runId,toProfile,reason){
   if(!ME){status('Sign in to ACK.');return false;}
@@ -893,7 +897,7 @@ async function viewMe(){
   const app=$('app');
   frame(railHtml('me'),null); app.innerHTML=skeletonCard()+skeletonCard();
   const {data:runs}=await sb.from('runs').select('*, profiles(github_handle,name,rig)').eq('profile_id',ME.id).order('created_at',{ascending:false}).limit(60);
-  noteTraces(runs); noteLooked([ME.github_handle]);
+  noteTraces(runs); noteLooked([ME.github_handle],'all');
   const R=runs||[]; const {count:acksR}=await sb.from('acks').select('*',{count:'exact',head:true}).eq('to_profile',ME.id);
   const {data:recentAcks}=await sb.from('acks').select('id,reason,created_at,run_id,from_profile,profiles:from_profile(github_handle,name,rig)').eq('to_profile',ME.id).order('created_at',{ascending:false}).limit(8);
   const {data:allAcks}=await sb.from('acks').select('reason').eq('to_profile',ME.id);
@@ -1237,7 +1241,7 @@ async function viewProfile(handle){
   const mine=ME&&ME.id===prof.id;
   const {data:runs}=await sb.from('runs').select('*, profiles(github_handle,name,rig)')
     .eq('profile_id',prof.id)[mine?'in':'eq']('visibility',mine?['public','link','private','anonymous']:'public').order('created_at',{ascending:false}).limit(50);
-  noteTraces(runs); noteLooked([handle]);
+  noteTraces(runs); noteLooked([handle],mine?'all':'public');
   const R=runs||[]; const {count:acksR}=await sb.from('acks').select('*',{count:'exact',head:true}).eq('to_profile',prof.id);
   const sh=grindShape(R, acksR||0);
   const T={runs:R.length,prompts:R.reduce((a,r)=>a+(r.prompts||0),0),
@@ -1389,7 +1393,7 @@ async function viewShareProfile(handle){
   const mine=ME&&ME.id===prof.id;
   const {data:runs}=await sb.from('runs').select('*').eq('profile_id',prof.id)
     [mine?'in':'eq']('visibility',mine?['public','link','private']:'public');
-  noteTraces((runs||[]).map(r=>({...r,profiles:{github_handle:handle,rig:prof.rig}}))); noteLooked([handle]);
+  noteTraces((runs||[]).map(r=>({...r,profiles:{github_handle:handle,rig:prof.rig}}))); noteLooked([handle],mine?'all':'public');
   const R=runs||[];
   const T={runs:R.length,prompts:R.reduce((a,r)=>a+(r.prompts||0),0),
     hours:Math.round(R.reduce((a,r)=>a+(r.duration_s||0),0)/360)/10,
