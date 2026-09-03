@@ -172,6 +172,80 @@ def test_a_push_after_the_window_closed_is_null_not_true(tmp_path):
     assert why == reach.R_LATE
 
 
+def _push_at(root, when, ref="HEAD:refs/heads/main"):
+    """Push with the reflog stamped at a chosen instant. `git` writes the reflog entry with the
+    committer date, so this is how a push that happened at another hour is reproduced."""
+    return _git(root, "push", "-q", "origin", ref,
+                GIT_COMMITTER_DATE=when.isoformat(), GIT_AUTHOR_DATE=when.isoformat())
+
+
+def _foreign_remote(tmp_path, root, name):
+    bare = tmp_path / f"{name}.git"
+    subprocess.run(["git", "init", "-q", "--bare", str(bare)], check=True,
+                   env=dict(os.environ, GIT_CONFIG_NOSYSTEM="1"))
+    _git(root, "remote", "add", "origin", f"https://github.com/alice/{name}.git")
+    _git(root, "config", "remote.origin.pushurl", str(bare))
+
+
+def test_a_fetch_inside_the_window_is_not_your_commit_crossing(tmp_path, monkeypatch):
+    """THE DEFECT THIS PINS: the first version asked "did this ref move during the window", not
+    "did YOUR commit reach the remote during it". A pull at the start of a session moves
+    origin/main while carrying nothing of yours; the work is pushed after the run closes; and the
+    card printed reach=yes for a crossing that happened in somebody else's window."""
+    monkeypatch.setattr(reach, "_gh_orgs", lambda root: (set(), True))
+    root = _repo(tmp_path)
+    _foreign_remote(tmp_path, root, "fetchy")
+    _push_at(root, NOW - timedelta(minutes=30))          # a ref move INSIDE the window
+
+    (root / "b.txt").write_text("two")                   # the run's own commit, made now
+    _git(root, "add", "b.txt")
+    _git(root, "commit", "-q", "-m", "two")
+    mine = _head(root)
+    _push_at(root, NOW + timedelta(hours=2))             # pushed two hours AFTER the run closed
+
+    value, why = reach.reach_of(str(root), *WINDOW, [mine])
+    assert value is None, why
+    assert why == reach.R_LATE
+
+
+def test_an_old_ref_and_a_late_push_is_a_dash_not_a_false(tmp_path, monkeypatch):
+    """The mirror defect: with the ref's only in-window move absent, the first version fell
+    through to "none of them is on any remote", which is the flattering-and-false sentence in the
+    other direction. The work DID leave; it left outside this run."""
+    monkeypatch.setattr(reach, "_gh_orgs", lambda root: (set(), True))
+    root = _repo(tmp_path)
+    _foreign_remote(tmp_path, root, "oldy")
+    _push_at(root, NOW - timedelta(days=2))              # the ref last moved two days ago
+
+    (root / "b.txt").write_text("two")
+    _git(root, "add", "b.txt")
+    _git(root, "commit", "-q", "-m", "two")
+    mine = _head(root)
+    _push_at(root, NOW + timedelta(hours=2))
+
+    value, why = reach.reach_of(str(root), *WINDOW, [mine])
+    assert value is None, why
+    assert why == reach.R_LATE
+
+
+def test_the_push_that_carried_the_commit_inside_the_window_is_the_one_that_counts(tmp_path, monkeypatch):
+    """The positive control for both tests above: same shape, the carrying push inside the run."""
+    monkeypatch.setattr(reach, "_gh_orgs", lambda root: (set(), True))
+    root = _repo(tmp_path)
+    _foreign_remote(tmp_path, root, "timely")
+    _push_at(root, NOW - timedelta(days=2))
+
+    (root / "b.txt").write_text("two")
+    _git(root, "add", "b.txt")
+    _git(root, "commit", "-q", "-m", "two")
+    mine = _head(root)
+    _push_at(root, NOW - timedelta(minutes=10))          # inside the window
+
+    value, why = reach.reach_of(str(root), *WINDOW, [mine])
+    assert value is True, why
+    assert why == reach.R_FOREIGN
+
+
 def test_without_an_account_name_on_this_machine_ownership_is_not_guessed(tmp_path):
     """An email local part is not a GitHub login. With no strong identity the answer is a dash,
     because "a repository the author does not own" would be a sentence nobody measured."""
