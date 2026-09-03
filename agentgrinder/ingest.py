@@ -203,6 +203,25 @@ def _cursor_tool_blocks(msg: dict) -> int:
     c = msg.get("content")
     return sum(1 for b in c if isinstance(b, dict) and b.get("type") not in (None, "text")) if isinstance(c, list) else 0
 
+# THE AUTHOR'S OWN USERNAME WAS BAKED INTO A PUBLIC TOOL. Until 3 Sep 2026 this was
+# `.replace("Users-morkeeth-", "")`: a hardcoded string that cleaned exactly one person's project
+# labels and left everyone else's raw. Measured that day — a stranger's Cursor project rendered on
+# the card as `Users-alice-code-myapp`, while the same fixture under a `Users-morkeeth-CODE-demo`
+# directory rendered as the clean `CODE-demo`.
+#
+# Cursor and Claude both name a project directory after the absolute path with the separators
+# flattened to dashes, so the home prefix is `Users-<whoever>-` on macOS and `home-<whoever>-` on
+# Linux. The prefix is derived from that shape, not from a name. `expanduser` is deliberately not
+# used: the label has to be right for a transcript copied from another machine, where the home
+# directory in the name is not the one this process is running under.
+_HOME_PREFIX = _re.compile(r"^-?(?:Users|home)-[^-]+-")
+
+
+def project_label(dirname: str) -> str:
+    """The project part of a flattened-path directory name, with any user's home prefix removed."""
+    return _HOME_PREFIX.sub("", dirname) or dirname
+
+
 def latest_cursor_session() -> str | None:
     files = glob.glob(os.path.expanduser(CURSOR_GLOB))
     return max(files, key=os.path.getmtime) if files else None
@@ -258,7 +277,7 @@ def parse_cursor_session(path: str, athlete: str = "you") -> dict:
     for i in range(typed):
         rhythm[min(buckets - 1, i * buckets // typed)] += 1
 
-    proj = os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(path)))).replace("Users-morkeeth-", "")
+    proj = project_label(os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(path)))))
     title = (first_prompt[:60] + "…") if first_prompt and len(first_prompt) > 60 else (first_prompt or f"{proj} session")
     return {
         "athlete": athlete, "title": title, "harness": "Cursor", "project": proj,
