@@ -37,9 +37,22 @@ def _tool_uses(msg: dict):
                 yield b.get("name", ""), (b.get("input") or {})
 
 
+CLAUDE_GLOB = "~/.claude/projects/*/*.jsonl"
+CURSOR_GLOB = "~/.cursor/projects/*/agent-transcripts/*/*.jsonl"
+
+
 def latest_session() -> str | None:
-    files = glob.glob(os.path.expanduser("~/.claude/projects/*/*.jsonl"))
+    files = glob.glob(os.path.expanduser(CLAUDE_GLOB))
     return max(files, key=os.path.getmtime) if files else None
+
+
+def searched_paths() -> tuple:
+    """Every transcript location the tool reads, in the order it reads them.
+
+    An error that says "nothing found" without saying where it looked is untestable by the person
+    reading it. Every not-found message prints this list.
+    """
+    return (CLAUDE_GLOB, CURSOR_GLOB) + CODEX_GLOBS
 
 
 def parse_session(path: str, athlete: str = "you") -> dict:
@@ -191,7 +204,7 @@ def _cursor_tool_blocks(msg: dict) -> int:
     return sum(1 for b in c if isinstance(b, dict) and b.get("type") not in (None, "text")) if isinstance(c, list) else 0
 
 def latest_cursor_session() -> str | None:
-    files = glob.glob(os.path.expanduser("~/.cursor/projects/*/agent-transcripts/*/*.jsonl"))
+    files = glob.glob(os.path.expanduser(CURSOR_GLOB))
     return max(files, key=os.path.getmtime) if files else None
 
 def parse_cursor_session(path: str, athlete: str = "you") -> dict:

@@ -16,6 +16,23 @@ from .render import render_profile
 SAMPLE = Path(__file__).resolve().parent.parent / "samples" / "sample_run.json"
 
 
+# Nothing found, and where we looked.
+#
+# The old auto message said "no Claude or Cursor session found on this machine" and named no
+# path — while `_pick` right beside it already handled Codex. A stranger cannot check a claim
+# that names no object, so the message lists every location, every time.
+def no_session_message() -> str:
+    from .ingest import searched_paths
+    lines = ["", "  no agent session found on this machine. Searched:", ""]
+    lines += [f"      {g}" for g in searched_paths()]
+    lines += ["",
+              "  AGENT GRINDER only reads transcripts you already have. To see a card anyway:",
+              "",
+              "      python3 -m agentgrinder demo",
+              ""]
+    return "\n".join(lines)
+
+
 # The coach hint, in one place, because it was wrong in four.
 #
 # Until 3 Sep 2026 every coach-missing message said `pip install -e ".[coach]"`. On the python the
@@ -72,8 +89,11 @@ def main(argv=None) -> int:
     g.add_argument("--athlete", default="you")
     g.add_argument("-o", "--out", default="grind.html")
     g.add_argument("--json", dest="as_json", action="store_true")
-    g.add_argument("--harness", choices=["claude", "cursor", "codex", "auto"], default="claude",
-                   help="which agent's transcript (auto = freshest Claude or Cursor)")
+    # AUTO IS THE DEFAULT. It was `claude` until 3 Sep 2026, so a Cursor or Codex user running the
+    # advertised one-liner got "no Claude Code session with a human turn" — a wall, with no hint
+    # that either of the other two harnesses was supported at all. The site promises three.
+    g.add_argument("--harness", choices=["claude", "cursor", "codex", "auto"], default="auto",
+                   help="which agent's transcript (default auto = the freshest of Claude, Cursor, Codex)")
     g.add_argument("--no-rank", action="store_true",
                    help="skip the pass over your history (faster; drops the progression line)")
     g.add_argument("--show-paths", action="store_true",
@@ -122,7 +142,7 @@ def main(argv=None) -> int:
     sh.add_argument("--roast", action="store_true", help="add roast-shape lines to the card")
     vb = sub.add_parser("vibe", help="meme label for a grind — real numbers, no streaks")
     vb.add_argument("session", nargs="?", help="run JSON (default: latest grind)")
-    vb.add_argument("--harness", choices=["claude", "cursor", "auto"], default="auto")
+    vb.add_argument("--harness", choices=["claude", "cursor", "codex", "auto"], default="auto")
     vb.add_argument("--json", dest="as_json", action="store_true")
     rb = sub.add_parser("roast", help="roast your grind shape — receipts only, no streaks")
     rb.add_argument("session", nargs="?", help="run JSON (default: latest grind)")
@@ -147,7 +167,7 @@ def main(argv=None) -> int:
     a2sub = a2.add_subparsers(dest="a2cmd", required=True)
     a2sub.add_parser("onboard", help="print A2A agent onboarding (for MCP agents)")
     ex = a2sub.add_parser("export", help="export latest grind as A2A JSON")
-    ex.add_argument("--harness", choices=["claude", "cursor"], default="claude")
+    ex.add_argument("--harness", choices=["claude", "cursor", "codex"], default="claude")
     ex.add_argument("--handle", default="you")
     fd = a2sub.add_parser("feed", help="fetch public grinds (network)")
     fd.add_argument("--handle", default=None, help="athlete GitHub handle")
@@ -161,7 +181,7 @@ def main(argv=None) -> int:
     akls.add_argument("run_id")
     r = sub.add_parser("v1card", help="the v1 sparkline card (kept for the bundled sample)")
     r.add_argument("session", nargs="?")
-    r.add_argument("--harness", choices=["claude", "cursor"], default="claude")
+    r.add_argument("--harness", choices=["claude", "cursor", "codex"], default="claude")
     r.add_argument("--athlete", default="you")
     r.add_argument("-o", "--out", default="card.html")
     r.add_argument("--no-open", action="store_true")
@@ -524,11 +544,14 @@ def _grind(args) -> int:
         from .flex import latest_any
         picked = latest_any()
         if not picked:
-            print("\n  no Claude or Cursor session found on this machine."
-                  "\n  try:  python3 -m agentgrinder demo\n"); return 1
+            print(no_session_message()); return 1
         harness, auto_path = picked
-        args.session = auto_path
         print(f"  auto -> {harness} ({Path(auto_path).name})")
+        # For Claude, leave args.session unset: latest_grind() below picks the SITTING inside the
+        # transcript, and pinning the path here would silently switch every Claude user's default
+        # card to the last sitting (pick=-1) instead of the one that rule chooses.
+        if harness != "claude":
+            args.session = auto_path
 
     if harness == "cursor":
         from .ingest import parse_cursor_session, latest_cursor_session
