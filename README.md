@@ -108,6 +108,48 @@ turn 1.0–18.5 — the rule **over-counts**: `done` and `ship` match prose, and
 turn verifies every claim beside it. Read the share as a ceiling until Helicon witness replaces
 it; that is why the claim count sits on the card next to the headline instead of inside it.
 
+## The grind coach: an agent owns the numbers
+
+The card above is a self-report checked by a rule. `coach` makes it a receipt: a
+[Strands Agents](https://strandsagents.com) agent reads the sitting through five tools, checks
+every claim against the evidence in its own human turn, asks the disk whether every file the run
+wrote exists, asks git which of them landed, and only then writes the verdict block and a
+next-session plan. It cannot write a number a tool did not return: `write_verdict` refuses it.
+
+```bash
+pip install -e ".[coach]"                                    # Strands SDK, Python 3.10 or newer
+python3 -m agentgrinder coach samples/sample_session.jsonl   # keyless, nothing leaves the machine
+python3 -m agentgrinder grind --coach                        # your last sitting, verdict on the card
+```
+
+The five tools, in `agentgrinder/coach/tools.py`:
+
+| Tool | Returns | Never returns |
+|---|---|---|
+| `read_run` | counts, the claim lines with ids, tool results per turn, one label per written file | a typed prompt, an absolute path, code |
+| `check_claim` | verified or not, the token that matched, a 200-char snippet of the evidence | anything outside the claim's own turn |
+| `verify_artifact` | exists, size, last modified, whether that instant is inside the window | the path |
+| `git_evidence` | commits inside the window containing the file, the first later commit that touched it, or why git could not be asked | |
+| `write_verdict` | accepted with five numbers, one paragraph and a 1-5 line plan, or refused with the reasons | a number no tool returned |
+
+Three modes, and the mode is always printed:
+
+- **local** (default): a real `strands.Agent` event loop over the five `@tool`s, driven by a
+  scripted local model (`coach/local_model.py`). The loop, the tool registry, the dispatch and
+  the `AfterToolCallEvent` hook that counts the calls are genuine Strands. The token generation
+  is not a language model: it is a deterministic policy (`coach/policy.py`) that reads the run,
+  checks every claim and file, and fills the verdict from the tool results. No key, no network,
+  no spend. The report says so under NOTE every time.
+- **bedrock** (`--model bedrock`, opt-in): the same loop with a real model on Amazon Bedrock
+  choosing the tools. Needs AWS credentials and costs money. The claim lines and result snippets
+  of the sitting leave the machine; the command prints that before it runs. Never the default.
+- **none**: the five functions called in order, no agent. The fallback. If an agent mode fails
+  the report prints the reason and ends with `status DEGRADED`; it never degrades quietly.
+
+The card shows the verdict with "verdict produced by N tool calls", and N is the hook's count,
+not the plan's. Tested in `tests/test_coach.py`: the keyless path never constructs a Bedrock
+model and opens no internet socket; a policy that writes a wrong number is refused.
+
 ## The lexicon
 
 | Term | Meaning | Strava analogue |
@@ -127,6 +169,7 @@ Retired, and not used here: Loop, Push, Builder's Diary, LOOPMAXXER, run/route/l
 
 | | |
 |---|---|
+| `coach` · `grind --coach` | the grind coach: a Strands agent checks every claim and file, then writes the verdict (keyless by default) |
 | `grind` | one sitting → the grind card (`run` is kept as an alias; `--harness auto` picks freshest agent) |
 | `flex` | compare your real runs across Claude, Cursor, and Codex on this machine |
 | `share` | screenshot-ready share card with claim-your-handle stub (`--vibe` `--roast`) |
@@ -151,6 +194,12 @@ have worked in. It never leaves the machine, and nothing reads it but `agentgrin
 Delete it and the next run rebuilds it: **7.8s** over 1,370 transcripts here, 0.04s warm (measured 31 Aug 06:2x; a 6.8s figure written on 30 Aug had already been re-measured at 6.1s and was never corrected here — it is a timing, so it moves).
 `nightrun --public` redacts repository and lane names while leaving every number and the shape
 unchanged. No auto-post, no auto-upload.
+
+The coach runs on counts, claim lines and git evidence. It never reads a typed prompt into a
+tool result, never returns an absolute path (paths become the labels the card prints), never
+returns code. In the default `local` mode nothing leaves the machine. In `bedrock` mode the
+claim lines and tool-result snippets are sent to Amazon Bedrock, and the command prints that
+sentence before it runs; it is opt-in and never the default.
 
 ## Pre-existing code, disclosed
 

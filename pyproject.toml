@@ -7,6 +7,12 @@ requires-python = ">=3.9"      # measured, not assumed: every command runs under
 license = {text = "MIT"}
 authors = [{name = "Oscar Morke"}]
 
+[project.optional-dependencies]
+# the grind coach runs on the Strands Agents SDK, which needs Python 3.10 or newer. The base
+# install stays dependency-free and 3.9-clean; `coach` and `grind --coach` say so when it is missing.
+coach = ["strands-agents>=1.0"]
+dev = ["pytest>=7.0"]
+
 [project.scripts]
 agentgrinder = "agentgrinder.cli:main"
 

@@ -66,6 +66,21 @@ def main(argv=None) -> int:
                    help="with --push, include MCP server names in your shared rig (opt-in)")
     g.add_argument("--push-url", default=None,
                    help="web app base URL for --push (default: AGENTGRINDER_URL or agentgrinder.vercel.app)")
+    g.add_argument("--coach", nargs="?", const="local", choices=["local", "bedrock", "none"], default=None,
+                   help="run the grind coach on this sitting before drawing the card. Default mode "
+                        "local: a real Strands agent loop over a scripted model, keyless, nothing "
+                        "leaves the machine. bedrock: a real model on Amazon Bedrock (AWS creds, "
+                        "costs money, sends claim lines off the machine). none: no agent.")
+    co = sub.add_parser("coach", help="the grind coach: an agent that checks every claim and file, then writes the verdict")
+    co.add_argument("session", nargs="?", help="path to a .jsonl transcript (default: your most recent grind)")
+    co.add_argument("--pick", type=int, default=None, help="which sitting (-1 = the last, 1 = the first)")
+    co.add_argument("--gap", type=int, default=30, help="minutes of total idle that end a grind (default 30)")
+    co.add_argument("--model", choices=["local", "bedrock", "none"], default="local",
+                    help="local (default, keyless, scripted model through the real Strands loop) · "
+                         "bedrock (real model, AWS creds, costs money, opt-in) · none (no agent)")
+    co.add_argument("--athlete", default="you")
+    co.add_argument("--json", dest="as_json", action="store_true",
+                    help="print the run with the verdict attached, as JSON (counts only, no prompt text)")
     fl = sub.add_parser("flex", help="compare your real runs across agents on this machine")
     fl.add_argument("--json", dest="as_json", action="store_true")
     sh = sub.add_parser("share", help="fun share card — claim-your-handle vibe, screenshot-ready")
@@ -315,6 +330,8 @@ def main(argv=None) -> int:
             return 0
     if args.cmd in ("grind", "run"):
         return _grind(args)
+    if args.cmd == "coach":
+        return _coach(args)
     if args.cmd == "history":
         from .history import load, MEASURES
         h = load()
@@ -562,6 +579,9 @@ def _grind(args) -> int:
                          show_paths=getattr(args, "show_paths", False))
     except ValueError as e:
         print(f"  {e}"); return 1
+    coach_text = None
+    if getattr(args, "coach", None):
+        coach_text = _run_coach_into(run, path, pick, args.gap * 60, args.coach, args.athlete)
     if args.as_json:
         print(json.dumps(run, indent=2)); return 0
 
@@ -599,6 +619,9 @@ def _grind(args) -> int:
         from .history import best_rank
         br = best_rank(ranks)
         print(f"\n  #{br[0]} of {br[1]:,} grinds on this machine by {br[2]}")
+    if coach_text:
+        print()
+        print(coach_text)
     print(f"\n  card -> {out}")
     if args.push:
         from .push import import_url
@@ -615,6 +638,63 @@ def _grind(args) -> int:
         print("  nothing was uploaded or posted; sharing it is your click\n")
         if not args.no_open:
             webbrowser.open(out.resolve().as_uri())
+    return 0
+
+
+def _run_coach_into(run: dict, path: str, pick: int, gap_s: int, mode: str, athlete: str) -> str | None:
+    """Run the coach on the same sitting and copy its verdict fields into `run`.
+
+    The coach re-parses the sitting (same window rule, same counts), so the card and the
+    verdict cannot disagree about what they measured; `matches_card` in the verdict says so.
+    """
+    try:
+        from .coach.agent import run_coach
+    except ImportError as e:
+        print(f"  coach unavailable: {e}"); return None
+    try:
+        ctx, text = run_coach(path, pick=pick, gap=gap_s, mode=mode, athlete=athlete)
+    except ImportError as e:
+        print(f"\n  the coach needs the Strands SDK for --coach {mode}: pip install -e \".[coach]\"  ({e})")
+        return None
+    for k in ("coach_mode", "coach_tool_calls", "coach_verdict", "coach_plan", "coach_numbers"):
+        run[k] = ctx.run.get(k)
+    return text
+
+
+def _coach(args) -> int:
+    """`agentgrinder coach` : the verdict, on its own, for one sitting."""
+    from .solo import latest_grind
+    if args.session and not Path(args.session).exists():
+        print(f"no such transcript: {args.session}"); return 1
+    pick = args.pick
+    if args.session:
+        path = args.session
+        pick = -1 if pick is None else pick
+    else:
+        found = latest_grind()
+        if not found:
+            print("\n  no Claude Code session with a human turn under ~/.claude/projects."
+                  "\n  try the bundled fixture, from the repo root:"
+                  "\n\n      python3 -m agentgrinder coach samples/sample_session.jsonl\n")
+            return 1
+        path, auto = found
+        pick = auto if pick is None else pick
+    try:
+        from .coach.agent import run_coach
+    except ImportError as e:
+        print(f'\n  the coach needs the Strands SDK: pip install -e ".[coach]"   ({e})\n'); return 1
+    try:
+        ctx, text = run_coach(path, pick=pick, gap=args.gap * 60, mode=args.model, athlete=args.athlete)
+    except ValueError as e:
+        print(f"  {e}"); return 1
+    except ImportError as e:
+        print(f'\n  the coach needs the Strands SDK for --model {args.model}: pip install -e ".[coach]"   ({e})\n')
+        return 1
+    if args.as_json:
+        print(json.dumps(ctx.run, indent=2, default=str)); return 0
+    print()
+    print(text)
+    print()
     return 0
 
 
