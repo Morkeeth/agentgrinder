@@ -72,6 +72,7 @@ button.ghost:hover,.act:hover{background:var(--rule-2);border-color:var(--rule)}
 .shell.norail.noside,.shell.solo{grid-template-columns:minmax(0,1fr)}
 .shell.solo .rail,.shell.solo .side{display:none}
 .shell.norail.noside .main,.shell.solo .main{border-right:0;padding:24px 0 90px;max-width:760px;margin:0 auto}
+.shell.wide.norail.noside .main,.shell.wide.solo .main,.shell.wide .main{max-width:1240px}
 .rail .r{display:flex;justify-content:space-between;gap:8px;padding:5px 0;color:var(--soft);font-size:13px}
 .rail .r span{color:var(--dim)}
 
@@ -245,8 +246,9 @@ footer{max-width:1320px;margin:0 auto;padding:20px 24px 40px;color:var(--dim);fo
 .share-frame{width:1200px;height:630px;transform-origin:top left;background:var(--box);
   border:1px solid var(--rule);display:flex;flex-direction:column;color:var(--ink)}
 .share-main{flex:1;display:grid;grid-template-columns:1fr 1.05fr;min-height:0}
-.share-left{padding:44px 40px;display:flex;flex-direction:column;justify-content:space-between;
+.share-left{padding:44px 40px;display:flex;flex-direction:column;justify-content:flex-start;
   border-right:1px solid var(--rule)}
+.share-left>div{margin:auto 0}
 .share-brand{font-size:14px;font-weight:600}
 .share-brand i{color:var(--blue);font-style:normal}
 .share-handle-row{display:flex;align-items:center;gap:16px;margin-top:26px}
@@ -263,7 +265,7 @@ footer{max-width:1320px;margin:0 auto;padding:20px 24px 40px;color:var(--dim);fo
 .share-hl{font-size:14px;font-weight:400;line-height:1.55;margin:12px 0 16px;padding-left:12px;
   border-left:1px solid var(--blue)}
 .share-stats{display:grid;grid-template-columns:repeat(4,1fr);background:var(--rule);gap:1px;
-  border:1px solid var(--rule);margin-top:auto}
+  border:1px solid var(--rule);margin-top:16px}
 .share-stats .stat{background:var(--box);padding:12px 14px}
 .share-stats .v{font-size:20px;font-weight:500;margin-top:6px;line-height:1.1}
 .share-stats .k{font-size:11px;color:var(--dim)}
@@ -374,10 +376,10 @@ async function fetchFeatured(){
 const $=id=>document.getElementById(id);
 // THE SHELL. rail | feed | side. A view that has no rail or no side column says so and the grid
 // closes up; nothing in the rail or the side is drawn from anything but a row this page fetched.
-function frame(rail,side){
+function frame(rail,side,wide){
   const sh=$('shell'); if(!sh) return;
   $('rail').innerHTML=rail||''; $('side').innerHTML=side||'';
-  sh.className='shell'+(rail?'':' norail')+(side?'':' noside');
+  sh.className='shell'+(rail?'':' norail')+(side?'':' noside')+(wide?' wide':'');
 }
 function projectStats(runs){
   const by={};
@@ -1238,14 +1240,14 @@ function importRun(){
 }
 
 async function viewShareRun(id){
-  const app=$('app'); frame(null,null);
+  const app=$('app'); frame(null,null,true);
   const q=new URLSearchParams(location.search);
   const {data:r}=await sb.from('runs').select('*, profiles(github_handle,name)').eq('id',id).single();
   if(!r){ app.innerHTML='<div class="empty">Run not found or private.</div>'; return; }
   const att=runAttribution(r);
-  const bits=[r.harness,r.project].filter(Boolean);
+  const bits=[r.title,r.harness,r.project].filter(Boolean);
   app.innerHTML=shareCardHtml({
-    handle:att.handle, ghost:att.ghost, stamp:att.ghost?'GHOST GRIND':'CLAIMED',
+    handle:att.handle, ghost:att.ghost, stamp:att.ghost?'Ghost grind':'Claimed',
     lead:att.ghost?'Someone posted a grind':'@'+(r.profiles||{}).github_handle+' posted a grind',
     sub:bits.join(' · ')||r.title||'Real session',
     heroN:vptText(r), heroK:'verified per turn', heroTip:VPT_TIP+' · '+vptFormula(r), rhythm:r.rhythm, headline:r.note||null,
@@ -1275,7 +1277,7 @@ async function viewShareRig(handle){
 }
 
 async function viewShareProfile(handle){
-  const app=$('app'); frame(null,null);
+  const app=$('app'); frame(null,null,true);
   const {data:prof}=await sb.from('profiles').select('*').eq('github_handle',handle).single();
   if(!prof){ app.innerHTML='<div class="empty">No such grinder.</div>'; return; }
   const mine=ME&&ME.id===prof.id;
@@ -1287,7 +1289,7 @@ async function viewShareProfile(handle){
     commits:R.reduce((a,r)=>a+(r.commits||0),0)};
   const harnesses=[...new Set(R.map(r=>r.harness).filter(Boolean))];
   app.innerHTML=shareCardHtml({
-    handle, stamp:'CLAIMED', lead:`@${handle} · Scrapbook`, sub:'Where I post my real runs.',
+    handle, stamp:'Claimed', lead:`@${handle} · Scrapbook`, sub:'Where I post my real runs.',
     heroN:T.runs, heroK:'runs posted', stats:shareStatsProfile(R,T,harnesses),
   });
   fitShareCard(); window.addEventListener('resize',fitShareCard);
@@ -1296,9 +1298,9 @@ async function viewShareProfile(handle){
   });
 }
 function viewClaim(){
-  const app=$('app'); frame(null,null);
+  const app=$('app'); frame(null,null,true);
   app.innerHTML=shareCardHtml({
-    handle:'you', stamp:'OPEN', lead:'Your handle is still on the table.',
+    handle:'you', stamp:'Open', lead:'Your handle is still on the table.',
     sub:'Post your real agent grinds — Claude, Cursor, fleet. Metrics only. Nothing invented.',
     heroN:'?', heroK:'verified per turn', stats:'',
   })+`<div class="cta"><button onclick="location.href='/?onboard'">Claim @yourhandle</button>
