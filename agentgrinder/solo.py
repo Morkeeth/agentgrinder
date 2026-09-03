@@ -46,7 +46,7 @@ from datetime import datetime, timedelta
 
 from .authorship import CATEGORIES, classify, is_human_turn
 from .claims import ClaimTracker, is_tool_result, result_text
-from . import gitwork, privacy
+from . import gitwork, privacy, reach as reachmod
 
 EDIT_TOOLS = {"Edit", "Write", "NotebookEdit"}
 READ_TOOLS = {"Read", "NotebookRead"}
@@ -391,6 +391,10 @@ def parse_solo(path: str, athlete: str = "you", pick: int = -1, gap: int = SITTI
     claims, claims_verified = _claims_in_window(s["claim_ev"], t0, hi)
     artifacts_produced = len({p for _, p, kind in visits if kind == "edit" and os.path.exists(p)})
 
+    # REACH — the same window, the same commits the trace draws, asked of git (reach.py). None
+    # whenever the machine cannot tell, and the reason travels with it as the dash's sentence.
+    reach_value, reach_reason = reachmod.reach_of(repo_root, t0, t1, [c["hash"] for c in commits])
+
     title = _title(s["first_prompt"], repo_name, show_prompt=show_paths)
     # The card only quotes the headline back as a typed sentence when it really is one.
     prompt_shown = bool(show_paths and privacy.safe_prompt(s["first_prompt"], opt_in=True))
@@ -409,9 +413,11 @@ def parse_solo(path: str, athlete: str = "you", pick: int = -1, gap: int = SITTI
         files_touched=len(files),
         commits=len(commits),
         # verified per turn = (claims_verified + artifacts_produced) ÷ turns_typed (metrics.headline_of).
-        # corrections / artifacts_promised / reach are None: Transcripto / ZUP / reach probe own them.
+        # corrections and artifacts_promised have no source on this machine and stay dashes.
+        # reach is asked of git over THIS window, with the same commits the trace draws (reach.py).
         claims=claims, claims_verified=claims_verified, artifacts_produced=artifacts_produced,
-        corrections=None, artifacts_promised=None, reach=None,
+        corrections=None, artifacts_promised=None,
+        reach=reach_value, reach_reason=reach_reason,
         commits_list=[dict(hash=c["hash"], at=c["at"], subject=c["subject"],
                            # file NAMES never travel; the digest is only a join key (see _key)
                            files=[_key(p) for p in c["files"]]) for c in commits],

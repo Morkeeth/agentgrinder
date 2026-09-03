@@ -12,6 +12,7 @@ import json
 import os
 from datetime import datetime
 
+from . import gitwork, reach as reachmod
 from .authorship import is_human_turn
 from .claims import ClaimTracker, is_tool_result, result_text
 
@@ -39,6 +40,13 @@ def _tool_uses(msg: dict):
 
 CLAUDE_GLOB = "~/.claude/projects/*/*.jsonl"
 CURSOR_GLOB = "~/.cursor/projects/*/agent-transcripts/*/*.jsonl"
+
+# THE READER'S HARNESSES — one registry, `--harness` key -> the name a person reads.
+# Every user-facing sentence that lists what this tool can read is checked against this dict by
+# tests/test_harness_strings.py. Codex was added to the reader and two shipped strings still said
+# "Claude vs Cursor" for a day, so the list a stranger reads and the list the reader supports are
+# now bound by a test rather than by remembering.
+HARNESSES = {"claude": "Claude Code", "cursor": "Cursor", "codex": "Codex"}
 
 
 def latest_session() -> str | None:
@@ -121,7 +129,8 @@ def parse_session(path: str, athlete: str = "you") -> dict:
     if not typed_ts:
         raise ValueError(f"no typed human turns found in {path}")
     # v0 'artifacts produced': Edit/Write paths that exist on disk at PARSE time (not at the
-    # session's close — a later delete or rename reads as not produced). 'promised' is ZUP's.
+    # session's close — a later delete or rename reads as not produced). 'promised' has no source
+    # on this machine: no harness records what a run said it would deliver, so it stays a dash.
     artifacts_produced = sum(1 for fp in written if os.path.exists(fp))
 
     # moving time (Strava-style): sum gaps between events, but a gap over IDLE_CAP means you stepped away
@@ -143,6 +152,11 @@ def parse_session(path: str, athlete: str = "you") -> dict:
 
     cwd = project.rstrip("/") if project else ""
     proj_name = os.path.basename(cwd) if cwd else "session"
+    # REACH — did this cross to a person who is not the author? git is the witness, and the
+    # answer is None whenever the machine cannot tell (agentgrinder/reach.py).
+    repo = gitwork.repo_of(cwd) if cwd else None
+    reach_value, reach_reason = reachmod.reach_of(
+        repo[1] if repo else None, min(typed_ts), max(all_ts or typed_ts))
     # real characteristic: does the project carry a rules/context file? (Karpathy: rules cut errors ~41%->11%)
     rules = None; rules_lines = 0; has_plan = False
     if cwd:
@@ -176,8 +190,9 @@ def parse_session(path: str, athlete: str = "you") -> dict:
         "claims_verified": tracker.verified,     # v0 rule, claims.py
         "corrections": None,                     # Transcripto (coach inverse class) — not built
         "artifacts_produced": artifacts_produced,
-        "artifacts_promised": None,              # ZUP artifact-detect
-        "reach": None,                           # git remotes + gh + launch log
+        "artifacts_promised": None,              # not measured yet: nothing records what was promised
+        "reach": reach_value,                    # git remotes + push refs + gh (reach.py)
+        "reach_reason": reach_reason,            # the sentence the dash prints on hover
         "has_rules": bool(rules), "rules_file": rules, "rules_lines": rules_lines, "has_plan": has_plan,
         "rig": detect_rig(),
         "route": _route_indices(route),          # numbers only -- safe to publish
@@ -284,6 +299,8 @@ def parse_cursor_session(path: str, athlete: str = "you") -> dict:
         "started": (min(pts).isoformat() if pts else None),
         "duration_s": dur, "turns_typed": typed, "tool_calls": tool_calls,
         "files_touched": None, "commits": None, "rhythm": rhythm,
+        # this harness cannot supply reach, and the dash says which fact is missing
+        "reach": None, "reach_reason": reachmod.HARNESS_LIMIT["Cursor"],
     }
 
 
@@ -372,6 +389,8 @@ def parse_codex_session(path: str, athlete: str = "you") -> dict:
         "files_touched": None,
         "commits": None,
         "rhythm": rhythm,
+        "reach": None,
+        "reach_reason": reachmod.HARNESS_LIMIT["Codex"],
     }
 
 
