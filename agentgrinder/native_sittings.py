@@ -1,0 +1,74 @@
+"""Split native transcripts at observed idle gaps before human turns."""
+import json
+import re
+from datetime import datetime, timezone, timedelta
+
+
+def records(path):
+    with open(path, encoding="utf-8") as stream:
+        for line in stream:
+            try:
+                row = json.loads(line)
+                if isinstance(row, dict): yield row
+            except ValueError:
+                continue
+
+
+def cursor_time(text):
+    match = re.search(r"<timestamp>(.*?)</timestamp>", text, re.S)
+    if not match: return None
+    value = match.group(1).strip()
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        return parsed.astimezone(timezone.utc) if parsed.tzinfo else None
+    except ValueError:
+        pass
+    offset = re.search(r"\(UTC(?:([+-]\d{1,2})(?::(\d{2}))?)?\)", value)
+    if not offset: return None
+    hours = int(offset.group(1) or 0)
+    minutes = int(offset.group(2) or 0) * (-1 if (offset.group(1) or '').startswith('-') else 1)
+    if abs(hours)>23 or abs(minutes)>59: return None
+    zone = timezone(timedelta(hours=hours, minutes=minutes))
+    value = value[:offset.start()].strip()
+    for fmt in ("%A, %b %d, %Y, %I:%M %p", "%A, %B %d, %Y, %I:%M %p"):
+        try: return datetime.strptime(value, fmt).replace(tzinfo=zone).astimezone(timezone.utc)
+        except ValueError: pass
+    return None
+
+
+def sittings(path, harness, gap=1800):
+    if gap <= 0: raise ValueError("Choose an idle gap greater than zero")
+    groups, current, metadata = [], [], []
+    last = None
+    delegated = False
+    for row in records(path):
+        payload = row.get("payload") or {}
+        if not isinstance(payload, dict): payload = {}
+        if harness == "codex" and row.get("type") == "session_meta":
+            metadata.append({k:v for k,v in row.items() if k != "timestamp"})
+            delegated = isinstance(payload.get("source"),dict) and "subagent" in payload["source"]
+            continue
+        if harness == "codex":
+            human = row.get("type")=="event_msg" and payload.get("type")=="user_message" and not delegated and not str(payload.get("message") or "").lstrip().startswith(("<recommended_plugins>","<environment_context>","<turn_aborted>"))
+            try:
+                stamp = datetime.fromisoformat(row.get("timestamp", "").replace("Z", "+00:00"))
+                stamp = stamp.astimezone(timezone.utc) if stamp.tzinfo else None
+            except (ValueError, TypeError): stamp = None
+        else:
+            from .ingest import _cursor_text
+            text = _cursor_text(row.get("message") or {})
+            human = row.get("role")=="user" and "<user_query>" in text
+            stamp = cursor_time(text)
+        if human and current and stamp and last and (stamp-last).total_seconds()>gap:
+            groups.append(metadata+current); current=[]
+        if human or current:
+            current.append(row)
+            if stamp: last=stamp
+    if current: groups.append(metadata+current)
+    return groups
+
+
+def choose(groups, pick=-1):
+    index = len(groups)-1 if pick in (None,-1) else pick-1
+    if index < 0 or index >= len(groups): raise ValueError("Choose a sitting between 1 and %d (or -1 for latest)" % len(groups))
+    return groups[index]

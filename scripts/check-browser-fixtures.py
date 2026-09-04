@@ -82,5 +82,49 @@ with sync_playwright() as p:
     auth.get_by_text('Check your email for the sign-in link.',exact=False).wait_for(timeout=3000)
     assert not auth.evaluate('document.documentElement.scrollWidth>innerWidth')
     auth.close()
+    # Run the real import handler through redirect restoration, server failure and success.
+    imported=browser.new_page(viewport={'width':390,'height':844})
+    imported.route('**/*',lambda route:route.fulfill(status=200,content_type='text/html',body='<div id="status"></div><main id="app"></main>'))
+    payload={'schema_version':1,'harness':'Codex','turns_typed':2,'duration_s':120,'measurement_revision':'a'*64}
+    import base64,urllib.parse
+    encoded=urllib.parse.quote(base64.b64encode(json.dumps(payload).encode()).decode(),safe='')
+    imported.goto('https://grinder-fixture.test/#import='+encoded)
+    imported.add_script_tag(content=(ROOT/'site/run-contract.js').read_text())
+    handler=html[html.index('function importRun(){'):html.index('async function viewShareRun(')]
+    imported.add_script_tag(content=r"""
+      const $=id=>document.getElementById(id),esc=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
+      let ME=null;window.importCalls=[];window.failImport=true;
+      const frame=()=>{},status=text=>{$('status').textContent=text};
+      const sb={from(table){const q={insert(row){window.importCalls.push({table,row});return q},select(){return q},single(){return Promise.resolve(window.failImport?{error:{message:'Fixture backend refused schema'}}:{data:{id:'published-fixture'},error:null})},update(){return q},eq(){return Promise.resolve({error:null})}};return q}};
+      function showSignIn(){stashImport(location.hash.match(/import=([^&]+)/)[1]);history.replaceState(null,'','/');$('app').innerHTML='<p>Simulated identity redirect</p>'}
+      async function viewRun(id){document.getElementById('app').innerHTML='<h2>Published run '+id+'</h2>';window.openedRun=id}
+    """+stash+handler)
+    imported.evaluate('importRun()')
+    imported.get_by_placeholder('Title (optional, you type this, not scraped)').fill('My chosen run title')
+    imported.locator('#i_vis').select_option('public')
+    imported.get_by_role('button',name='Sign in to publish',exact=True).click()
+    imported.get_by_text('Simulated identity redirect',exact=True).wait_for()
+    imported.evaluate("ME={id:'fixture-author',rig:{}};restoreImport();importRun()")
+    assert imported.locator('#i_title').input_value()=='My chosen run title'
+    assert imported.locator('#i_vis').input_value()=='public'
+    imported.get_by_role('button',name='Publish',exact=True).click()
+    imported.get_by_text('Fixture backend refused schema',exact=True).wait_for()
+    assert len(imported.evaluate('importCalls'))==1 # no silent retry dropping evidence
+    assert imported.get_by_role('button',name='Publish',exact=True).is_enabled()
+    assert '#import=' in imported.url
+    imported.evaluate('window.failImport=false')
+    imported.get_by_role('button',name='Publish',exact=True).click()
+    imported.get_by_role('heading',name='Published run published-fixture',exact=True).wait_for()
+    assert imported.url.endswith('/?run=published-fixture')
+    saved=imported.evaluate('importCalls[1].row')
+    assert saved['measurement_revision']=='a'*64 and saved['title']=='My chosen run title'
+    assert saved['started_at'] is None # do not invent a session timestamp on import
+    # A first-time friend arriving at a run must stay there, even with no runs of their own.
+    routing=html[html.index('async function route(){'):html.index("document.addEventListener('DOMContentLoaded'")]
+    imported.add_script_tag(content="function authErrorFromUrl(){};async function shouldOnboard(){return true};async function viewOnboard(){window.wrongOnboard=true};"+routing)
+    imported.evaluate('route()')
+    assert imported.evaluate('window.openedRun')=='published-fixture'
+    assert not imported.evaluate('window.wrongOnboard')
+    imported.close()
     print(json.dumps({'fixture':'practice discovery, failed search, before/after, explicit shared attempt','mobile_and_desktop':True,'javascript_errors':failures,'writes':calls}))
     browser.close()

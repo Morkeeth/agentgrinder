@@ -22,14 +22,14 @@ def test_landing_names_one_canonical_public_run_and_reads_it_anonymously():
     assert ".eq('id',FEATURED_RUN)" in HTML
 
 
-def test_landing_draws_the_run_before_the_sign_in_call():
+def test_landing_shows_a_run_without_sign_in_before_capture_details():
     assert "async function viewLanding()" in HTML
     assert "function landingHTML(r)" in HTML
     body = HTML[HTML.index("function landingHTML(r)"):]
     body = body[:body.index("\nasync function viewLanding()")]
-    # the card is above the buttons, and the buttons are above how-it-works
+    # The real example remains available without authentication.
     assert body.index("featuredCard(r)") < body.index("Get started")
-    assert body.index("Get started") < body.index("howItWorks()")
+    assert body.index("featuredCard(r)") < body.index("uploadBlock()")
 
 
 def test_the_card_carries_the_verdict_its_numbers_and_the_tool_call_count():
@@ -38,7 +38,7 @@ def test_the_card_carries_the_verdict_its_numbers_and_the_tool_call_count():
     assert "vptHtml(r)" in card and "fiveRow(r)" in card       # the numbers
     assert "r.coach_verdict" in card                            # the verdict paragraph
     assert "verdict produced by <b>${esc(String(n))}</b> tool call" in card
-    assert "write_verdict" in card and "refuses" in card        # the refusal line, in words
+    assert "<details" in card  # supporting coach evidence is available on demand
 
 
 def test_a_snapshot_paints_before_the_fetch_and_matches_the_row_that_was_published():
@@ -81,7 +81,8 @@ def test_how_it_works_names_the_five_tools_and_the_three_modes_logged_out():
 def test_the_landing_promises_nothing_that_needs_an_account():
     body = HTML[HTML.index("function landingHTML(r)"):]
     body = body[:body.index("\nasync function viewLanding()")]
-    assert "No account needed" in body
+    assert 'href="/?explore"' in body
+    assert "Runs start private" in body
     # every link out of the landing is a page that renders without a session
     for href in re.findall(r"location\.href='([^']+)'", body):
         assert href in ("/?onboard", "/?explore"), href

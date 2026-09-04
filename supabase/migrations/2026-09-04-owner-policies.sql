@@ -1,0 +1,47 @@
+-- Explicit ownership rules for the inherited base tables, independent of old permissive policies.
+begin;
+alter table profiles enable row level security;
+alter table runs enable row level security;
+alter table acks enable row level security;
+drop policy if exists grinder_profile_insert on profiles;
+create policy grinder_profile_insert on profiles for insert to authenticated with check(auth_uid=auth.uid());
+drop policy if exists grinder_profile_insert_guard on profiles;
+create policy grinder_profile_insert_guard on profiles as restrictive for insert to authenticated with check(auth_uid=auth.uid());
+drop policy if exists grinder_profile_update on profiles;
+create policy grinder_profile_update on profiles for update to authenticated using(auth_uid=auth.uid()) with check(auth_uid=auth.uid());
+drop policy if exists grinder_profile_update_guard on profiles;
+create policy grinder_profile_update_guard on profiles as restrictive for update to authenticated using(auth_uid=auth.uid()) with check(auth_uid=auth.uid());
+drop policy if exists grinder_profile_delete on profiles;
+create policy grinder_profile_delete on profiles for delete to authenticated using(auth_uid=auth.uid());
+drop policy if exists grinder_profile_delete_guard on profiles;
+create policy grinder_profile_delete_guard on profiles as restrictive for delete to authenticated using(auth_uid=auth.uid());
+drop policy if exists grinder_run_insert on runs;
+create policy grinder_run_insert on runs for insert to authenticated with check(profile_id=grinder_profile_id());
+drop policy if exists grinder_run_insert_guard on runs;
+create policy grinder_run_insert_guard on runs as restrictive for insert to authenticated with check(profile_id=grinder_profile_id());
+drop policy if exists grinder_run_update on runs;
+create policy grinder_run_update on runs for update to authenticated using(profile_id=grinder_profile_id()) with check(profile_id=grinder_profile_id());
+drop policy if exists grinder_run_update_guard on runs;
+create policy grinder_run_update_guard on runs as restrictive for update to authenticated using(profile_id=grinder_profile_id()) with check(profile_id=grinder_profile_id());
+drop policy if exists grinder_run_delete on runs;
+create policy grinder_run_delete on runs for delete to authenticated using(profile_id=grinder_profile_id());
+drop policy if exists grinder_run_delete_guard on runs;
+create policy grinder_run_delete_guard on runs as restrictive for delete to authenticated using(profile_id=grinder_profile_id());
+drop policy if exists grinder_ack_insert on acks;
+create policy grinder_ack_insert on acks for insert to authenticated with check(from_profile=grinder_profile_id());
+drop policy if exists grinder_ack_insert_guard on acks;
+create policy grinder_ack_insert_guard on acks as restrictive for insert to authenticated with check(from_profile=grinder_profile_id());
+drop policy if exists grinder_ack_delete on acks;
+create policy grinder_ack_delete on acks for delete to authenticated using(from_profile=grinder_profile_id());
+drop policy if exists grinder_ack_delete_guard on acks;
+create policy grinder_ack_delete_guard on acks as restrictive for delete to authenticated using(from_profile=grinder_profile_id());
+drop policy if exists grinder_ack_no_update on acks;
+create policy grinder_ack_no_update on acks as restrictive for update to authenticated using(false);
+-- Ghost attribution is not safe while raw rows include profile_id. Keep these rows owner-only.
+drop policy if exists grinder_ghost_owner_only on runs;
+create policy grinder_ghost_owner_only on runs as restrictive for select to anon,authenticated using(visibility<>'anonymous' or profile_id=grinder_profile_id());
+-- Public reads still use the established policies; mutating identity needs an authenticated owner.
+revoke insert,update,delete on profiles,runs,acks from anon;
+grant insert,update,delete on profiles,runs to authenticated;
+grant insert,delete on acks to authenticated;
+commit;

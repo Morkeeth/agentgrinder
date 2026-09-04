@@ -17,7 +17,7 @@ def test_network_client_sends_one_scoped_request_and_returns_no_credential():
         def do_POST(self):
             seen.append(json.loads(self.rfile.read(int(self.headers['Content-Length']))))
             self.send_response(200);self.send_header('Content-Type','application/json');self.end_headers()
-            self.wfile.write(b'{"id":"draft-id","action":"draft"}')
+            self.wfile.write(b'{"id":"00000000-0000-0000-0000-000000000099","action":"draft","debug_token":"fixture-token"}')
         def log_message(self,*args):pass
     server=ThreadingHTTPServer(('127.0.0.1',0),Handler)
     thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
@@ -32,3 +32,13 @@ def test_network_client_sends_one_scoped_request_and_returns_no_credential():
 
 def test_credentials_never_travel_over_remote_plain_http():
     with pytest.raises(ValueError):AgentClient('fixture-token','http://example.com')
+
+
+def test_parser_derived_title_is_not_automatically_uploaded():
+    payload=run_payload({'turns_typed':2,'harness':'Cursor','title':'PRIVATE_TYPED_PROMPT','note':'PRIVATE_NOTE'})
+    assert 'PRIVATE_TYPED_PROMPT' not in str(payload)
+    assert 'PRIVATE_NOTE' not in str(payload)
+
+
+def test_separately_chosen_public_title_can_be_shared():
+    assert run_payload({'turns_typed':2,'title':'private'},title='Chosen public title')['title']=='Chosen public title'

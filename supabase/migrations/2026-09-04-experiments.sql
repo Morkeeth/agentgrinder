@@ -47,7 +47,7 @@ begin
  if choice is null or choice not in ('adopt','revert','incomparable') then raise exception 'Choose an adoption decision'; end if;
  if outcome_run is not null then
   observed=grinder_run_snapshot(outcome_run);
-  if observed->>'measurement_revision'=attempt.baseline->>'measurement_revision' or (observed->>'started_at')::timestamptz<attempt.created_at then raise exception 'Choose a new session after the cycle began'; end if;
+  if observed->>'started_at' is null or (observed->>'started_at')::timestamptz>now() or observed->>'measurement_revision'=attempt.baseline->>'measurement_revision' or (observed->>'started_at')::timestamptz<attempt.created_at then raise exception 'Choose a new session after the cycle began'; end if;
  end if;
  if (observed is null or observed->>'harness' is distinct from attempt.baseline->>'harness') and choice<>'incomparable' then raise exception 'Different or missing evidence needs an incomparable outcome'; end if;
  update grinder_experiment_cycles set outcome=observed,decision=choice,reflection=reflection_text,reviewed_at=now() where id=cycle;

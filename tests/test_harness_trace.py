@@ -104,7 +104,7 @@ def test_cursor_finds_the_repository_from_the_files_it_wrote(tmp_path):
     ]))
     # a real answer from reach.py, not the old "this harness cannot supply it"
     assert run["reach"] is None
-    assert run["reach_reason"] == reach.R_NO_COMMITS
+    assert run["reach_reason"] == reach.R_NO_WINDOW  # embedded times lack a timezone
 
 
 def test_cursor_that_wrote_nothing_reports_nothing(tmp_path):

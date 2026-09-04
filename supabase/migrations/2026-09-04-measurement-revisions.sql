@@ -12,3 +12,6 @@ alter table public.runs
 
 comment on column public.runs.measurement_revision is 'Opaque local measurement revision; not independent attestation';
 comment on column public.runs.baseline_revision is 'Frozen local revision used for this comparison';
+
+-- Native durations can include fractions of a second. Preserve the measured value.
+alter table public.runs alter column duration_s type double precision;

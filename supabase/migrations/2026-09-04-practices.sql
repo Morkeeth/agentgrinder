@@ -78,7 +78,7 @@ begin
  if outcome_run is not null then
   observed=grinder_run_snapshot(outcome_run);
   if observed->>'measurement_revision'=original.baseline->>'measurement_revision' then raise exception 'Choose a new run for the outcome'; end if;
-  if (observed->>'started_at')::timestamptz<original.created_at then raise exception 'The outcome session must start after the attempt'; end if;
+  if observed->>'started_at' is null or (observed->>'started_at')::timestamptz>now() or (observed->>'started_at')::timestamptz<original.created_at then raise exception 'The outcome session must start after the attempt'; end if;
  end if;
  if (not was_tried or observed is null or observed->>'harness' is distinct from original.baseline->>'harness') and choice<>'incomparable' then raise exception 'Missing or different evidence needs an incomparable outcome'; end if;
  update grinder_practice_attempts set outcome=observed,tried=was_tried,decision=choice,note=reflection,reviewed_at=now() where id=attempt;

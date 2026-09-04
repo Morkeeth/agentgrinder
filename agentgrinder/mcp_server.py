@@ -300,6 +300,8 @@ def _handle(req: dict):
                 "inputSchema":{"type":"object","properties":{
                     "action":{"type":"string","enum":["draft","publish","reply","ack"]},
                     "payload":{"type":"object"},
+                    "public_title":{"type":"string","description":"Separately chosen title for sharing; never copy a private prompt"},
+                    "public_note":{"type":"string","description":"Optional caption explicitly chosen for the granted audience"},
                     "request_id":{"type":"string","description":"Reuse this UUID and the identical payload after an uncertain response"}},
                     "required":["action","payload"],"additionalProperties":False}})
         return {"jsonrpc": "2.0", "id": rid, "result": {"tools": available}}
@@ -316,7 +318,7 @@ def _handle(req: dict):
                 from .agent_api import AgentClient, run_payload
                 payload = args["payload"]
                 if args["action"] in ("draft","publish"):
-                    payload = run_payload(payload,payload.get("visibility","private"))
+                    payload = run_payload(payload,payload.get("visibility","private"),title=args.get("public_title"),note=args.get("public_note"))
                 text = json.dumps(AgentClient().perform(args["action"],payload,args.get("request_id")))
             elif name == "a2a_onboard":
                 text = onboarding_text()

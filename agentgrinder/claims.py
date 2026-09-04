@@ -212,7 +212,7 @@ def claims_in(text: str) -> list[Claim]:
     return out
 
 
-EVIDENCE_VERSION = "test-outcomes-2026-09-04"
+EVIDENCE_VERSION = "test-outcomes-2026-09-04-v2"
 _TEST_SUBJECT = re.compile(r"\b(?:tests?|suite|pytest|test_\w+)\b", re.I)
 _OTHER_OUTCOME = re.compile(r"\b(?:deploy\w*|merg\w*|commit\w*|shipp?\w*|creat\w*|wrote|written|added|remov\w*|renam\w*|updated|built|landed)\b", re.I)
 _PASS_RESULT = re.compile(r"\b(?:PASSED|PASS|passed|ok)\b")
@@ -235,9 +235,14 @@ def evidence_kind(claim: Claim, result_text: str) -> str | None:
     tests = set(re.findall(r"(?<![\w/])test_\w+\b(?!\.\w)", claim.line))
     targets = tests or {token for token in claim.tokens if "." in token or "/" in token}
     if targets:
-        if all(re.search(r"(?<![\w./-])" + re.escape(tok) + r"(?![\w./-])", result_text) for tok in targets):
-            return "token"
-        return None
+        for target in targets:
+            token = re.compile(r"(?<![\w./-])" + re.escape(target) + r"(?![\w./-])")
+            matching_lines = [line for line in result_text.splitlines() if token.search(line)]
+            if not any((_PASS_RESULT.search(line) or _GENERIC_OK.search(line))
+                       and not re.search(r"\b(?:SKIPPED|SKIP|XFAIL|PENDING)\b",line,re.I)
+                       for line in matching_lines):
+                return None
+        return "token"
     return "generic" if _GENERIC_OK.search(result_text) else None
 
 
@@ -289,6 +294,8 @@ def result_text(o: dict) -> str:
     if isinstance(c, list):
         for b in c:
             if isinstance(b, dict) and b.get("type") == "tool_result":
+                if b.get("is_error") is True or b.get("isError") is True:
+                    parts.append("ERROR: tool reported failure")
                 inner = b.get("content")
                 if isinstance(inner, str):
                     parts.append(inner)
@@ -296,6 +303,9 @@ def result_text(o: dict) -> str:
                     parts.extend(x.get("text", "") for x in inner if isinstance(x, dict))
     tr = o.get("toolUseResult")
     if isinstance(tr, dict):
+        exit_code=tr.get("exit_code",tr.get("exitCode"))
+        if tr.get("interrupted") is True or (exit_code is not None and str(exit_code).lstrip("-").isdigit() and int(exit_code)!=0):
+            parts.append("ERROR: tool reported failure")
         for k in ("stdout", "stderr", "output", "listing"):
             v = tr.get(k)
             if isinstance(v, str):

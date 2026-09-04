@@ -294,15 +294,15 @@ window.GrinderChallenges = function ({ client: db, me, app, frame, status }) {
       $("challenge-body").innerHTML =
         `<article class="card"><small>${esc(c.kind === "octacon" ? "OCTACON" : "Challenge")}</small><h2>${esc(c.name)}</h2><p>${esc(c.contract.task)}</p><ol>${(c.contract.checks || []).map((check) => `<li>${esc(check)}</li>`).join("")}</ol><p>${entries.length} of ${c.capacity} Crews entered · ${open ? "closes" : "closed"} ${esc(new Date(c.closes_at).toLocaleString())}</p><small>This Contract is fixed. A changed task needs a new Challenge.</small></article>` +
         octaconBoard(c, entries, submissions) +
-        (open && crews.length && rigs.length
+        (open && me()?.id !== c.owner_id && !mine.length && crews.length && rigs.length
           ? `<form id="enter-challenge" class="panel reply-form"><h3>Enter your Crew</h3><label>Crew<select name="crew">${options(crews, "name")}</select></label><label>Lock this public Rig<select name="rig">${options(rigs, "label")}</select></label><p>Your Crew name and selected Rig become part of the public entry.</p><button>Enter and lock Rig</button></form>`
-          : open && me()
+          : open && me() && me().id !== c.owner_id && !mine.length
             ? '<p>To enter, own a Crew and <a href="/?rigs">save a public Rig version</a>.</p>'
             : "") +
         entries
           .map(
             (e) =>
-              `<article class="card"><h3>${esc(e.crew_name)}</h3><a href="/?rigversion=${e.rig_revision}">Locked Rig</a><p>${submissions.some((s) => s.entry_id === e.id) ? "Submitted" : "Awaiting a grind"}</p></article>`,
+              `<article class="card"><h3>${esc(e.crew_name)}</h3>${e.rig_revision ? `<a href="/?rigversion=${e.rig_revision}">Locked Rig</a>` : "<small>Source Rig removed</small>"}<p>${submissions.some((s) => s.entry_id === e.id) ? "Submitted" : "Awaiting a grind"}</p></article>`,
           )
           .join("") +
         (open && mine.length && runs.length
@@ -313,7 +313,7 @@ window.GrinderChallenges = function ({ client: db, me, app, frame, status }) {
           .map((s) => {
             const team = entries.find((e) => e.id === s.entry_id);
             const history = reviews.filter((r) => r.submission_id === s.id);
-            return `<article class="card"><h3>${esc(team?.crew_name)}</h3><p>${esc(s.snapshot.title || "Submitted grind")}</p><a href="/?run=${s.run_id}">Open source grind</a><p>Measurement ${esc(s.measurement_revision.slice(0, 12))} · client-reported snapshot</p>${
+            return `<article class="card"><h3>${esc(team?.crew_name)}</h3><p>${esc(s.snapshot.title || "Submitted grind")}</p>${s.run_id ? `<a href="/?run=${s.run_id}">Open source grind</a>` : "<small>Source grind removed; submitted result retained</small>"}<p>Measurement ${esc(s.measurement_revision.slice(0, 12))} · client-reported snapshot</p>${
               history
                 .map(
                   (r) =>

@@ -337,6 +337,7 @@ footer{max-width:1320px;margin:0 auto;padding:20px 24px 40px;color:var(--dim);fo
   .row{flex-wrap:wrap}
   .share-frame{height:auto;min-height:630px}
 }
+.landing-intro{padding:28px 0 20px}.landing-intro h1{font-size:clamp(32px,6vw,52px);line-height:1.05;letter-spacing:-1.6px;max-width:13ch;margin:16px 0}.landing-intro>p:not(.meta){font-size:17px;line-height:1.5;max-width:40ch}.landing-intro .cta{margin-top:22px}
 </style><link rel="stylesheet" href="/social.css"></head>
 <body>
 <div class="bar"><div class="bar-in">
@@ -921,7 +922,7 @@ async function viewMe(){
   const sh=grindShape(R,acksR||0);
   frame(railHtml('me',R), sidePanels(R,{mine:true}));
   const composer=`<div class="up">
-    <div class="up-top"><span class="t">Score a run</span><span class="meta">nothing uploads until you push</span></div>
+    <div class="up-top"><span class="t">Record a run</span><span class="meta">nothing uploads until you push</span></div>
     <div class="cmd"><span class="c">${INSTALL_CMD}</span><button class="act" id="cp1">Copy</button></div>
     <div class="up-foot">Reads the newest session on your machine, metrics only.</div></div>`;
   app.innerHTML=`<div class="phero">${avatar(ME.github_handle,{size:36})}
@@ -966,16 +967,14 @@ async function viewOnboard(){
   const app=$('app'); const n=ME?2:1; const done=ME?1:0;
   frame(railHtml('onboard'),null);
   const cmd=t=>`<div class="cmd"><span class="c">${t}</span></div>`;
-  const step1=`<div class="ob-step"><h3>Connect GitHub${ME?' · done':''}</h3>
+  const step1=`<div class="ob-step"><h3>Create your Scrapbook${ME?' · done':''}</h3>
     <p class="hint">Identity only. Your handle names your Scrapbook. No repo access is asked for.</p>
     ${ME?`<p class="meta">Connected as <b style="color:var(--ink);font-weight:500">@${esc(ME.github_handle)}</b></p>`:
     `<button id="ob-auth">Sign in with GitHub</button>`}</div>`;
   const step2=`<div class="ob-step"><h3>Grind locally</h3>
-    <p class="hint">Reads Claude Code or Cursor on your machine. Transcripts never upload, only metrics, and only if you push.</p>
-    ${cmd('git clone https://github.com/Morkeeth/agentgrinder && cd agentgrinder && pip install -e .')}
-    ${cmd('python3 -m agentgrinder grind')}
-    ${cmd('python3 -m agentgrinder flex')}
-    <p class="hint">Compare Claude against Cursor on your machine before you push.</p></div>`;
+    <p class="hint">Reads Claude Code, Cursor or Codex on your machine. Transcripts never upload, only metrics, and only if you push.</p>
+    <div class="cmd"><span class="c">${INSTALL_CMD}</span><button class="act" id="cp1">Copy</button></div>
+    <p class="hint">Your latest sitting becomes a private run card. You can inspect it before sharing.</p></div>`;
   const step3=`<div class="ob-step"><h3>What leaves your machine</h3>
     <div class="p-row" style="padding-left:0;padding-right:0"><span>Counts, timing, pace, commits, the curve</span><span class="v">shared</span></div>
     <div class="p-row" style="padding-left:0;padding-right:0"><span>Prompt text</span><span class="v never">never</span></div>
@@ -988,8 +987,9 @@ async function viewOnboard(){
       ${ME?`<button id="ob-push">I pushed, show my grind</button>`:`<button disabled>Sign in first</button>`}
       <button class="ghost" id="ob-skip">Skip, browse the feed</button>
     </div></div>`;
-  app.innerHTML=`<div class="head"><h2>Welcome to Agent Grinder</h2><span class="meta">four steps, about a minute</span></div>
+  app.innerHTML=`<div class="head"><h2>Welcome to Agent Grinder</h2><span class="meta">record → share → improve</span></div>
       ${stepBar(n,done)}${step1}${step2}${step3}${step4}`;
+  wireCopy();
   const oa=$('ob-auth'); if(oa) oa.addEventListener('click',()=>$('auth').click());
   const os=$('ob-skip'); if(os) os.addEventListener('click',()=>{ localStorage.setItem('ag_onboard_done','1'); history.replaceState(null,'','/'); route(); });
   const op=$('ob-push'); if(op) op.addEventListener('click',async()=>{ localStorage.setItem('ag_onboard_done','1'); history.replaceState(null,'','/'); viewMe(); });
@@ -1055,19 +1055,19 @@ function featuredCard(r){
       <span class="state" title="A client-supplied coach report; not independent server verification">Coach report</span></div>
     <div class="title">${esc(r.title||'A grind')}</div>
     <div class="sub">${esc(r.harness||'agent')}${r.project?' · '+esc(r.project):''}${dm?' · '+fmtDur(dm):''}</div>
+    ${curve(r.rhythm)}
     ${vptHtml(r)}
-    ${fiveRow(r)}
+    <details><summary class="pad">Coach notes and measurement details</summary>${fiveRow(r)}
     <div class="grp">the coach${n?` · verdict produced by <b>${esc(String(n))}</b> tool call${n==1?'':'s'}`:''}</div>
     ${r.coach_verdict?`<div class="para">${esc(String(r.coach_verdict))}</div>`:''}
     ${plan.length?`<ul class="plan">${plan.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}
-    <div class="rule-line">The coach never writes a number a tool did not return. write_verdict refuses the number and names the tool that owns it.</div>
+    </details>
     <div class="grp">cost — what the grind spent</div>
     <div class="stats num">
       <div class="stat"><div class="k">prompts · cost</div><div class="v"${cnt(r.prompts)}>${r.prompts??'-'}</div></div>
       <div class="stat"><div class="k">time</div><div class="v">${fmtDur(dm)}</div></div>
       <div class="stat"><div class="k">commits</div><div class="v"${cnt(r.commits??0)}>${r.commits??0}</div></div>
       <div class="stat"><div class="k">tool calls</div><div class="v"${cnt(r.tool_calls??0)}>${r.tool_calls??0}</div></div></div>
-    ${curve(r.rhythm)}
     <div class="foot"><a href="/?run=${r.id}" style="color:var(--blue);font-weight:500">Open the full run</a>
       <span class="acts"><a class="act" href="/?share=1&run=${r.id}">Share</a></span></div></div>`;
 }
@@ -1108,7 +1108,7 @@ const INSTALL_CMD="git clone https://github.com/Morkeeth/agentgrinder && cd agen
 const COACH_CMD='python3.12 -m venv .venv && .venv/bin/pip install -e ".[coach]" && .venv/bin/agentgrinder grind --coach';
 function uploadBlock(){
   return `<div class="up">
-    <div class="up-top"><span class="t">Score a run</span><span class="meta">no account needed</span></div>
+    <div class="up-top"><span class="t">Record a run</span><span class="meta">no account needed</span></div>
     <div class="cmd"><span class="c">${INSTALL_CMD}</span><button class="act" id="cp1">Copy</button></div>
     <div class="cmd"><span class="c plain">Reads the newest session on your machine, prints the card. No install, no key: it runs on the python macOS already ships.</span></div>
     <div class="up-top" style="margin-top:2px"><span class="t">Then have the coach check it</span><span class="meta">needs Python 3.10 or newer</span></div>
@@ -1152,16 +1152,12 @@ function wireCopy(){
 
 
 function landingHTML(r){
-  return `${uploadBlock()}
-  ${coachStrip(r)}
-  <div class="head"><h2>A real run, refereed</h2><span class="meta">your agent says it shipped, --coach puts a second agent on it</span></div>
+  return `<section class="landing-intro"><p class="meta">STRAVA FOR YOUR AGENT RUNS</p><h1>Good work deserves a run.</h1><p>Capture a session. Flex what you built. Learn what makes your next run better.</p><div class="cta"><button onclick="location.href='/?onboard'">Record my first run</button><a href="/?explore">Explore the runs</a></div></section>
+  <div class="head"><h2>One real run</h2><span class="meta">a builder, an agent, and the work</span></div>
   ${r?featuredCard(r):`<div class="card"><div class="empty">Loading the public example run.</div></div>`}
-  <div class="cta">
-    <button onclick="location.href='/?onboard'">Get started</button>
-    <button class="ghost" onclick="document.getElementById('auth').click()">Sign in with GitHub</button>
-    <button class="ghost" onclick="location.href='/?explore'">Browse public runs</button>
-    <span class="hint">No account needed to read the run above or the feed.</span></div>
-  ${howItWorks()}`;
+  <section class="panel"><div class="pad"><h2>Your history. Your Rig. Your Crew.</h2><p>Keep a Scrapbook of your runs. Get specific ACKs from other builders. Try a practice, then compare the next session.</p><div class="cta"><button onclick="location.href='/?onboard'">Get started</button><button class="ghost" onclick="document.getElementById('auth').click()">Sign in</button></div></div></section>
+  <details class="panel"><summary class="pad">Capture runs from Cursor, Claude Code or Codex</summary>${uploadBlock()}</details>
+  <p class="hint">Runs start private. You choose what to share. <a href="/methodology">How the measurements work</a> · <a href="/privacy">Privacy</a></p>`;
 }
 
 async function viewLanding(){
@@ -1194,12 +1190,14 @@ async function viewRun(id){
   const preselect=q.get('reason')&&ACK_REASONS[q.get('reason')]?q.get('reason'):suggested[0];
   const openAck=q.get('ack')==='1'&&ME&&!ad.mine.has(r.id)&&ME.id!==r.profile_id;
   frame(railHtml(null,[r]), sidePanels([r]));
-  app.innerHTML=`<div class="head"><h2>A grind</h2><span class="meta">${esc(r.visibility==='public'?'public':r.crew_shared?'Crew members':r.visibility==='private'?'private':'link only')}</span></div>`
+  app.innerHTML=`<div class="head"><h2>A grind</h2><span class="meta">${esc(r.visibility==='public'?'public':r.crew_shared?'Crew members':r.visibility==='private'||r.visibility==='anonymous'?'private':'link only')}</span></div>`
     +runCard(r,ad.mine.has(r.id),ad.counts[r.id]||acks.length,{picker:openAck,suggested,selected:preselect})
     +`<div class="head"><h2>ACKs</h2><span class="meta">${acks.length}</span></div><div class="panel">`+ackListHtml(acks)+`</div>`
-    +`<div class="cta"><a class="act" href="/?share=1&run=${r.id}">Share card</a>
+    +`<div class="cta">${r.visibility==='public'||r.visibility==='link'?'<button id="run-copy-link">Copy run link</button>':''}<a class="act" href="/?share=1&run=${r.id}">Share card</a>
       <a class="act" href="/?share=1&run=${r.id}&roast=1">Roast card</a>
       <span class="hint"><a href="/?u=${encodeURIComponent((r.profiles||{}).github_handle||'')}">see the profile</a></span></div><section id="grind-crew-share"></section><section id="grind-thread"></section>`;
+  const copyLink=$('run-copy-link');if(copyLink)copyLink.onclick=async()=>{try{await navigator.clipboard.writeText(location.origin+'/?run='+r.id);copyLink.textContent='Link copied'}catch(_){status('Copy this page address to share your run.')}};
+  if(ME?.id===r.profile_id){const controls=document.createElement('div');controls.className='panel reply-form';controls.innerHTML='<label>Who can read this run<select id="run-audience"><option value="private">Only me</option><option value="public">Public</option><option value="link">Anyone with the link</option></select></label><button id="run-save-audience">Save audience</button><button id="run-delete" class="ghost">Delete run</button>';app.append(controls);$('run-audience').value=r.visibility==='anonymous'?'private':r.visibility;$('run-save-audience').onclick=async()=>{const {error}=await sb.from('runs').update({visibility:$('run-audience').value}).eq('id',r.id);if(error){status(error.message,true);return}await viewRun(r.id)};$('run-delete').onclick=async()=>{if(!confirm('Delete this run and its discussion? Submitted Challenge results stay in event history.'))return;const {error}=await sb.from('runs').delete().eq('id',r.id);if(error){status(error.message,true);return}history.replaceState(null,'','/');viewMe()};}
   wireKudos(); if(openAck){ const card=$('card-'+id); if(card) wireAckPicker(card,r,preselect); }
   if(q.get('ack')) history.replaceState(null,'',`/?run=${id}`);
   await social.thread(id,$('grind-thread'));
@@ -1229,14 +1227,14 @@ function trendingBlock(repos){ if(!repos.length) return '';
 async function viewExplore(){
   const app=$('app');
   frame(railHtml('feed'),null); app.innerHTML=skeletonCard()+skeletonCard()+skeletonCard();
-  const {data:runs,error}=await sb.from('runs').select('*, profiles(github_handle,name,rig)').in('visibility',['public','anonymous']).order('created_at',{ascending:false}).limit(50);
+  const {data:runs,error}=await sb.from('runs').select('*, profiles(github_handle,name,rig)').eq('visibility','public').order('created_at',{ascending:false}).limit(50);
   noteTraces(runs);
   if(error){status(error.message,true);return;}
   const ad=await ackData(runs||[]);
   const R=runs||[];
   frame(railHtml('feed',R), sidePanels(R,{mine:false}));
   const composer=`<div class="up">
-    <div class="up-top"><span class="t">Score a run</span><span class="meta">nothing here reads your transcripts</span></div>
+    <div class="up-top"><span class="t">Record a run</span><span class="meta">nothing here reads your transcripts</span></div>
     <div class="cmd"><span class="c">${INSTALL_CMD}</span><button class="act" id="cp1">Copy</button></div>
     <div class="cmd"><span class="c plain">Or add the MCP and your agent logs its own run for your approval.</span>
       <a class="d" href="#" id="manuallink">Log one manually</a></div>
@@ -1384,9 +1382,17 @@ function importRun(){
       <input type="checkbox" id="i_share_rig" ${run.rig_share_names?'checked':''}> Share MCP names on my rig (opt-in)
     </label>
     <input id="i_stack" placeholder="stack notes for friends (optional)" value="${esc(run.rig_notes||'')}">
-    <div class="row"><select id="i_vis"><option value="private">private</option><option value="public">public</option><option value="link">link-only · anyone with the link can read</option><option value="anonymous">anonymous · ghost grind</option></select>
+    <div class="row"><select id="i_vis"><option value="private">private</option><option value="public">public</option><option value="link">link-only · anyone with the link can read</option></select>
     <button id="i_pub">${ME?'Publish':'Sign in to publish'}</button></div></div></div>`;
+  const editFields=['i_title','i_note','i_stack','i_vis'];
+  try{const saved=JSON.parse(sessionStorage.getItem('ag_import_edits')||'null');if(saved?.token===m[1]){for(const key of editFields)if(typeof saved[key]==='string')$(key).value=saved[key];$('i_share_rig').checked=!!saved.shareRig}}catch(_){}
+  function saveImportEdits(){try{sessionStorage.setItem('ag_import_edits',JSON.stringify({token:m[1],...Object.fromEntries(editFields.map(key=>[key,$(key).value])),shareRig:$('i_share_rig').checked}))}catch(_){}}
+  editFields.forEach(key=>$(key).addEventListener('change',saveImportEdits));
   $('i_pub').addEventListener('click',async()=>{
+    saveImportEdits();
+    const publishButton=$('i_pub');
+    if(publishButton.disabled)return;
+
     // SIGN-IN USED TO DESTROY THE RUN IT WAS CALLED TO PUBLISH. The whole payload lives in the
     // URL fragment (#import=<base64>) and this call passed `redirectTo: location.href`. RFC 6749
     // 3.1.2 forbids a fragment in an OAuth redirect_uri, so the provider drops it: the user came
@@ -1394,10 +1400,12 @@ function importRun(){
     // re-running the command. Stash it before leaving, put it back in route() on the way in.
     if(!ME){ stashImport(m[1]);
       showSignIn(); return; }
+    publishButton.disabled=true;
+    try{
     const base={profile_id:ME.id,title:$('i_title').value||'Untitled run',
       project:run.project||null,harness:run.harness||null,prompts:run.turns_typed??null,duration_s:run.duration_s??null,
       commits:run.commits??null,tool_calls:run.tool_calls??null,files_touched:run.files_touched??null,
-      rhythm:run.rhythm||null,note:$('i_note').value||null,visibility:$('i_vis').value,started_at:run.started||new Date().toISOString()};
+      rhythm:run.rhythm||null,note:$('i_note').value||null,visibility:$('i_vis').value,started_at:run.started||null};
     // the coach columns (nullable; migration 2026-09-03-coach.sql). Retry without them on a
     // database that does not have them yet, and say so.
     const coach={claims:run.claims??null,claims_verified:run.claims_verified??null,artifacts_produced:run.artifacts_produced??null,
@@ -1407,12 +1415,7 @@ function importRun(){
     if(run.schema_version===1) Object.assign(coach,{schema_version:1,trace_basis:run.trace_basis||null,route:run.route||null,
       measurement_revision:run.measurement_revision??null,baseline_revision:run.baseline_revision??null,
       progress_delta:run.progress_delta??null});
-    let {error}=await sb.from('runs').insert({...base,...coach});
-    let partial=false;
-    if(error&&/column|schema cache/i.test(error.message||'')){
-      if(run.schema_version===1){status('Publishing needs a site update to preserve this grind’s measurement references. Your draft is still here.',true);return;}
-      ({error}=await sb.from('runs').insert(base)); partial=!error;
-    }
+    let {data:published,error}=await sb.from('runs').insert({...base,...coach}).select('id').single();
     if(!error){
       const rig={...(ME.rig||{})};
       if(run.rig_mcps!=null) rig.mcps=run.rig_mcps;
@@ -1422,8 +1425,11 @@ function importRun(){
       await sb.from('profiles').update({rig}).eq('id',ME.id);
     }
     if(error){status(error.message,true);return;}
-    history.replaceState(null,'','/'); status(partial?'Published. The database has no coach columns yet, so verified claims and the verdict were shown but not stored.':'Published to your grind.');
-    localStorage.setItem('ag_onboard_done','1'); viewMe();
+    try{localStorage.setItem('ag_onboard_done','1');sessionStorage.removeItem('ag_import');sessionStorage.removeItem('ag_import_edits')}catch(_){}
+    history.replaceState(null,'','/?run='+published.id);status(base.visibility==='private'?'Saved privately. You can make it public when you are ready.':'Run published. Copy its link to share.');
+    await viewRun(published.id);
+    }catch(_){status('Publishing could not connect. Your draft is still here. Check Your runs before retrying.',true)}finally{publishButton.disabled=false}
+
   });
   return true;
 }
@@ -1444,9 +1450,7 @@ async function viewShareRun(id){
     stats:shareStatsGrind(r), roast:q.get('roast')?roastShapeLines(r):null,
   });
   fitShareCard(); window.addEventListener('resize',fitShareCard);
-  const copy=$('share-copy'); if(copy) copy.addEventListener('click',()=>{
-    navigator.clipboard.writeText(location.origin+'/?run='+id).then(()=>status('Link copied.'));
-  });
+  const copy=$('share-copy'); if(copy){if(!['public','link'].includes(r.visibility)){copy.textContent='Private run';copy.disabled=true;status('This link is private. Choose a public or link-only audience on the run page before sharing.')}else copy.addEventListener('click',()=>{navigator.clipboard.writeText(location.origin+'/?run='+id).then(()=>status('Link copied.')).catch(()=>status('Copy the run page address to share.'));});}
 }
 async function viewShareRig(handle){
   const app=$('app'); frame(null,null);
@@ -1502,7 +1506,7 @@ function viewClaim(){
 async function viewEvent(){
   const app=$('app');
   frame(railHtml('feed'),null); app.innerHTML=skeletonCard()+skeletonCard();
-  const {data:runs}=await sb.from('runs').select('*, profiles(github_handle,name,rig)').in('visibility',['public','anonymous']).order('created_at',{ascending:false}).limit(40);
+  const {data:runs}=await sb.from('runs').select('*, profiles(github_handle,name,rig)').eq('visibility','public').order('created_at',{ascending:false}).limit(40);
   noteTraces(runs);
   const ad=await ackData(runs||[]);
   const R=runs||[];
@@ -1545,9 +1549,10 @@ async function route(){ authErrorFromUrl();
     const u=q.get('u'); if(u) return viewShareProfile(u);
     const rn=q.get('run'); if(rn) return viewShareRun(rn);
   }
-  if(await shouldOnboard()) return viewOnboard();
   const u=q.get('u'); const rn=q.get('run');
-  if(rn) return viewRun(rn); if(u) return viewProfile(u); if(q.get('explore')!==null) return viewExplore(); return ME?viewMe():viewLanding(); }
+  if(rn) return viewRun(rn); if(u) return viewProfile(u); if(q.get('explore')!==null) return viewExplore();
+  if(await shouldOnboard()) return viewOnboard();
+  return ME?viewMe():viewLanding(); }
 
 document.addEventListener('DOMContentLoaded',()=>{
   $('app').innerHTML=skeletonCard();
@@ -1555,9 +1560,9 @@ document.addEventListener('DOMContentLoaded',()=>{
     const {data:{session}}=await sb.auth.getSession();
     if(session){await sb.auth.signOut();location.href='/';return;}
     showSignIn(); });
-  $('delete').addEventListener('click',async e=>{e.preventDefault(); if(!ME)return; if(!confirm('Delete your profile, runs, practices, agents and owned events? This also removes their discussion history. Transfer shared Crew ownership first. Cannot be undone.'))return;
+  $('delete').addEventListener('click',async e=>{e.preventDefault(); if(!ME)return; if(!confirm('Delete your profile and owned work? Shared submitted results can remain without your profile. Transfer shared Crews and hosted Challenges first. Cannot be undone.'))return;
     const {error}=await sb.from('profiles').delete().eq('id',ME.id); if(error){status(error.message,true);return;} await sb.auth.signOut(); location.href='/'; });
-  if(sb){ refreshAuth().then(route); sb.auth.onAuthStateChange(()=>refreshAuth().then(route)); } else route();
+  if(sb){ refreshAuth().then(route); sb.auth.onAuthStateChange(()=>{setTimeout(()=>refreshAuth().then(route),0)}); } else route();
 });
 </script>
 </body></html>

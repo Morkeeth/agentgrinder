@@ -27,20 +27,11 @@ python3.12 -m venv .venv               # any python3.10+ you have
 .venv/bin/pip install -e .             # then `.venv/bin/agentgrinder grind` works from any directory
 ```
 
-`pip install -e .` under macOS `/usr/bin/python3` **fails**: that pip is 21.2.4, it predates PEP 660,
-and it refuses an editable install of a pyproject-only project. Measured 3 Sep 2026. The site used to
-print that command as step one; it does not any more.
+The wheel includes the demo assets, so a non-editable install also works. Use Python 3.9 or newer for the local reader. The optional Strands coach needs Python 3.10 or newer.
 
-Editable on purpose. `demo` renders the transcript in `samples/`, which lives in the clone and not
-in the wheel, so a non-editable `pip install .` gives you a working `grind` from anywhere and a
-`demo` that cannot find its sample. Measured on a fresh clone, 3 Sep 2026.
+`grind` discovers the latest Claude Code, Cursor or Codex session. Native transcripts are split at an observed idle gap before a new human turn. `--list` shows sittings; `--pick 1` selects the first. Cursor timestamps need an explicit timezone for a dated comparison. Missing timing stays unknown.
 
-**Python 3.9 or newer**, which is what macOS already ships — checked by running every command
-under `/usr/bin/python3` (3.9.6) and under 3.12.5, 31 Aug. The manifest said 3.10 until that was
-measured, and `pip install` refused on a stock Mac because of it.
-
-**If you have never run Claude Code**, `grind` has nothing to read and says so, and
-`python3 -m agentgrinder demo` renders the bundled sample instead.
+If no supported transcript is available, `python3 -m agentgrinder demo` renders the bundled sample. The sample is labelled and does not represent your work.
 
 It finds your last Claude Code sitting, keeps only the turns **you typed**, asks git what actually
 shipped, and draws **the grind trace**: one row per file, your prompts as ticks on your own line,

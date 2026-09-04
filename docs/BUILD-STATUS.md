@@ -17,7 +17,7 @@ This is a local implementation checkpoint, not a deployed release or a claim tha
 
 ## Checks at this checkpoint
 
-- Python suite: 223 passed.
+- Python suite: 231 passed.
 - PostgreSQL/PGlite: migration retries, membership and visibility, immutable references, agent scope/retry/revoke, bounded questions, two-Crew Challenge review/appeal, practice/experiment decisions, blocking, Scrapbook ownership and account deletion.
 - Isolated installed wheel: demo, capture list and Rig configuration ran outside the checkout with isolated Python and no runtime dependencies.
 - Browser fixtures: practice discovery and an explicit shared attempt, the two-entry/eight-place OCTACON board, and OAuth/email form requests with preserved import data. Phone and desktop layout checks passed. Auth calls were stubbed; no message was sent.
@@ -48,7 +48,7 @@ The existing hosted database does not yet have the new product tables. A local p
 
 `python3 scripts/prepare-migration.py > /tmp/grinder-product-migration.sql` creates one ordered transaction for review. It does not connect or deploy. The existing profiles/runs/ACKs schema and `2026-09-03-coach.sql` are prerequisites. Do not rely on alphabetic file order: use `scripts/migration-order.txt`.
 
-The database tests run these real migrations and PostgreSQL row-level security in PGlite. Authentication and the pre-existing base tables are explicit test fixtures. Passing them does not establish compatibility with the live schema or hosted Auth configuration. Inspect the live schema and apply to a staging copy before applying to production. Test the signed-in browser journey against the migrated deployment before releasing the frontend.
+The database tests run these real migrations and PostgreSQL row-level security in PGlite. Authentication is an explicit fixture. Base columns, constraints, policies and grants were read from the hosted database on 5 September and captured in tests/fixtures; these files contain schema metadata, not user records. Tests now reproduce the hosted permissive default grants and distinct profile/auth IDs. The transactional hosted rollback preflight is prepared in scripts/friend-preflight.sql; the first hosted execution returned `42P01: relation public.grinder_rig_revisions does not exist`. The complete transaction also passes on a fresh PGlite base; hosted diagnosis is in progress. Test the signed-in browser journey against the migrated deployment before releasing the frontend.
 
 Email sign-in uses the documented Supabase `signInWithOtp` interface: https://supabase.com/docs/reference/javascript/auth-signinwithotp. Hosted email delivery and redirect configuration have not been exercised. No verification email was sent during this build.
 
@@ -68,6 +68,12 @@ Email sign-in uses the documented Supabase `signInWithOtp` interface: https://su
 
 No production migration, deployment, package publication, domain purchase, recruitment message or paid offer was sent. The original main worktree's `hack.md` edit is preserved.
 
-Public entries, practices and discussions can be removed through source/account deletion; frozen versions prevent silent edits, not an owner's right to delete their material. The deletion migration requires explicit review of those cascade effects against the live schema.
+Deletion now uses explicit foreign-key actions. Source links clear while other users' practice outcomes and Challenge review histories survive. Shared Crew and Challenge ownership must transfer before profile deletion. Legacy anonymous rows are owner-only because the stored attribution did not support the promised anonymity.
 
-Independent review and final release checks are still required. A green test count is not a completed roadmap ticket.
+Independent Claude and Cursor reviews of commit `50a6d9b` are complete. The current changes address cross-user deletion, block-graph disclosure, organizer self-entry and duplicate entries, owner-wide agent quotas, unsafe anonymous feeds, and native whole-file measurement. Negative tests exercise each database denial. The reported native coach opt-out issue did not reproduce; a CLI test verifies --coach none. Frozen baselines remain pinned; their wording now explains backfill. No configured Fable reviewer was available. Final hosted checks remain required. A green test count is not a completed roadmap ticket.
+
+## Friend-flow changes — 5 September
+
+The landing page leads with capture, sharing and improvement. First-time visitors keep their requested run link. Import title and audience survive the sign-in redirect, schema errors remain visible, and successful publication opens the exact permalink. Owners can change audience or delete the run. Private runs cannot expose a share link. Browser fixtures cover these paths with mocked authentication; actual hosted sign-in and delivery remain untested.
+
+Native capture now separates resumed Codex and Cursor sittings. Explicit Cursor timezone offsets are normalized; absent timing stays unknown. Parser versions distinguish the new measurements. Published agent payloads exclude transcript-derived title and note unless explicitly supplied.

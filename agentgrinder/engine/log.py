@@ -116,9 +116,11 @@ def _save_revision(conn: sqlite3.Connection, row: dict) -> dict:
         previous = conn.execute("SELECT revision_id FROM reading_origins WHERE project_identity=? AND started<? AND value IS NOT NULL ORDER BY started DESC LIMIT 1",
                                 (row["project_identity"],row["started"])).fetchone()
     else:
-        previous = conn.execute("SELECT revision_id FROM readings WHERE project = ? AND started < ? "
-                                "AND value IS NOT NULL ORDER BY started DESC LIMIT 1",
-                                (row["project"], row["started"])).fetchone()
+        candidates = conn.execute("SELECT revision_id FROM readings WHERE project = ? AND started < ? "
+                                  "AND value IS NOT NULL ORDER BY started DESC",
+                                  (row["project"], row["started"])).fetchall()
+        previous = next((candidate for candidate in candidates
+                         if not (get_revision(conn,candidate[0]) or {}).get("project_identity")),None)
     payload = {k: v for k, v in row.items() if k not in ("id", "revision_id")}
     payload.update(revision_id=revision_id, baseline_revision_id=previous[0] if previous else None)
     conn.execute("INSERT OR IGNORE INTO measurement_revisions VALUES (?,?,?,?,?,?)",

@@ -36,12 +36,12 @@ def sources():
     return sorted(set(found), key=lambda item: (item[0], str(item[1])))
 
 
-def read_run(harness, path, pick=-1):
+def read_run(harness, path, pick=-1, records=None):
     from .ingest import parse_codex_session, parse_cursor_session
     from .solo import parse_solo
     if harness == 'claude':
         return parse_solo(str(path), pick=pick)
-    return {'codex': parse_codex_session, 'cursor': parse_cursor_session}[harness](str(path))
+    return {'codex': parse_codex_session, 'cursor': parse_cursor_session}[harness](str(path), records=records)
 
 
 def scan(db, selected=None):
@@ -66,7 +66,8 @@ def scan(db, selected=None):
                 from .solo import human_sittings
                 runs = [read_run(harness, path, pick=i+1) for i in range(len(human_sittings(str(path))))]
             else:
-                runs = [read_run(harness, path)]
+                from .native_sittings import sittings
+                runs = [read_run(harness,path,records=group) for group in sittings(path,harness)]
             if capture_digest(path) != digest:
                 report['retry'] += 1
                 continue

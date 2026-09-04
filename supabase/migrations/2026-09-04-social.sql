@@ -52,7 +52,7 @@ as $$ select exists(select 1 from grinder_crews where id=target and owner_id=gri
 create or replace function public.grinder_can_read_run(target uuid) returns boolean
 language sql stable security definer set search_path = public
 as $$ select exists(select 1 from runs where id=target and
-    (profile_id=grinder_profile_id() or visibility in ('public','anonymous')
+    (profile_id=grinder_profile_id() or visibility in ('public','link')
      or (crew_shared and grinder_is_member(crew_id)))) $$;
 
 drop policy if exists grinder_crew_runs_read on public.runs;
@@ -221,6 +221,7 @@ begin
   update grinder_memberships set role='member' where crew_id=crew;
   update grinder_memberships set role='owner' where crew_id=crew and profile_id=new_owner;
   update grinder_crews set owner_id=new_owner where id=crew;
+  update grinder_challenges set owner_id=new_owner where host_crew=crew;
 end $$;
 
 create or replace function public.grinder_notify_follow() returns trigger

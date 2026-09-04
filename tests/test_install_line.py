@@ -59,8 +59,9 @@ def test_every_coach_hint_in_the_cli_names_a_venv():
 
 def test_the_readme_lead_command_matches_the_website():
     assert "python3 -m agentgrinder grind" in README
-    # and the README says out loud why the editable install is not the lead
-    assert "PEP 660" in README
+    # The first command block works without depending on editable-install support.
+    first_block = README.split('```bash', 1)[1].split('```', 1)[0]
+    assert "pip install" not in first_block
 
 
 def test_the_hint_the_user_actually_sees_names_a_venv_and_the_running_version():

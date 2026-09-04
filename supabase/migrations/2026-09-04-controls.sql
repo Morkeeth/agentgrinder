@@ -1,4 +1,8 @@
 begin;
+-- Preserve existing reasons while adding the new product vocabulary.
+alter table acks drop constraint if exists acks_reason_check;
+alter table acks add constraint acks_reason_check check(reason in ('solved','checked','helped','explained','recovered','shipped','focus','pace','rig','comeback','handoff'));
+
 create table if not exists grinder_blocks (
  blocker_id uuid not null references profiles(id) on delete cascade,
  blocked_id uuid not null references profiles(id) on delete cascade,
@@ -19,9 +23,20 @@ drop policy if exists reports_create on grinder_reports;
 create policy reports_create on grinder_reports for insert to authenticated with check(reporter_id=grinder_profile_id() and (run_id is not null or reply_id is not null) and (run_id is null or grinder_can_read_run(run_id)) and (reply_id is null or exists(select 1 from grinder_replies where id=reply_id)));
 grant select,insert,delete on grinder_blocks to authenticated;
 grant select,insert on grinder_reports to authenticated;
-create or replace function grinder_blocked(a uuid,b uuid) returns boolean
+create or replace function grinder_blocked_pair(a uuid,b uuid) returns boolean
 language sql stable security definer set search_path=public as $$
  select exists(select 1 from grinder_blocks where (blocker_id=a and blocked_id=b) or (blocker_id=b and blocked_id=a))
+$$;
+revoke all on function grinder_blocked_pair(uuid,uuid) from public,anon,authenticated;
+create or replace function grinder_blocked(a uuid,b uuid) returns boolean
+language sql stable security definer set search_path=public as $$
+ select coalesce(grinder_profile_id() in (a,b),false) and grinder_blocked_pair(a,b)
+$$;
+revoke all on function grinder_blocked(uuid,uuid) from public,anon;
+grant execute on function grinder_blocked(uuid,uuid) to authenticated;
+create or replace function grinder_can_read_practice(target uuid) returns boolean
+language sql stable security definer set search_path=public as $$
+ select exists(select 1 from grinder_practice_versions where id=target and not grinder_blocked_pair(owner_id,grinder_profile_id()) and (owner_id=grinder_profile_id() or visibility='public' or (visibility='crew' and grinder_is_member(crew_id))))
 $$;
 drop policy if exists blocked_runs on runs;
 create policy blocked_runs on runs as restrictive for select to authenticated using(not grinder_blocked(profile_id,grinder_profile_id()));
@@ -42,10 +57,10 @@ begin
   actor=new.from_profile;select profile_id into target from runs where id=new.run_id;
   if target is null or target=new.from_profile or target is distinct from new.to_profile then raise exception 'ACK needs another owner and their grind'; end if;
   if new.reason is null or new.reason<>all(array['shipped','focus','pace','rig','comeback','handoff']) then raise exception 'Choose a supported ACK reason'; end if;
-  if not exists(select 1 from runs where id=new.run_id and (visibility in ('public','anonymous') or (crew_shared and exists(select 1 from grinder_memberships where crew_id=runs.crew_id and profile_id=actor)))) then raise exception 'Grind unavailable'; end if;
+  if not exists(select 1 from runs where id=new.run_id and (visibility in ('public','link') or (crew_shared and exists(select 1 from grinder_memberships where crew_id=runs.crew_id and profile_id=actor)))) then raise exception 'Grind unavailable'; end if;
  else actor=new.follower_id;target=new.followed_id;
  end if;
- if grinder_blocked(actor,target) then raise exception 'This interaction is unavailable'; end if;
+ if grinder_blocked_pair(actor,target) then raise exception 'This interaction is unavailable'; end if;
  return new;
 end $$;
 drop trigger if exists reply_interactions on grinder_replies;

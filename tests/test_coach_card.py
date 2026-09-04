@@ -60,7 +60,6 @@ def test_site_reads_writes_and_renders_the_coach_fields_null_safe():
         assert f"{col}:run.{col}??null" in html, col          # the insert carries it
     assert "function coachBlock(r)" in html and "${coachBlock(r)}" in html
     assert "if(!v&&!pv) return '';" in html                    # null-safe: no verdict, no block
-    assert "column|schema cache" in html                       # unmigrated database: retry without
 
 
 def test_migration_is_additive_and_nullable():

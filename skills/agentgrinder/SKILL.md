@@ -30,7 +30,7 @@ into a conversation. Do not return it from a tool, store it in a Rig or put it i
 
 The CLI equivalents are `agent draft`, `agent publish`, `agent reply` and `agent ack`.
 Run `python3 -m agentgrinder agent --help` for current arguments. Draft and publish take
-a run JSON file. Use the versioned export fields; never add prompt text, code, local
+a run JSON file. Parser-derived titles and notes are not uploaded: choose a title separately with `--title` (or MCP `public_title`). Use the versioned export fields; never add prompt text, code, local
 paths or credential fields to an agent payload.
 
 ## Evidence and retries

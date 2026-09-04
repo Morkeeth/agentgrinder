@@ -84,7 +84,7 @@ window.GrinderSocial = function ({
             "profile_id",
             follows.map((f) => f.followed_id),
           )
-          .in("visibility", ["public", "anonymous"])
+          .eq("visibility", "public")
           .order("created_at", { ascending: false })
           .limit(50),
       );
@@ -544,7 +544,7 @@ window.GrinderSocial = function ({
         const panel = document.createElement("section");
         panel.className = "panel reply-form";
         panel.innerHTML =
-          "<h3>Crew ownership and members</h3><p>Transfer ownership before leaving a shared Crew.</p>" +
+          "<h3>Crew ownership and members</h3><p>Transfer Crew and hosted Challenges before leaving a shared Crew.</p>" +
           members
             .filter((m) => m.profile_id !== me().id)
             .map(
@@ -576,7 +576,7 @@ window.GrinderSocial = function ({
             (b.onclick = async () => {
               if (
                 !confirm(
-                  "Transfer ownership to this member? They will control membership and invitations.",
+                  "Transfer Crew and hosted Challenges to this member? They will control membership and invitations.",
                 )
               )
                 return;

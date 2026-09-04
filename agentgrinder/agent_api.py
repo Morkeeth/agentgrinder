@@ -16,14 +16,17 @@ RUN_FIELDS = {"title","project","harness","turns_typed","duration_s","tool_calls
               "rhythm","route","schema_version","measurement_revision","baseline_revision","note","trace_basis"}
 
 
-def run_payload(run: dict, visibility: str = "private") -> dict:
+def run_payload(run: dict, visibility: str = "private", *, title: str | None = None, note: str | None = None) -> dict:
     validate_run(run)
     if visibility not in ("private","public"):
         raise ValueError("Agent publishing supports private or explicitly authorised public grinds.")
     exported=export_run(run)
     payload={k:v for k,v in exported.items() if k in RUN_FIELDS}
-    for field in ("title","note"):
-        if run.get(field) is not None:payload[field]=run[field]
+    # A parser title can be the first typed prompt. Only separately chosen public text travels.
+    for field,value,limit in (("title",title,200),("note",note,4000)):
+        if value is not None:
+            if not isinstance(value,str) or len(value)>limit:raise ValueError("Public text is invalid or too long.")
+            payload[field]=value
     payload["visibility"]=visibility
     return payload
 
@@ -66,7 +69,15 @@ class AgentClient:
             raise RuntimeError(f"Agent endpoint unavailable; reuse request {rid} with the same payload when retrying.") from None
         if not isinstance(result,dict) or 'id' not in result:
             raise RuntimeError(f"Agent endpoint returned an invalid response; request {rid}.")
-        return dict(result,request_id=rid)
+        try:
+            result_id=str(uuid.UUID(result['id']))
+            actor_id=str(uuid.UUID(result['agent_id'])) if result.get('agent_id') else None
+        except (ValueError,TypeError,KeyError):
+            raise RuntimeError(f'Agent endpoint returned an invalid identity; request {rid}.') from None
+        if result.get('action')!=action:raise RuntimeError(f'Agent endpoint returned a mismatched action; request {rid}.')
+        safe=dict(id=result_id,action=action,request_id=rid)
+        if actor_id:safe['agent_id']=actor_id
+        return safe
 
 
 def add_parser(subparsers):
@@ -77,6 +88,8 @@ def add_parser(subparsers):
     for name in ('draft','publish'):
         action=actions.add_parser(name);action.add_argument('run_json')
         action.add_argument('--visibility',choices=['private','public'],default='private')
+        action.add_argument('--title',help='explicit public title; parser-derived titles are not uploaded')
+        action.add_argument('--note',help='explicit caption to share')
     actions.add_parser('questions',help='read bounded public questions and their permitted evidence')
     reply=actions.add_parser('reply');reply.add_argument('run_id');reply.add_argument('body');reply.add_argument('--question-id')
     ack=actions.add_parser('ack');ack.add_argument('run_id');ack.add_argument('--reason',required=True,choices=['shipped','focus','pace','rig','comeback','handoff'])
@@ -88,7 +101,7 @@ def run_cli(args):
         if args.agent_action=='questions':
             print(json.dumps(AgentClient(base_url=args.url).questions(),indent=2));return 0
         if args.agent_action in ('draft','publish'):
-            payload=run_payload(json.loads(Path(args.run_json).read_text()),args.visibility)
+            payload=run_payload(json.loads(Path(args.run_json).read_text()),args.visibility,title=args.title,note=args.note)
         elif args.agent_action=='reply':
             payload=dict(run_id=str(uuid.UUID(args.run_id)),body=args.body)
             if args.question_id:payload['question_id']=str(uuid.UUID(args.question_id))

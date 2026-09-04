@@ -120,7 +120,7 @@ def main(argv=None) -> int:
     c.add_argument("run"); c.add_argument("-o", "--out", default="card.html")
     c.add_argument("--no-open", action="store_true")
     g = sub.add_parser("grind", aliases=["run"],
-                       help="one ordinary session -> the grind card (Claude Code or Cursor)")
+                       help="one ordinary session -> the grind card (Claude Code, Cursor or Codex)")
     g.add_argument("session", nargs="?", help="path to a .jsonl (default: your most recent grind)")
     g.add_argument("--pick", type=int, default=None,
                    help="which sitting in that transcript (-1 = the last, 1 = the first)")
@@ -618,6 +618,11 @@ def _grind(args) -> int:
         print(f"no such transcript: {args.session}"); return 1
 
     harness = args.harness
+    if harness == "auto" and args.session:
+        from .native_sittings import records
+        first = next(records(args.session), {})
+        harness = 'codex' if first.get('type') in ('session_meta','event_msg','response_item') else 'cursor' if first.get('role') in ('user','assistant') else 'claude'
+
     if harness == "auto" and not args.session:
         from .flex import latest_any
         picked = latest_any()
@@ -641,7 +646,11 @@ def _grind(args) -> int:
         from .contract import capture_digest
         source_digest=capture_digest(path)
         try:
-            run = parse_cursor_session(path, athlete=args.athlete)
+            from .native_sittings import sittings, choose
+            groups=sittings(path,'cursor',args.gap*60)
+            if args.list:
+                print(json.dumps([{'sitting':i+1,'records':len(g)} for i,g in enumerate(groups)],indent=2));return 0
+            run = parse_cursor_session(path, athlete=args.athlete, records=choose(groups,args.pick))
         except ValueError as e:
             print(str(e),file=sys.stderr);return 1
         return _native_grind(run, args, path, source_digest)
@@ -660,7 +669,11 @@ def _grind(args) -> int:
         from .contract import capture_digest
         source_digest=capture_digest(path)
         try:
-            run = parse_codex_session(path, athlete=args.athlete)
+            from .native_sittings import sittings, choose
+            groups=sittings(path,'codex',args.gap*60)
+            if args.list:
+                print(json.dumps([{'sitting':i+1,'records':len(g)} for i,g in enumerate(groups)],indent=2));return 0
+            run = parse_codex_session(path, athlete=args.athlete, records=choose(groups,args.pick))
         except ValueError as e:
             # A named --session with no typed turn used to reach the user as a raw traceback.
             print(f"\n  {e}"
@@ -807,7 +820,7 @@ def _native_grind(run, args, path, source_digest):
     if requested:
         try:
             from .coach.native import review_activity
-            if args.coach=='bedrock':print('Bedrock receives activity counts and accepted practice context for this review.',file=sys.stderr)
+            if args.coach=='bedrock':print('Bedrock receives activity counts for this review. Accepted private practices stay local.',file=sys.stderr)
             coach_text=review_activity(run,args.coach)
         except ImportError:
             print(coach_install_hint(),file=sys.stderr);return 1

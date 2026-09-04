@@ -9,3 +9,5 @@
 2026-09-04-deletion.sql
 2026-09-04-scrapbook.sql
 2026-09-04-attribution.sql
+2026-09-04-owner-policies.sql
+2026-09-05-permissions.sql

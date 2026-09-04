@@ -1,0 +1,459 @@
+{
+  "columns": [
+    {
+      "data_type": "uuid",
+      "table_name": "acks",
+      "column_name": "id",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "data_type": "uuid",
+      "table_name": "acks",
+      "column_name": "from_profile",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "data_type": "uuid",
+      "table_name": "acks",
+      "column_name": "to_profile",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "data_type": "uuid",
+      "table_name": "acks",
+      "column_name": "run_id",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "data_type": "text",
+      "table_name": "acks",
+      "column_name": "reason",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "data_type": "text",
+      "table_name": "acks",
+      "column_name": "note",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "data_type": "boolean",
+      "table_name": "acks",
+      "column_name": "same_owner",
+      "is_nullable": "NO",
+      "column_default": "false"
+    },
+    {
+      "data_type": "timestamp with time zone",
+      "table_name": "acks",
+      "column_name": "created_at",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "data_type": "uuid",
+      "table_name": "profiles",
+      "column_name": "id",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "data_type": "uuid",
+      "table_name": "profiles",
+      "column_name": "auth_uid",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "data_type": "text",
+      "table_name": "profiles",
+      "column_name": "github_handle",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "data_type": "text",
+      "table_name": "profiles",
+      "column_name": "name",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "data_type": "jsonb",
+      "table_name": "profiles",
+      "column_name": "rig",
+      "is_nullable": "NO",
+      "column_default": "'{}'::jsonb"
+    },
+    {
+      "data_type": "timestamp with time zone",
+      "table_name": "profiles",
+      "column_name": "created_at",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "data_type": "uuid",
+      "table_name": "runs",
+      "column_name": "id",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()"
+    },
+    {
+      "data_type": "uuid",
+      "table_name": "runs",
+      "column_name": "profile_id",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "data_type": "text",
+      "table_name": "runs",
+      "column_name": "title",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "data_type": "text",
+      "table_name": "runs",
+      "column_name": "project",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "data_type": "text",
+      "table_name": "runs",
+      "column_name": "harness",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "data_type": "timestamp with time zone",
+      "table_name": "runs",
+      "column_name": "started_at",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "data_type": "integer",
+      "table_name": "runs",
+      "column_name": "duration_s",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "data_type": "integer",
+      "table_name": "runs",
+      "column_name": "prompts",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "data_type": "integer",
+      "table_name": "runs",
+      "column_name": "tool_calls",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "data_type": "integer",
+      "table_name": "runs",
+      "column_name": "files_touched",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "data_type": "integer",
+      "table_name": "runs",
+      "column_name": "commits",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "data_type": "jsonb",
+      "table_name": "runs",
+      "column_name": "rhythm",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "data_type": "boolean",
+      "table_name": "runs",
+      "column_name": "is_ship",
+      "is_nullable": "NO",
+      "column_default": "false"
+    },
+    {
+      "data_type": "text",
+      "table_name": "runs",
+      "column_name": "visibility",
+      "is_nullable": "NO",
+      "column_default": "'private'::text"
+    },
+    {
+      "data_type": "timestamp with time zone",
+      "table_name": "runs",
+      "column_name": "created_at",
+      "is_nullable": "NO",
+      "column_default": "now()"
+    },
+    {
+      "data_type": "text",
+      "table_name": "runs",
+      "column_name": "note",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "data_type": "jsonb",
+      "table_name": "runs",
+      "column_name": "route",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "data_type": "jsonb",
+      "table_name": "runs",
+      "column_name": "tool_mix",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "data_type": "integer",
+      "table_name": "runs",
+      "column_name": "claims",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "data_type": "integer",
+      "table_name": "runs",
+      "column_name": "claims_verified",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "data_type": "integer",
+      "table_name": "runs",
+      "column_name": "artifacts_produced",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "data_type": "text",
+      "table_name": "runs",
+      "column_name": "coach_verdict",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "data_type": "text",
+      "table_name": "runs",
+      "column_name": "coach_plan",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "data_type": "integer",
+      "table_name": "runs",
+      "column_name": "coach_tool_calls",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "data_type": "text",
+      "table_name": "runs",
+      "column_name": "progress_verdict",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "data_type": "boolean",
+      "table_name": "runs",
+      "column_name": "reach",
+      "is_nullable": "YES",
+      "column_default": null
+    }
+  ],
+  "policies": [
+    {
+      "cmd": "SELECT",
+      "qual": "true",
+      "roles": [
+        "public"
+      ],
+      "tablename": "profiles",
+      "permissive": "PERMISSIVE",
+      "policyname": "profiles_read",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "ALL",
+      "qual": "(auth_uid = auth.uid())",
+      "roles": [
+        "public"
+      ],
+      "tablename": "profiles",
+      "permissive": "PERMISSIVE",
+      "policyname": "profiles_owner_write",
+      "schemaname": "public",
+      "with_check": "(auth_uid = auth.uid())"
+    },
+    {
+      "cmd": "ALL",
+      "qual": "(profile_id IN ( SELECT profiles.id\n FROM profiles\n WHERE (profiles.auth_uid = auth.uid())))",
+      "roles": [
+        "public"
+      ],
+      "tablename": "runs",
+      "permissive": "PERMISSIVE",
+      "policyname": "runs_owner_write",
+      "schemaname": "public",
+      "with_check": "(profile_id IN ( SELECT profiles.id\n FROM profiles\n WHERE (profiles.auth_uid = auth.uid())))"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "true",
+      "roles": [
+        "public"
+      ],
+      "tablename": "follows",
+      "permissive": "PERMISSIVE",
+      "policyname": "follows_read",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "ALL",
+      "qual": "(follower IN ( SELECT profiles.id\n FROM profiles\n WHERE (profiles.auth_uid = auth.uid())))",
+      "roles": [
+        "public"
+      ],
+      "tablename": "follows",
+      "permissive": "PERMISSIVE",
+      "policyname": "follows_write",
+      "schemaname": "public",
+      "with_check": "(follower IN ( SELECT profiles.id\n FROM profiles\n WHERE (profiles.auth_uid = auth.uid())))"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "true",
+      "roles": [
+        "public"
+      ],
+      "tablename": "acks",
+      "permissive": "PERMISSIVE",
+      "policyname": "acks_read",
+      "schemaname": "public",
+      "with_check": null
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "public"
+      ],
+      "tablename": "acks",
+      "permissive": "PERMISSIVE",
+      "policyname": "acks_write",
+      "schemaname": "public",
+      "with_check": "(from_profile IN ( SELECT profiles.id\n FROM profiles\n WHERE (profiles.auth_uid = auth.uid())))"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "((visibility = ANY (ARRAY['public'::text, 'link'::text, 'anonymous'::text])) OR (profile_id IN ( SELECT profiles.id\n FROM profiles\n WHERE (profiles.auth_uid = auth.uid()))))",
+      "roles": [
+        "public"
+      ],
+      "tablename": "runs",
+      "permissive": "PERMISSIVE",
+      "policyname": "runs_read",
+      "schemaname": "public",
+      "with_check": null
+    }
+  ],
+  "constraints": [
+    {
+      "name": "follows_pkey",
+      "table": "follows",
+      "definition": "PRIMARY KEY (follower, followee)"
+    },
+    {
+      "name": "follows_follower_fkey",
+      "table": "follows",
+      "definition": "FOREIGN KEY (follower) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "follows_followee_fkey",
+      "table": "follows",
+      "definition": "FOREIGN KEY (followee) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "profiles_pkey",
+      "table": "profiles",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "profiles_auth_uid_key",
+      "table": "profiles",
+      "definition": "UNIQUE (auth_uid)"
+    },
+    {
+      "name": "profiles_github_handle_key",
+      "table": "profiles",
+      "definition": "UNIQUE (github_handle)"
+    },
+    {
+      "name": "runs_pkey",
+      "table": "runs",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "runs_profile_id_fkey",
+      "table": "runs",
+      "definition": "FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "follows_check",
+      "table": "follows",
+      "definition": "CHECK ((follower <> followee))"
+    },
+    {
+      "name": "acks_reason_check",
+      "table": "acks",
+      "definition": "CHECK ((reason = ANY (ARRAY['solved'::text, 'checked'::text, 'helped'::text, 'explained'::text, 'recovered'::text, 'shipped'::text])))"
+    },
+    {
+      "name": "acks_pkey",
+      "table": "acks",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "acks_from_profile_fkey",
+      "table": "acks",
+      "definition": "FOREIGN KEY (from_profile) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "acks_to_profile_fkey",
+      "table": "acks",
+      "definition": "FOREIGN KEY (to_profile) REFERENCES profiles(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "acks_run_id_fkey",
+      "table": "acks",
+      "definition": "FOREIGN KEY (run_id) REFERENCES runs(id) ON DELETE CASCADE"
+    },
+    {
+      "name": "runs_visibility_check",
+      "table": "runs",
+      "definition": "CHECK ((visibility = ANY (ARRAY['private'::text, 'link'::text, 'public'::text, 'crew'::text, 'anonymous'::text])))"
+    }
+  ]
+}

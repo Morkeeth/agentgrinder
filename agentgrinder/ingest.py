@@ -277,7 +277,7 @@ def latest_cursor_session() -> str | None:
     files = glob.glob(os.path.expanduser(CURSOR_GLOB))
     return max(files, key=os.path.getmtime) if files else None
 
-def parse_cursor_session(path: str, athlete: str = "you") -> dict:
+def parse_cursor_session(path: str, athlete: str = "you", records=None) -> dict:
     typed = 0
     tool_calls = 0
     commits = 0
@@ -288,57 +288,44 @@ def parse_cursor_session(path: str, athlete: str = "you") -> dict:
     first_prompt = None
     ts_re = _re.compile(r"<timestamp>(.*?)</timestamp>")
     uq_re = _re.compile(r"<user_query>(.*?)</user_query>", _re.S)
-    with open(path, encoding="utf-8") as fh:
-        for line in fh:
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                o = json.loads(line)
-            except json.JSONDecodeError:
-                continue
-            role = o.get("role")
-            msg = o.get("message") if isinstance(o.get("message"), dict) else {}
-            text = _cursor_text(msg)
-            if role == "user" and "<user_query>" in text:
-                typed += 1
-                m = ts_re.search(text)
-                if m:
-                    stamps.append(m.group(1))
-                if first_prompt is None:
-                    q = uq_re.search(text)
-                    first_prompt = (q.group(1).strip() if q else text.strip())
-            elif role == "assistant":
-                tool_calls += _cursor_tool_blocks(msg)
-                # THE TRACE. Until 4 Sep 2026 this branch counted tool blocks and threw the rest
-                # away, so every Cursor card printed a dash for files touched, commits and
-                # artifacts, and reach printed "this harness does not name the repository". All
-                # three sentences were false at the object: the paths are in the transcript.
-                for name, inp in _cursor_tool_uses(msg):
-                    if not isinstance(inp, dict):
-                        continue
-                    if name in _CURSOR_EDIT_TOOLS:
-                        fp = inp.get("path")
-                        if isinstance(fp, str) and fp:
-                            files.add(fp)
-                            written.add(fp)
-                            edits.append(fp)
-                    elif name in _CURSOR_SHELL_TOOLS:
-                        if "git commit" in (inp.get("command") or ""):
-                            commits += 1
-
+    from .native_sittings import records as read_records
+    for o in records if records is not None else read_records(path):
+        role = o.get("role")
+        msg = o.get("message") if isinstance(o.get("message"), dict) else {}
+        text = _cursor_text(msg)
+        if role == "user" and "<user_query>" in text:
+            typed += 1
+            m = ts_re.search(text)
+            if m:
+                stamps.append(m.group(1))
+            if first_prompt is None:
+                q = uq_re.search(text)
+                first_prompt = (q.group(1).strip() if q else text.strip())
+        elif role == "assistant":
+            tool_calls += _cursor_tool_blocks(msg)
+            # THE TRACE. Until 4 Sep 2026 this branch counted tool blocks and threw the rest
+            # away, so every Cursor card printed a dash for files touched, commits and
+            # artifacts, and reach printed "this harness does not name the repository". All
+            # three sentences were false at the object: the paths are in the transcript.
+            for name, inp in _cursor_tool_uses(msg):
+                if not isinstance(inp, dict):
+                    continue
+                if name in _CURSOR_EDIT_TOOLS:
+                    fp = inp.get("path")
+                    if isinstance(fp, str) and fp:
+                        files.add(fp)
+                        written.add(fp)
+                        edits.append(fp)
+                elif name in _CURSOR_SHELL_TOOLS:
+                    if "git commit" in (inp.get("command") or ""):
+                        commits += 1
     if not typed:
         raise ValueError(f"no typed <user_query> turns in {path}")
 
     # duration from first/last embedded timestamp (best-effort), else None
     dur = None
-    def _pt(s):
-        s = _re.sub(r"\s*\(UTC[^)]*\)", "", s).strip()
-        for fmt in ("%A, %b %d, %Y, %I:%M %p", "%A, %B %d, %Y, %I:%M %p"):
-            try: return datetime.strptime(s, fmt)
-            except ValueError: pass
-        return None
-    pts = [p for p in (_pt(s) for s in stamps) if p]
+    from .native_sittings import cursor_time
+    pts = [p for p in (cursor_time('<timestamp>'+s+'</timestamp>') for s in stamps) if p]
     if len(pts) >= 2:
         dur = int((max(pts) - min(pts)).total_seconds())
 
@@ -383,6 +370,7 @@ def parse_cursor_session(path: str, athlete: str = "you") -> dict:
     route = [_region_of(fp, repo_root) for fp in edits]
     return {
         "athlete": athlete, "title": title, "harness": "Cursor", "project": proj,
+        "parser_version": "cursor-sittings-2026-09-05" if records is not None else "cursor-timezone-2026-09-05",
         "project_identity": project_identity(repo_root or os.path.dirname(os.path.dirname(os.path.dirname(path)))),
         "started": (min(pts).isoformat() if pts else None),
         "trace_basis": "typed-turn order; spacing is not elapsed time",
@@ -488,7 +476,7 @@ def _codex_command(blob) -> str:
     return blob
 
 
-def _codex_scan(path: str):
+def _codex_scan(path: str, records=None):
     """One pass for the trace: (written paths in order, commits, timestamps, cwd).
 
     Separate from `_codex_count` on purpose. That function exists because Codex writes megabyte
@@ -499,52 +487,45 @@ def _codex_scan(path: str):
     commits = 0
     stamps: list[datetime] = []
     cwd = None
+    from .native_sittings import records as read_records
     try:
-        with open(path, encoding="utf-8") as fh:
-            for line in fh:
-                line = line.strip()
-                if not line:
-                    continue
+        for o in records if records is not None else read_records(path):
+            ts = o.get("timestamp")
+            if isinstance(ts, str):
                 try:
-                    o = json.loads(line)
-                except json.JSONDecodeError:
-                    continue
-                ts = o.get("timestamp")
-                if isinstance(ts, str):
-                    try:
-                        stamps.append(datetime.fromisoformat(ts.replace("Z", "+00:00")))
-                    except ValueError:
-                        pass
-                p = o.get("payload")
-                if not isinstance(p, dict):
-                    continue
-                if o.get("type") == "session_meta" and cwd is None:
-                    cwd = p.get("cwd")
-                elif p.get("type") == "patch_apply_end" and p.get("success") is True:
-                    changes = p.get("changes")
-                    if isinstance(changes, dict):
-                        for changed in changes:
-                            if isinstance(changed, str) and changed:
-                                edits.append(changed)
-                elif p.get("type") == "custom_tool_call" and p.get("name") == "exec":
-                    if "git commit" in _codex_command(p.get("input")):
-                        commits += 1
+                    stamps.append(datetime.fromisoformat(ts.replace("Z", "+00:00")))
+                except ValueError:
+                    pass
+            p = o.get("payload")
+            if not isinstance(p, dict):
+                continue
+            if o.get("type") == "session_meta" and cwd is None:
+                cwd = p.get("cwd")
+            elif p.get("type") == "patch_apply_end" and p.get("success") is True:
+                changes = p.get("changes")
+                if isinstance(changes, dict):
+                    for changed in changes:
+                        if isinstance(changed, str) and changed:
+                            edits.append(changed)
+            elif p.get("type") == "custom_tool_call" and p.get("name") == "exec":
+                if "git commit" in _codex_command(p.get("input")):
+                    commits += 1
     except OSError:
         pass
     return edits, commits, stamps, cwd
 
 
-def parse_codex_session(path: str, athlete: str = "you") -> dict:
-    hit = _codex_count(path)
+def parse_codex_session(path: str, athlete: str = "you", records=None) -> dict:
+    from .native_trace import codex_activity
+    native = codex_activity(path, records=records)
+    hit = (native['typed'], native['tools']) if native['typed'] else None
     if not hit:
         raise ValueError(f"no human user_message turns in {path}")
     typed, tool_calls = hit
-    edits, commits, stamps, cwd = _codex_scan(path)
+    edits, commits, stamps, cwd = _codex_scan(path, records=records)
     written = set(edits)
     files = set(edits)
 
-    from .native_trace import codex_activity
-    native = codex_activity(path)
     rhythm = native["rhythm"]
 
     proj = os.path.basename(cwd) if cwd else os.path.basename(path).replace(".jsonl", "")[:32]
@@ -574,7 +555,7 @@ def parse_codex_session(path: str, athlete: str = "you") -> dict:
         "title": title,
         "harness": "Codex",
         "project_identity": project_identity(cwd),
-        "parser_version": "codex-native-2026-09-04",
+        "parser_version": "codex-sittings-2026-09-05" if records is not None else "codex-native-2026-09-04",
         "authorship": native["authorship"],
         "trace": native["trace"],
         "trace_basis": native["trace_basis"],

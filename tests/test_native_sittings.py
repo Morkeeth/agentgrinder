@@ -1,0 +1,45 @@
+import json
+from agentgrinder.cli import main
+from agentgrinder.native_sittings import sittings, choose, cursor_time
+from agentgrinder.ingest import parse_codex_session
+
+
+def resumed(tmp_path):
+    path=tmp_path/'resumed.jsonl'
+    rows=[{'type':'session_meta','timestamp':'2026-09-01T09:00:00Z','payload':{'cwd':str(tmp_path)}}]
+    for stamp,kind in [('2026-09-01T09:30:00Z','user_message'),('2026-09-01T09:31:00Z','function_call'),('2026-09-04T10:00:00Z','user_message'),('2026-09-04T10:02:00Z','function_call')]:
+        rows.append({'type':'event_msg' if kind=='user_message' else 'response_item','timestamp':stamp,'payload':{'type':kind,'message':'Go','call_id':stamp}})
+    path.write_text('\n'.join(json.dumps(row) for row in rows))
+    return path
+
+
+def test_resumed_run_excludes_idle_days_and_session_creation(tmp_path):
+    path=resumed(tmp_path)
+    groups=sittings(path,'codex')
+    assert len(groups)==2
+    first=parse_codex_session(str(path),records=choose(groups,1))
+    latest=parse_codex_session(str(path),records=choose(groups,-1))
+    assert first['started']=='2026-09-01T09:30:00+00:00'
+    assert first['duration_s']==60
+    assert latest['duration_s']==120
+    assert latest['turns_typed']==1
+    assert latest['trace'][0]['second']==0
+    assert latest['parser_version']=='codex-sittings-2026-09-05'
+
+
+def test_auto_named_native_and_list_pick_coach_opt_out(tmp_path,capsys):
+    path=resumed(tmp_path)
+    assert main(['grind',str(path),'--list','--no-series'])==0
+    listed=json.loads(capsys.readouterr().out)
+    assert [row['sitting'] for row in listed]==[1,2]
+    assert main(['grind',str(path),'--pick','1','--coach','none','--json','--no-series'])==0
+    run=json.loads(capsys.readouterr().out)
+    assert run['duration_s']==60
+    assert 'coach_verdict' not in run
+
+
+def test_cursor_timezone_is_explicit():
+    stamp=cursor_time('<timestamp>Friday, Sep 04, 2026, 10:00 AM (UTC+02:00)</timestamp>')
+    assert stamp.isoformat()=='2026-09-04T08:00:00+00:00'
+    assert cursor_time('<timestamp>Friday, Sep 04, 2026, 10:00 AM (UTC-00:30)</timestamp>').isoformat()=='2026-09-04T10:30:00+00:00'
+    assert cursor_time('<timestamp>Friday, Sep 04, 2026, 10:00 AM</timestamp>') is None

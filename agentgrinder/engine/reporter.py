@@ -65,7 +65,7 @@ def progress_line(p: dict | None, project: str) -> str:
         return f"incomparable on {project}: the measurement rules changed; the original baseline is preserved."
     if p["verdict"] == "baseline":
         why = ("this is the first grind recorded on it" if n <= 1
-               else "the previous grind had no headline to compare against")
+               else "no earlier measured grind was pinned when this revision was recorded")
         return f"baseline on {project}: {why}. Two measured grinds give a verdict."
     arrow = "up" if (p["delta"] or 0) > 0 else ("down" if (p["delta"] or 0) < 0 else "level")
     sign = "+" if (p["delta"] or 0) > 0 else ""

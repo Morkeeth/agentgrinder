@@ -31,8 +31,8 @@ def test_moving_transcript_does_not_create_false_snapshot(tmp_path,monkeypatch):
     from agentgrinder import capture
     p=transcript(tmp_path)
     original=capture.read_run
-    def read(*args):
-        run=original(*args)
+    def read(*args,**kwargs):
+        run=original(*args,**kwargs)
         with p.open('a') as f:f.write('\n')
         return run
     monkeypatch.setattr(capture,'read_run',read)

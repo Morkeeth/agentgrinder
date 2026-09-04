@@ -75,7 +75,9 @@ create or replace function public.grinder_issue_agent_token(agent uuid,allowed_s
 language plpgsql security definer set search_path=public as $$
 declare secret text:='ag_'||gen_random_uuid()::text||gen_random_uuid()::text; token_id uuid;
 begin
+ perform 1 from profiles where id=grinder_profile_id() for update;
  if not exists(select 1 from grinder_agents where id=agent and owner_id=grinder_profile_id()) then raise exception 'Only the agent owner can grant access'; end if;
+ if (select count(*) from grinder_agent_tokens where agent_id=agent and not revoked and expires_at>now())>=5 then raise exception 'Revoke an existing token before issuing another (five active tokens per agent)'; end if;
  if allowed_scopes is null or cardinality(allowed_scopes)<1 or not allowed_scopes <@ array['draft','publish','reply','ack']::text[] then raise exception 'Choose valid action scopes'; end if;
  if allowed_audiences is null or cardinality(allowed_audiences)<1 or not allowed_audiences <@ array['private','public']::text[] then raise exception 'Choose private or public audiences'; end if;
  if expires is null or expires<=now() or expires>now()+interval '90 days' then raise exception 'Choose an expiry within 90 days'; end if;
@@ -113,6 +115,7 @@ begin
  if action is null or request_id is null then raise exception 'An action and request ID are required'; end if;
  if not action=any(capability.scopes) then raise exception 'This action is outside the granted scope'; end if;
  select * into actor from grinder_agents where id=capability.agent_id;
+ perform 1 from profiles where id=actor.owner_id for update;
  perform grinder_check_agent_payload(payload);
  fingerprint=encode(sha256(convert_to(action||payload::text,'UTF8')),'hex');
  select * into prior from grinder_agent_requests r where r.token_id=capability.id and r.request_id=grinder_agent_action.request_id;
@@ -120,6 +123,7 @@ begin
   if prior.fingerprint<>fingerprint then raise exception 'A request ID cannot be reused for a different action'; end if;
   return prior.response;
  end if;
+ if (select count(*) from grinder_agent_requests r join grinder_agent_tokens t on t.id=r.token_id join grinder_agents a on a.id=t.agent_id where a.owner_id=actor.owner_id and r.created_at>now()-interval '1 hour')>=60 then raise exception 'Hourly owner action limit reached'; end if;
  if capability.window_started<now()-interval '1 hour' then
   update grinder_agent_tokens set window_started=now(),window_actions=0 where id=capability.id;
  elsif capability.window_actions>=60 then raise exception 'Hourly action limit reached'; end if;

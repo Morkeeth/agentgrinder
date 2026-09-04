@@ -20,3 +20,14 @@ def test_named_passing_test_still_matches():
 
 def test_plain_suite_summary_can_match_a_suite_claim():
     assert evidence_matches(Claim(line='The suite passed',tokens=set()),'3 passed in 0.2s')
+
+
+@pytest.mark.parametrize('output', ['test_login SKIPPED\ntest_other PASSED','collected test_login\ntest_other PASSED'])
+def test_another_passing_test_does_not_support_this_target(output):
+    assert not evidence_matches(Claim(line='test_login passed',tokens={'test_login'}),output)
+
+
+def test_error_tool_result_cannot_be_success_evidence():
+    from agentgrinder.claims import result_text
+    event={'type':'user','message':{'content':[{'type':'tool_result','is_error':True,'content':'test_login PASSED'}]}}
+    assert not evidence_matches(Claim(line='test_login passed',tokens={'test_login'}),result_text(event))

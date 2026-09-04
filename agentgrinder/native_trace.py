@@ -4,15 +4,10 @@ from collections import Counter
 from datetime import datetime
 
 
-def codex_activity(path):
-    records = []
-    with open(path, encoding='utf-8') as stream:
-        for line in stream:
-            try:
-                row = json.loads(line)
-                if isinstance(row, dict): records.append(row)
-            except ValueError:
-                continue
+def codex_activity(path, records=None):
+    if records is None:
+        from .native_sittings import records as read_records
+        records = list(read_records(path))
     delegated = any(isinstance((r.get('payload') or {}).get('source'), dict) and 'subagent' in r['payload']['source']
                     for r in records if r.get('type') == 'session_meta')
     counts = Counter(human=0, injected=0, delegated=0)

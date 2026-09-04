@@ -291,7 +291,7 @@ window.GrinderPractices = function ({ client: db, me, app, frame, status }) {
       );
       const runs = await ownRuns();
       $("practice-body").innerHTML =
-        `<article class="card"><h2>${esc(experiment.name)}</h2><p>${esc(experiment.intention)}</p><a href="/?practice=${experiment.practice_id}">Locked practice version</a><p>Only Crew members can read these cycles. Decisions are participant observations, not independent causal results.</p></article><form id="start-cycle" class="panel reply-form"><h3>Begin the next cycle</h3><label>Your baseline grind<select name="baseline" required>${options(runs, "title")}</select></label><p>Starting shares the baseline counts and your later outcome and reflection with this Crew.</p><button ${runs.length ? "" : "disabled"}>Share baseline and start</button></form>` +
+        `<article class="card"><h2>${esc(experiment.name)}</h2><p>${esc(experiment.intention)}</p>${experiment.practice_id ? `<a href="/?practice=${experiment.practice_id}">Locked practice version</a>` : "<small>Source practice removed; cycle results retained</small>"}<p>Only Crew members can read these cycles. Decisions are participant observations, not independent causal results.</p></article><form id="start-cycle" class="panel reply-form"><h3>Begin the next cycle</h3><label>Your baseline grind<select name="baseline" required>${options(runs, "title")}</select></label><p>Starting shares the baseline counts and your later outcome and reflection with this Crew.</p><button ${runs.length ? "" : "disabled"}>Share baseline and start</button></form>` +
         cycles
           .map(
             (c) =>

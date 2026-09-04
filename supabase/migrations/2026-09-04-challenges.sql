@@ -16,6 +16,7 @@ create table if not exists grinder_challenge_entries (
  crew_name text not null, rig_revision uuid not null references grinder_rig_revisions(id),
  created_at timestamptz not null default now(), unique(challenge_id,crew_id)
 );
+create unique index if not exists grinder_challenge_one_owner on grinder_challenge_entries(challenge_id,owner_id);
 create table if not exists grinder_challenge_submissions (
  id uuid primary key default gen_random_uuid(), entry_id uuid not null references grinder_challenge_entries(id),
  run_id uuid not null references runs(id), measurement_revision text not null,
@@ -71,8 +72,10 @@ begin
  select * into event from grinder_challenges where id=challenge for update;
  if not found or event.closes_at<=now() then raise exception 'This Challenge is closed'; end if;
  if not grinder_owns_crew(crew) then raise exception 'Only a Crew owner can enter it'; end if;
+ if event.owner_id=grinder_profile_id() then raise exception 'The organiser cannot enter their own Challenge'; end if;
  select id into result from grinder_challenge_entries where challenge_id=challenge and crew_id=crew;
  if found then return result; end if;
+ if exists(select 1 from grinder_challenge_entries where challenge_id=challenge and owner_id=grinder_profile_id()) then raise exception 'One entry per owner per Challenge'; end if;
  if (select count(*) from grinder_challenge_entries where challenge_id=challenge)>=event.capacity then raise exception 'This Challenge is full'; end if;
  if not exists(select 1 from grinder_rig_revisions where id=rig and owner_id=grinder_profile_id() and visibility='public') then raise exception 'Choose your public Rig revision; entries expose the locked configuration'; end if;
  select name into label from grinder_crews where id=crew;
