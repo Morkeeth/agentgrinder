@@ -16,12 +16,12 @@ next to it. Track: **Professional Agents**.
 Your coding agent tells you it fixed the test, shipped the file, and got the suite green, and you
 have no way to check without rereading the whole transcript. The measurement is worse than absent,
 it is confidently wrong: a raw session log labels far more turns as coming from the human than a
-human ever typed. Over a 40 minute window on my own machine on 3 September 2026,
-`python3 -m agentgrinder authorship` counted **334 records marked `type: "user"` and 12 of them,
-3.6%, were typed by a person**. The other 322 were tool results, injected skill bodies, harness
-envelopes and prompts one agent wrote to another. Rerun on a 31 minute window on 4 September it
-counted 95 records and 4 typed by a person, 4.2%, and again later that day over a wider window,
-244 records and 4 typed, 1.6%. The share moves with the window. The gap does not. Every dashboard built on that field is inflating
+human ever typed. Over a 14 day window on my own machine on 4 September 2026,
+`python3 -m agentgrinder authorship --hours 336` counted **34,032 records marked `type: "user"`
+and 966 of them, 2.8%, were typed by a person**. The other 33,066 were tool results, injected skill
+bodies, harness envelopes and prompts one agent wrote to another. Narrower windows on the same
+machine read 2.4% over 24 hours and 6.9% over one hour, so the share moves a little and the gap
+does not move at all. Every dashboard built on that field is inflating
 the number it puts in front of you. METR's 2025 randomized trial on experienced open source
 developers found the same gap in the other direction: they believed the agent made them 20% faster
 and the stopwatch said 19% slower. So the one number that matters, how much verified work a

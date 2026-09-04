@@ -14,10 +14,19 @@ half-measured, published the half that was missing, and left the check red.
 ### Beat 1. The field is lying to you, and here is the count
 
 **On screen:** `type: "user"` records against how many a person typed.
-**Number:** 334 records, 12 typed by a person, 3.6%. And 95 / 4 / 4.2%. And 244 / 4 / 1.6%.
-**Source:** `python3 -m agentgrinder authorship`, three windows, 3 and 4 Sep 2026.
-**The point:** three readings, not one. The share moves with the window. The gap does not. Use all
-three: one flattering number would be the thing this reel is against.
+**Number:** 34,032 records marked `type: "user"`, **966 typed by a person, 2.8%**, over 14 days.
+Narrower windows on the same machine: 3,291 / 80 / 2.4% over 24 hours, 58 / 4 / 6.9% over one hour.
+**Source:** `python3 -m agentgrinder authorship --hours 336`, `--hours 24`, `--hours 1`, 4 Sep 2026,
+after the window fix below.
+**The point:** three readings, not one. The share moves a little with the window and the gap does
+not move at all. Use all three: one flattering number would be the thing this reel is against.
+**READ THIS BEFORE RENDERING.** The earlier version of this beat quoted 334 / 12 / 3.6%, and that
+figure is NOT REPRODUCIBLE and never was. `authorship` reused the night-run collector, which
+narrows any window to the last contiguous burst of activity, so every reading described whatever
+burst happened to be last at the moment it ran, while the command printed a span beside it. Three
+readings that looked like three windows were three bursts. Fixed 4 Sep 2026; the numbers above are
+the first ones taken over windows anyone actually asked for. If a reel had rendered the old beat it
+would have shown an irreproducible number as the opening evidence.
 
 ### Beat 2. So the tool counts what a person typed, and prints the sum
 
@@ -73,10 +82,14 @@ own authority is not something this project does quietly. **This is the line of 
 ### Beat 8. Then the same question, asked of the other half
 
 **On screen:** two evidence rules, one carrying almost everything.
-**Number:** 13,126 claims, 5,806 verified. **1,245 (21.4%)** by a test name or file path from the
-claim line. **4,561 (78.6%)** by a generic passing token alone. Only **13.2%** of claims name a
-test or a file at all.
-**Source:** `python3 scripts/evidence-branch-report.py`, 1,516 transcripts.
+**Number:** **21.4% by the strong rule, 78.6% by the generic one alone**, and only **13.2%** of
+claims name a test or a file at all. The counts under those shares as of 4 Sep 2026 19:0x were
+13,126 claims and 5,806 verified; re-run three hours later on the same 1,516 transcripts they were
+13,309 and 5,960, **and the shares were identical to the decimal**.
+**Source:** `python3 scripts/evidence-branch-report.py`. Bind the command, not the counts.
+**RENDER THE SHARES, PIN THE COUNTS TO A MOMENT.** The corpus grows while anyone works on it. A
+count that never drifts on a live corpus is a count nobody is re-running, so the reel should show
+the shares as the claim and the counts as a reading taken at a stated time.
 **The point, and it must be said this way:** this is not "four in five verifications are wrong". It
 is "four in five rest on a rule whose accuracy nobody has measured". The size of the question, not
 its answer.
@@ -97,6 +110,22 @@ different kind of claim than one shipping a green one.
 on both sides. After, the cell reads 1. The transcripts carried 2,279 absolute paths all along.
 **Source:** `docs/STRANGER-AUDIT-2026-09-04.md`, addendum 2, same fixture both times.
 **The point:** the tool was telling a person something false about their own machine.
+
+### Beat 11. The only one anyone caught in themselves first
+
+**On screen:** a terminal on a machine with nothing on it, and the line the tool used to print.
+**Number:** `parts sum to the total: 0 + 0 + 0 + 0 + 0 = 0  OK`.
+**Source:** `agentgrinder/cli.py`, the comment under the `authorship` branch, and
+`tests/test_harness_trace.py`, which now asserts that line is absent on an empty population AND
+still present when there is one.
+**The point, in the code's own words:** an identity over an empty population passes whatever the
+classifier does, so a reader is shown a green check that cannot go red. This tool's whole subject
+is a number correct about the wrong object, and it was printing one. Found by running the CLI with
+an empty `HOME`, which is the only way anyone was ever going to see it.
+**Why it is the heart of the reel:** every other beat is a project auditing its own numbers. This
+one is a project finding the exact defect it exists to name, inside itself, before anybody else
+did. And the fix is not silence: the check still fires when there is something to check, and a
+second test holds that, because silencing a check and fixing one look identical from outside.
 
 ---
 

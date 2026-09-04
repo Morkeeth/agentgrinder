@@ -18,16 +18,17 @@ Claude Code transcript marks far more records as coming from the human than a hu
 because tool results, injected skill bodies, harness envelopes and prompts one agent wrote to
 another all carry `type: "user"`.
 
-Run `python3 -m agentgrinder authorship` on your own machine and you get your own version of this.
-Three windows on the author's machine:
+Run `python3 -m agentgrinder authorship --hours 336` on your own machine and you get your own
+version of this. Three windows on the author's machine, 4 September 2026, each one asked for
+explicitly:
 
 | window | records marked `type: "user"` | actually typed by a person |
 |---|---|---|
-| 40 min, 3 Sep | 334 | 12, 3.6% |
-| 31 min, 4 Sep | 95 | 4, 4.2% |
-| wider, 4 Sep | 244 | 4, 1.6% |
+| 1 hour | 58 | 4, 6.9% |
+| 24 hours | 3,291 | 80, 2.4% |
+| 336 hours, 14 days | **34,032** | **966, 2.8%** |
 
-The share moves with the window. The gap does not. Every dashboard built on that field is
+The share moves a little with the window. The gap does not move at all. Every dashboard built on that field is
 inflating the number it shows you, and the command prints its five categories with their sum so
 you can check the correction rather than trust it.
 

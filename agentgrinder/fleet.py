@@ -248,8 +248,24 @@ def _in_window(stamps, lo, hi):
 
 
 def collect(since: datetime, until: datetime, athlete: str = "you",
-            burst_gap: int = 30) -> dict:
-    """Build the night-run Run from every transcript with activity inside the window."""
+            burst_gap: int = 30, burst: bool = True) -> dict:
+    """Build the night-run Run from every transcript with activity inside the window.
+
+    `burst=True` (the default, and what the night-run card wants) narrows the window to the LAST
+    contiguous burst of activity, because a night run is one run and not everything since the
+    earliest stray lane. See the burst comment below.
+
+    `burst=False` measures the WHOLE requested window. Anything that reports a property of the
+    machine rather than of one run must pass False, or it will describe the last hour and print
+    the caller's window next to it.
+
+    THIS DEFAULT WAS A SILENT NARROWING. `authorship` reported over the last burst while its
+    header printed a span and its docs said "every type:user record in the window". Measured
+    4 Sep 2026 over a 336 hour window on a machine with 1,534 transcripts: 296 files passed the
+    mtime filter, 57 held a typed turn inside the window, 966 typed turns in total, and the
+    command reported 1 session, 62 records and 5 human. The burst threw away 56 sessions and 961
+    typed turns, correctly for a night run and catastrophically for a machine-wide count.
+    """
     mains = sorted(glob.glob(os.path.join(PROJECTS, "*", "*.jsonl")))
     subs = sorted(glob.glob(os.path.join(PROJECTS, "*", "*", "subagents", "**", "agent-*.jsonl"), recursive=True))
 
@@ -298,7 +314,11 @@ def collect(since: datetime, until: datetime, athlete: str = "you",
     # scored the night "1 typed prompt"); human turns alone would ignore the fleet entirely.
     all_spans = sorted(lane_spans + [(t, t) for t in typed_all])
     excluded_lanes, burst_start = 0, None
-    if all_spans:
+    if not burst:
+        # the caller asked about the window, so the window is what it gets
+        t0 = min([a for a, _ in all_spans], default=None) or (min(typed_all) if typed_all else since)
+        t0 = max(t0, since)
+    elif all_spans:
         gap = timedelta(minutes=burst_gap)
         burst_start, open_until = all_spans[0]
         for a, b in all_spans[1:]:

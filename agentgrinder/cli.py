@@ -485,10 +485,17 @@ def main(argv=None) -> int:
         from .authorship import CATEGORIES, LABELS
         from .fleet import collect, parse_window
         since, until = parse_window(args.since, args.hours)
-        run = collect(since, until, burst_gap=args.gap)
+        # burst=False, and it is the whole point of this command. `collect` defaults to narrowing
+        # the window to the last contiguous burst, which is right for a night-run card and wrong
+        # for a statement about a machine. With the default, a 336 hour window on a machine with
+        # 1,534 transcripts reported one session and 62 records while printing a span, because the
+        # span it printed was the burst's and not the caller's.
+        run = collect(since, until, burst_gap=args.gap, burst=False)
         a = run["authorship"]
         tot = a["user_records_total"]
-        print(f"\n  type:user records {run['started'][:19]} -> {run['ended'][:19]}"
+        print(f"\n  type:user records in the window you asked for, "
+              f"{since.strftime('%Y-%m-%dT%H:%M:%S')} -> {until.strftime('%Y-%m-%dT%H:%M:%S')}")
+        print(f"  earliest and latest record actually found: {run['started'][:19]} -> {run['ended'][:19]}"
               f"   ({len(run['lanes'])} lane transcripts + {len(run['sessions'])} sessions)")
         print(f"  gate: {a['gate']}\n")
         if tot == 0:
