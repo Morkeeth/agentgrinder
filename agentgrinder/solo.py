@@ -385,7 +385,7 @@ def parse_solo(path: str, athlete: str = "you", pick: int = -1, gap: int = SITTI
     stretch = longest_stretch(s["typed"], events, t1, tool_in_window)
     moving = _moving(events)
 
-    # ---- the five numbers this repo can compute (fleet-ops/METRICS-AGENTIC-ENGINEERING-2026-09-02.md)
+    # ---- the five numbers this repo can compute (METRICS-AGENTIC-ENGINEERING-2026-09-02, an internal spec not in this repo)
     # Same window as every other count on the card. The claim rule lives in claims.py and is
     # calibrated (precision 0.63, recall 0.66 on a held-out hand-labelled set, 3 Sep 2026); the
     # card prints the claim share beside the headline so a reader sees both halves of it.

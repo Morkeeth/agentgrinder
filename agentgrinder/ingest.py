@@ -185,7 +185,7 @@ def parse_session(path: str, athlete: str = "you") -> dict:
         "files_touched": len(files),
         "commits": commits,
         "rhythm": rhythm,
-        # the five numbers (fleet-ops/METRICS-AGENTIC-ENGINEERING-2026-09-02.md); None = not this repo's to compute
+        # the five numbers (METRICS-AGENTIC-ENGINEERING-2026-09-02, an internal spec not in this repo); None = not this repo's to compute
         "claims": tracker.claims,
         "claims_verified": tracker.verified,     # v0 rule, claims.py
         "corrections": None,                     # Transcripto (coach inverse class) — not built

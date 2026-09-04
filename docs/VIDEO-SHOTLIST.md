@@ -52,13 +52,13 @@ close if the recording drifts past 3:10.
 
 ## The voiceover script
 
-Local text to speech is already built and free: `~/CODE/voice-generation` (Kokoro 82M, runs on
+Local text to speech is already built and free (Kokoro 82M, runs on
 CPU, no key, no signup, nothing leaves the machine). Do not pay for a TTS service for this.
 
 Save the "Say over it" column as one line per line of the file, then:
 
 ```bash
-cd ~/CODE/voice-generation
+cd <your local text-to-speech checkout>
 ./kvenv/bin/python vo.py scripts/agentgrinder-demo.txt \
   -o renders/agentgrinder-demo.mp3 --preset demo
 ```

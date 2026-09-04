@@ -48,8 +48,19 @@ def test_a_snapshot_paints_before_the_fetch_and_matches_the_row_that_was_publish
                   "prompts:3", "commits:6", "tool_calls:150"):
         assert field in snap, field
     assert "3 of 7 claims had evidence in their own turn." in snap
-    # no private repo name, no absolute path, no prompt text rode along with it
-    assert "/Users/" not in snap and "repo G" not in snap and "fleet-ops" not in snap
+    # No absolute path, no local checkout path, and no repository name outside the ones this
+    # project discloses on purpose.
+    #
+    # This used to name two private repositories as the strings it forbade, which made the guard
+    # itself one of the places a private name appeared in a public repository. It also could only
+    # ever catch the two names somebody had thought of, and on 4 Sep 2026 a list-based sweep of
+    # twelve names missed four that a shape-based scan found immediately. So the check is now on
+    # the SHAPES a name arrives in, and it does not need to know any name in advance.
+    assert "/Users/" not in snap and "~/CODE/" not in snap and "/home/" not in snap
+    import re as _re
+    slugs = set(_re.findall(r"[A-Za-z0-9_]+/([A-Za-z0-9._-]+)", snap))
+    allowed = {"agentgrinder", "agents-for-humans", "mountain-of-helicon", "transcripto"}
+    assert slugs <= allowed, f"an undisclosed repository name is in the featured snapshot: {slugs - allowed}"
 
 
 def test_how_it_works_names_the_five_tools_and_the_three_modes_logged_out():

@@ -7,7 +7,7 @@ the prompts the ORCHESTRATOR wrote to its own subagents. A counter that trusts t
 wrong by roughly 60x, and it is wrong in the flattering direction.
 
 This module is the project's Constitution rule 2 made executable. It is a deliberate near-copy
-of Transcripto's `is_human_turn` (`~/CODE/transcripto/transcripto.py`, which is the measured
+of Transcripto's `is_human_turn` (its `transcripto.py`, which is the measured
 authority for this signal: ~95% of `type: user` records at fleet scale are not the operator).
 It is COPIED, not imported, because AGENT GRINDER ships as one dependency-free package -- but
 it must not DIVERGE, and `classify()` below carries the same keep/drop rules line for line:

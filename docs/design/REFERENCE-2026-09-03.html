@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Agent Grinder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f7f7f5;--box:#fff;--ink:#0a0a0a;--soft:#6f6f6b;--dim:#9a9a95;
+  --rule:#e3e3df;--rule-2:#efefec;--blue:#0047ff;--blue-soft:#c4d2ff;--blue-wash:#f2f5ff;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
+body{
+  background:var(--paper);color:var(--ink);
+  font-family:'IBM Plex Sans',system-ui,sans-serif;
+  font-size:14px;line-height:1.5;font-weight:400;
+  -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums;
+}
+a{color:inherit;text-decoration:none}
+/* type scale: 11 / 13 / 14 / 20 / 28. weights: 400, 500, 600. nothing else. */
+.lbl{font-size:11px;color:var(--dim);font-weight:400}
+.meta{font-size:13px;color:var(--soft);font-weight:400}
+
+/* top bar */
+.bar{position:sticky;top:0;z-index:20;background:var(--paper);border-bottom:1px solid var(--rule)}
+.bar-in{max-width:1320px;margin:0 auto;padding:0 24px;height:54px;display:flex;align-items:center;gap:28px}
+.mark{font-size:14px;font-weight:600;letter-spacing:-.01em}
+.mark i{color:var(--blue);font-style:normal}
+.bar nav{display:flex;gap:22px;font-size:13px;color:var(--soft)}
+.bar nav a.on{color:var(--ink);font-weight:500}
+.bar .right{margin-left:auto;display:flex;align-items:center;gap:18px;font-size:13px;color:var(--soft)}
+.bar .right .you{color:var(--ink);font-weight:500}
+
+/* layout */
+.shell{max-width:1320px;margin:0 auto;padding:0 24px;display:grid;grid-template-columns:172px minmax(0,1fr) 276px;align-items:start}
+.rail{border-right:1px solid var(--rule);padding:24px 22px 60px 0;position:sticky;top:54px}
+.rail .lbl{margin:20px 0 8px}
+.rail .lbl:first-child{margin-top:0}
+.rail a{display:flex;justify-content:space-between;padding:5px 0;color:var(--soft);font-size:13px}
+.rail a.on{color:var(--ink);font-weight:500}
+.rail a span{color:var(--dim)}
+.main{padding:24px 24px 90px;border-right:1px solid var(--rule);min-width:0}
+.side{padding:24px 0 90px 22px;position:sticky;top:54px}
+
+.head{display:flex;align-items:baseline;justify-content:space-between;gap:14px;margin:0 0 12px}
+.head h2{font-size:14px;font-weight:600;margin:0}
+.head .meta{font-size:13px}
+.head + .head,.card + .head,.panel + .head{margin-top:28px}
+
+/* upload: the first thing an agent sees */
+.up{background:var(--box);border:1px solid var(--rule);margin-bottom:14px}
+.up-top{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--rule)}
+.up-top .t{font-size:14px;font-weight:600}
+.up-top .meta{margin-left:auto}
+.cmd{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid var(--rule-2)}
+.cmd .c{flex:1;min-width:0;font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cmd .c b{font-weight:600}
+.cmd .d{font-size:13px;color:var(--soft);flex:none}
+.btn{border:1px solid var(--ink);background:var(--ink);color:#fff;font:500 13px/1 'IBM Plex Sans';
+  padding:8px 14px;cursor:pointer;border-radius:2px;flex:none}
+.btn.line{background:none;color:var(--ink);border-color:var(--rule)}
+.up-foot{padding:11px 16px;font-size:13px;color:var(--soft)}
+
+/* the coach, running */
+.check{background:var(--box);border:1px solid var(--rule);margin-bottom:14px}
+.check-top{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--rule)}
+.check-top .t{font-size:14px;font-weight:500}
+.check-top .s{margin-left:auto;font-size:13px;color:var(--soft)}
+.step{display:grid;grid-template-columns:14px 128px minmax(0,1fr) auto;gap:12px;align-items:baseline;
+  padding:9px 16px;border-bottom:1px solid var(--rule-2);font-size:13px;opacity:.3}
+.step:last-child{border-bottom:0}
+.step.done{opacity:1}
+.step .i{width:6px;height:6px;border:1px solid var(--dim);border-radius:50%;transform:translateY(-1px)}
+.step.done .i{background:var(--blue);border-color:var(--blue)}
+.step .n{font-weight:500}
+.step .o{color:var(--soft)}
+.step .t{font-size:13px;color:var(--dim)}
+
+/* run card */
+.card{background:var(--box);border:1px solid var(--rule);margin-bottom:14px}
+.c-top{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--rule)}
+.av{width:26px;height:26px;border:1px solid var(--rule);border-radius:50%;display:grid;place-items:center;
+  font-size:11px;font-weight:600;color:var(--soft);flex:none}
+.c-top .h{font-size:14px;font-weight:500}
+.c-top .m{font-size:13px;color:var(--dim)}
+.state{margin-left:auto;font-size:13px;color:var(--blue);font-weight:500}
+.state.off{color:var(--dim);font-weight:400}
+.c-title{font-size:14px;font-weight:500;padding:14px 16px 0}
+.tw{padding:10px 16px 0}
+.tw svg{display:block;width:100%;height:60px}
+.tl{fill:none;stroke:var(--blue);stroke-width:1.4;stroke-linejoin:round;stroke-linecap:round}
+.tl.grey{stroke:#c6c6c1}
+.base{stroke:var(--rule-2);stroke-width:1}
+.boxes{display:grid;grid-template-columns:repeat(5,1fr);background:var(--rule);gap:1px;
+  border-top:1px solid var(--rule);margin-top:12px}
+.bx{background:var(--box);padding:12px 14px}
+.bx .v{font-size:20px;font-weight:500;margin-top:6px;line-height:1.1}
+.bx .v span{font-size:13px;color:var(--soft);font-weight:400}
+.bx.hero .v{color:var(--blue)}
+.c-foot{display:flex;flex-wrap:wrap;gap:8px 18px;padding:12px 16px;border-top:1px solid var(--rule);align-items:center}
+.c-foot .meta{font-size:13px}
+.c-foot .acts{margin-left:auto;display:flex;gap:8px}
+.act{border:1px solid var(--rule);background:none;font:500 13px/1 'IBM Plex Sans';color:var(--ink);
+  padding:7px 12px;cursor:pointer;border-radius:2px}
+.act.blue{color:var(--blue);border-color:var(--blue-soft);background:var(--blue-wash)}
+
+/* skeleton */
+.sk{background:linear-gradient(90deg,#eeeeeb 25%,#f6f6f4 37%,#eeeeeb 63%);background-size:400% 100%;
+  animation:sh 1.25s ease infinite;border-radius:2px;display:block}
+@keyframes sh{0%{background-position:100% 0}100%{background-position:-100% 0}}
+.sk.l{height:9px;margin:7px 0}
+
+/* crew */
+.chat{background:var(--box);border:1px solid var(--rule)}
+.chat-top{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--rule)}
+.chat-top .t{font-size:14px;font-weight:500}
+.msgs{padding:14px 16px 8px}
+.msg{margin-bottom:14px;max-width:82%}
+.msg .who{font-size:13px;color:var(--soft);margin-bottom:5px}
+.msg .who b{color:var(--ink);font-weight:500}
+.msg .who .ag{color:var(--blue);font-weight:500;margin-left:7px}
+.bub{border:1px solid var(--rule);padding:11px 13px;font-size:14px;line-height:1.55}
+.msg.me{margin-left:auto}
+.msg.me .who{text-align:right}
+.msg.me .bub{background:var(--ink);color:#fff;border-color:var(--ink)}
+.shared{border:1px solid var(--rule);margin-top:9px}
+.shared .st{padding:10px 12px;border-bottom:1px solid var(--rule-2);font-size:13px;font-weight:500}
+.shared svg{display:block;width:100%;height:44px;padding:8px 12px 0}
+.shared .sr{display:flex;flex-wrap:wrap;gap:16px;padding:8px 12px 11px;font-size:13px;color:var(--soft)}
+.shared .sr b{color:var(--ink);font-weight:500}
+.typing{display:flex;gap:5px;align-items:center;padding:0 0 12px;font-size:13px;color:var(--dim)}
+.typing i{width:4px;height:4px;background:var(--dim);border-radius:50%;display:inline-block;animation:bl 1.1s infinite}
+.typing i:nth-child(2){animation-delay:.16s}.typing i:nth-child(3){animation-delay:.32s}
+@keyframes bl{0%,60%,100%{opacity:.25}30%{opacity:1}}
+
+/* side */
+.panel{border:1px solid var(--rule);background:var(--box);margin-bottom:14px}
+.p-top{padding:12px 14px;border-bottom:1px solid var(--rule);display:flex;justify-content:space-between;align-items:baseline}
+.p-top .t{font-size:14px;font-weight:600}
+.p-row{display:flex;justify-content:space-between;align-items:center;gap:10px;
+  padding:10px 14px;border-bottom:1px solid var(--rule-2);font-size:13px}
+.p-row:last-child{border-bottom:0}
+.p-row .v{color:var(--soft)}
+.p-row .v b{color:var(--ink);font-weight:500}
+.p-row .v.never{color:var(--ink);font-weight:500}
+.mini{width:54px;flex:none}
+.mini svg{display:block;width:100%;height:15px}
+.g-row{padding:10px 14px;border-bottom:1px solid var(--rule-2);font-size:13px}
+.g-row:last-child{border-bottom:0}
+
+@media (max-width:1180px){.shell{grid-template-columns:164px minmax(0,1fr)}.side{display:none}.main{border-right:0}}
+@media (max-width:800px){
+  .shell{grid-template-columns:1fr;padding:0 18px}
+  .rail{display:none}.main{padding:18px 0 80px}.bar nav{display:none}
+  .boxes{grid-template-columns:1fr 1fr 1fr}
+  .step{grid-template-columns:14px minmax(0,1fr);gap:5px 10px}
+  .step .o,.step .t{grid-column:2}
+  .cmd{flex-wrap:wrap}.cmd .c{white-space:normal;flex-basis:100%}
+  .c-foot .acts{margin-left:0;width:100%}
+}
+</style>
+</head>
+<body>
+
+<div class="bar"><div class="bar-in">
+  <span class="mark">Agent<i>·</i>Grinder</span>
+  <nav><a class="on" href="#">Feed</a><a href="#">Crews</a><a href="#">Projects</a><a href="#">Guides</a><a href="#">Wall</a></nav>
+  <div class="right"><span>Private by default</span><span class="you">Morkeeth</span></div>
+</div></div>
+
+<div class="shell">
+
+  <aside class="rail">
+    <p class="lbl">Your floor</p>
+    <a class="on" href="#">Feed <span>3</span></a>
+    <a href="#">Your grinds <span>12</span></a>
+    <a href="#">Scrapbook</a>
+    <p class="lbl">Crews</p>
+    <a href="#">night shift <span>4</span></a>
+    <a href="#">the fleet <span>11</span></a>
+    <p class="lbl">Projects</p>
+    <a href="#">agentgrinder</a>
+    <a href="#">transcripto</a>
+    <a href="#">helicon</a>
+    <p class="lbl">Read</p>
+    <a href="#">Guides</a>
+    <a href="#">Rigs</a>
+  </aside>
+
+  <main class="main">
+
+    <!-- upload first -->
+    <div class="up">
+      <div class="up-top"><span class="t">Upload a run</span><span class="meta">no account needed to score one locally</span></div>
+      <div class="cmd">
+        <span class="c"><b>pip install agentgrinder</b> &amp;&amp; agentgrinder grind --coach local</span>
+        <button class="btn line" id="cp1">Copy</button>
+      </div>
+      <div class="cmd">
+        <span class="c">Reads your newest session, scores it, prints the card.</span>
+        <span class="d meta">12 seconds</span>
+      </div>
+      <div class="up-foot">Posting is a second command and your click. Nothing uploads until then.</div>
+    </div>
+
+    <div class="head"><h2>The coach is reading a session</h2><span class="meta">on your machine</span></div>
+    <div class="check">
+      <div class="check-top"><span class="av">M</span><span class="t">66 minutes · Claude Code</span><span class="s" id="st">reading</span></div>
+      <div class="step" data-s="0"><span class="i"></span><span class="n">read_run</span><span class="o">334 records, 3 typed turns, 7 claim lines</span><span class="t">0.4s</span></div>
+      <div class="step" data-s="1"><span class="i"></span><span class="n">check_claim</span><span class="o">7 claims tested against their own turn</span><span class="t">1.1s</span></div>
+      <div class="step" data-s="2"><span class="i"></span><span class="n">verify_artifact</span><span class="o">14 paths opened, 8 exist</span><span class="t">0.7s</span></div>
+      <div class="step" data-s="3"><span class="i"></span><span class="n">git_evidence</span><span class="o">12 of them landed in a commit</span><span class="t">0.9s</span></div>
+      <div class="step" data-s="4"><span class="i"></span><span class="n">write_verdict</span><span class="o">4 numbers refused</span><span class="t">0.3s</span></div>
+    </div>
+
+    <div class="head"><h2>Friends</h2><span class="meta">3 grinds today</span></div>
+
+    <div class="card">
+      <div class="c-top"><span class="av">M</span><div><div class="h">Morkeeth</div><div class="m">Claude Code · 1 Sep · 66 min</div></div><span class="state">Refereed</span></div>
+      <div class="c-title">One real sitting, refereed by the coach</div>
+      <div class="tw"><svg viewBox="0 0 800 60" preserveAspectRatio="none"><line class="base" x1="0" y1="54" x2="800" y2="54"/><polyline class="tl" id="t1" points=""/></svg></div>
+      <div class="boxes">
+        <div class="bx hero"><div class="lbl">Verified per turn</div><div class="v" data-count="1.00" data-dec="2">0.00</div></div>
+        <div class="bx"><div class="lbl">Claims held</div><div class="v"><b data-count="3">0</b><span> of 7</span></div></div>
+        <div class="bx"><div class="lbl">Files on disk</div><div class="v"><b data-count="8">0</b><span> of 14</span></div></div>
+        <div class="bx"><div class="lbl">Commits</div><div class="v" data-count="6">0</div></div>
+        <div class="bx"><div class="lbl">Typed turns</div><div class="v" data-count="3">0</div></div>
+      </div>
+      <div class="c-foot">
+        <span class="meta">37 coach tool calls · baseline against your last grind</span>
+        <span class="acts"><button class="act">ACK</button><button class="act">Share</button></span>
+      </div>
+    </div>
+
+    <div class="card" id="card2">
+      <div class="c-top"><span class="av">a</span><div style="flex:1"><span class="sk l" style="width:100px"></span><span class="sk l" style="width:150px;height:7px"></span></div></div>
+      <div style="padding:14px 16px"><span class="sk l" style="width:58%;height:12px"></span><span class="sk" style="height:50px;margin-top:12px"></span></div>
+      <div class="boxes">
+        <div class="bx"><span class="sk l" style="width:44px;height:7px"></span><span class="sk l" style="width:32px;height:15px"></span></div>
+        <div class="bx"><span class="sk l" style="width:40px;height:7px"></span><span class="sk l" style="width:28px;height:15px"></span></div>
+        <div class="bx"><span class="sk l" style="width:36px;height:7px"></span><span class="sk l" style="width:24px;height:15px"></span></div>
+        <div class="bx"><span class="sk l" style="width:42px;height:7px"></span><span class="sk l" style="width:20px;height:15px"></span></div>
+        <div class="bx"><span class="sk l" style="width:46px;height:7px"></span><span class="sk l" style="width:18px;height:15px"></span></div>
+      </div>
+    </div>
+
+    <div class="head"><h2>night shift</h2><span class="meta">4 in the crew, 2 online</span></div>
+    <div class="chat">
+      <div class="chat-top"><span class="av">n</span><span class="t">night shift</span></div>
+      <div class="msgs">
+        <div class="msg">
+          <div class="who"><b>agentgrinder</b></div>
+          <div class="bub">Here is the sitting from last night.
+            <div class="shared">
+              <div class="st">Built the private-coach onboarding</div>
+              <svg viewBox="0 0 400 44" preserveAspectRatio="none"><polyline class="tl grey" id="t2" points=""/></svg>
+              <div class="sr"><span><b>2h 20m</b></span><span><b>47</b> turns</span><span><b>3</b> commits</span><span>shipped</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="msg">
+          <div class="who"><b>coach</b><span class="ag">agent</span></div>
+          <div class="bub">This one predates the referee, so it has no verified per turn. I can re-read the session if the log is still on disk.</div>
+        </div>
+        <div class="msg me">
+          <div class="who"><b>you</b></div>
+          <div class="bub">Re-read it. 47 turns for 3 commits.</div>
+        </div>
+        <div class="typing"><i></i><i></i><i></i> coach is reading</div>
+      </div>
+    </div>
+
+  </main>
+
+  <aside class="side">
+    <div class="panel">
+      <div class="p-top"><span class="t">Your projects</span><span class="lbl">7 days</span></div>
+      <div class="p-row"><span>agentgrinder</span><span class="mini"><svg viewBox="0 0 54 15" preserveAspectRatio="none"><polyline class="tl" data-mini="0" points=""/></svg></span><span class="v"><b>0.67</b></span></div>
+      <div class="p-row"><span>transcripto</span><span class="mini"><svg viewBox="0 0 54 15" preserveAspectRatio="none"><polyline class="tl grey" data-mini="1" points=""/></svg></span><span class="v"><b>1.00</b></span></div>
+      <div class="p-row"><span>helicon</span><span class="mini"><svg viewBox="0 0 54 15" preserveAspectRatio="none"><polyline class="tl grey" data-mini="2" points=""/></svg></span><span class="v">no grind</span></div>
+    </div>
+
+    <div class="panel">
+      <div class="p-top"><span class="t">What leaves your machine</span></div>
+      <div class="p-row"><span>Counts and timings</span><span class="v">shared</span></div>
+      <div class="p-row"><span>Claim lines</span><span class="v">shared</span></div>
+      <div class="p-row"><span>Your prompts</span><span class="v never">never</span></div>
+      <div class="p-row"><span>Code and file paths</span><span class="v never">never</span></div>
+      <div class="p-row"><span>Coach model</span><span class="v">local, no network</span></div>
+    </div>
+
+    <div class="panel">
+      <div class="p-top"><span class="t">Guides</span></div>
+      <div class="g-row">Why a claim needs evidence in its own turn</div>
+      <div class="g-row">Reading someone else's rig</div>
+      <div class="g-row">Prompts are a cost, not a score</div>
+    </div>
+  </aside>
+</div>
+
+<script>
+const RHY=[9,3,0,0,0,3,6,4,2,0,3,0,3,1,1,3,0,0,0,0,2,1,3,2,4,7,4,2,3,2,0,1,0,0,0,0,0,0,0,1,1,1,0,0,0,1,1,1,0,0,0,1,1,0,0,1,2,1,0,0,0,1,3,2,3,4,5,1,7,5,4,2,1,2,4,0,0,2,4,1,0,2,6,4,3,3,0,0,0,0];
+function pts(a,w,h,p){const m=Math.max(...a)||1;return a.map((v,i)=>{
+  const x=(i/(a.length-1))*w,y=h-p-(v/m)*(h-p*2);return x.toFixed(1)+','+y.toFixed(1);}).join(' ');}
+function draw(el,a,w,h,p,dur,delay){
+  if(!el)return; el.setAttribute('points',pts(a,w,h,p));
+  const len=el.getTotalLength();
+  el.style.transition='none';el.style.strokeDasharray=len;el.style.strokeDashoffset=len;
+  el.getBoundingClientRect();
+  el.style.transition='stroke-dashoffset '+dur+'ms cubic-bezier(.25,.7,.3,1) '+(delay||0)+'ms';
+  el.style.strokeDashoffset=0;
+  setTimeout(()=>{el.style.strokeDasharray='none';},(delay||0)+dur+90);
+}
+function up(el,dur,delay){
+  const t=parseFloat(el.dataset.count),d=parseInt(el.dataset.dec||'0');
+  setTimeout(()=>{const t0=performance.now();
+    (function s(n){const p=Math.min(1,(n-t0)/dur),e=1-Math.pow(1-p,3);
+      el.textContent=(t*e).toFixed(d);if(p<1)requestAnimationFrame(s);})(performance.now());},delay);
+}
+const C2={h:'agentgrinder',m:'Claude Code · 30 Aug · 2h 20m',t:'Built the private-coach onboarding',
+  k:['Verified per turn','Typed turns','Files touched','Commits','Claims'],v:['—','47','12','3','—']};
+
+(function(){
+  const steps=[...document.querySelectorAll('.step')],st=document.getElementById('st');
+  steps.forEach((s,i)=>setTimeout(()=>{
+    s.classList.add('done');
+    st.textContent = i===steps.length-1 ? 'verdict written, 37 tool calls' : s.querySelector('.n').textContent;
+  },420+i*600));
+
+  draw(document.getElementById('t1'),RHY,800,60,6,1400,260);
+  draw(document.getElementById('t2'),RHY.slice(20,70),400,44,7,1100,850);
+  document.querySelectorAll('.card .bx [data-count], .card .bx.hero .v[data-count]').forEach((el,i)=>up(el,850,560+i*90));
+  document.querySelectorAll('[data-mini]').forEach((el,i)=>draw(el,RHY.slice(i*12,i*12+14),54,15,3,700,1000+i*150));
+
+  setTimeout(()=>{
+    const c=document.getElementById('card2');
+    c.innerHTML='<div class="c-top"><span class="av">a</span><div><div class="h">'+C2.h+'</div><div class="m">'+C2.m+'</div></div><span class="state off">Not refereed</span></div>'+
+      '<div class="c-title">'+C2.t+'</div>'+
+      '<div class="tw"><svg viewBox="0 0 800 60" preserveAspectRatio="none"><line class="base" x1="0" y1="54" x2="800" y2="54"/><polyline class="tl grey" id="t3" points=""/></svg></div>'+
+      '<div class="boxes">'+C2.k.map((k,i)=>'<div class="bx'+(i===0?' hero':'')+'"><div class="lbl">'+k+'</div><div class="v">'+C2.v[i]+'</div></div>').join('')+'</div>'+
+      '<div class="c-foot"><span class="meta">1 ACK, shipped · posted before the coach existed</span>'+
+      '<span class="acts"><button class="act">ACK</button><button class="act blue">Score it</button></span></div>';
+    c.style.opacity=0;c.style.transition='opacity 300ms ease';requestAnimationFrame(()=>c.style.opacity=1);
+    draw(document.getElementById('t3'),RHY.slice(10,64),800,60,6,1150,110);
+  },1900);
+
+  const b=document.getElementById('cp1');
+  b.addEventListener('click',()=>{
+    navigator.clipboard&&navigator.clipboard.writeText('pip install agentgrinder && agentgrinder grind --coach local');
+    b.textContent='Copied';setTimeout(()=>b.textContent='Copy',1600);
+  });
+})();
+document.addEventListener('keydown',e=>{if(e.key==='r'||e.key==='R')location.reload();});
+setTimeout(()=>{document.title='W'+document.documentElement.scrollWidth+'/'+window.innerWidth;},4200);
+</script>
+</body>
+</html>

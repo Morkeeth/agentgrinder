@@ -4,7 +4,7 @@ A 'run' JSON (see samples/) carries only counts read from a real session:
   athlete, title, harness, project, started (ISO), duration_s,
   turns_typed, tool_calls, files_touched, commits,
   rhythm  -> typed turns per time bucket (the 'route')
-and, optionally, the five numbers of a run (fleet-ops/METRICS-AGENTIC-ENGINEERING-2026-09-02.md):
+and, optionally, the five numbers of a run (METRICS-AGENTIC-ENGINEERING-2026-09-02, an internal spec not in this repo):
   claims, claims_verified        -> verified-claims share (the calibrated claim rule in
                                     claims.py; the evidence side is still unmeasured)
   corrections                    -> correction rate (not measured yet: nothing labels a turn as

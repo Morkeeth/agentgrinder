@@ -1,6 +1,6 @@
 """The headline is verified-per-turn, prompts are a cost. Math + the v0 claim rule.
 
-Written 2026-09-02 after the metric finding (fleet-ops/METRICS-AGENTIC-ENGINEERING-2026-09-02.md):
+Written 2026-09-02 after the metric finding (METRICS-AGENTIC-ENGINEERING-2026-09-02, an internal spec not in this repo):
 a card that headlines "47 prompts" celebrates the METR failure. These tests pin the flip.
 """
 import json

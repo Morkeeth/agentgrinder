@@ -96,7 +96,7 @@ def headline(run: dict) -> tuple[str, str]:
 
     # RUNG 2 — LEVERAGE. One or two sentences typed, and the machine did a hundred things. This
     # is the sentence a short grind actually has and the old ladder threw away: a 10-minute
-    # pigeon sitting was headlined "1 prompts, 4 files changed in pigeon" (sic) when what
+    # a one-prompt sitting was headlined "1 prompts, 4 files changed" (sic) when what
     # happened was one prompt and 104 tool calls.
     if typed and typed <= 3 and run["tool_calls"] >= 40 * typed:
         tail = ""

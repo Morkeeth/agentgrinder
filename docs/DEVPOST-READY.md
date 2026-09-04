@@ -84,7 +84,7 @@ Both are on the GitHub repository page, right side, under About:
 | Thing | How | Time |
 |---|---|---|
 | **AWS Builder ID** | sign in at `https://profile.aws.amazon.com` with an email, no AWS account needed. The form asks for the ID | 5 minutes |
-| **Public video URL** | the shot list is written, timed at 2:55, and every command in it has been run: `docs/VIDEO-SHOTLIST.md`. The local Kokoro TTS in `~/CODE/voice-generation` is installed and ready for the voiceover. What does not exist is the recording and a public YouTube URL | about 2 hours of recording time including the cold review pass |
+| **Public video URL** | the shot list is written, timed at 2:55, and every command in it has been run: `docs/VIDEO-SHOTLIST.md`. The local Kokoro TTS in `<your local text-to-speech checkout>` is installed and ready for the voiceover. What does not exist is the recording and a public YouTube URL | about 2 hours of recording time including the cold review pass |
 | **Devpost account registered for the event** | the Join button on the event page | 2 minutes |
 | **AWS credentials**, only if the Bedrock take is filmed | the `bedrock` mode is opt-in and costs money. The video does not need it; the local mode is honest and the report prints the mode. `docs/BEDROCK-COACH-RECEIPT-TEMPLATE.md` has the command and the receipt fields if it is worth doing | 30 minutes |
 

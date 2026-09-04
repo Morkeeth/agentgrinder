@@ -6,7 +6,7 @@ Fetch tools: read public grinds only — metrics, no prompt text.
 
 Add to Claude Code (~/.claude.json) or Cursor (.cursor/mcp.json):
   { "mcpServers": { "agentgrinder": { "command": "python3",
-      "args": ["-m", "agentgrinder.mcp_server"], "cwd": "/path/to/aistrava" } } }
+      "args": ["-m", "agentgrinder.mcp_server"], "cwd": "/path/to/agentgrinder" } } }
 """
 from __future__ import annotations
 

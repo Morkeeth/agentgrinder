@@ -3,7 +3,7 @@
 **Finding fixed:** the card mapped Strava *Distance* → human prompts. Prompts are a **cost**
 (the denominator), not an achievement. Headlining "47 prompts" celebrates the METR failure
 (developers believed 20% faster, measured 19% slower). Spec:
-`~/CODE/fleet-ops/METRICS-AGENTIC-ENGINEERING-2026-09-02.md`. Rule: **distance = verified output; prompts = cost.**
+`METRICS-AGENTIC-ENGINEERING-2026-09-02` (an internal spec, not in this repo). Rule: **distance = verified output; prompts = cost.**
 
 Branch `fable/verified-per-turn-2026-09-02`. Not pushed, not deployed.
 

@@ -167,7 +167,7 @@ def build_map(run: dict, geo: "Geo | None" = None) -> dict:
     names = set(lanes_by_repo) | set(commits_by_repo)
     # ONE rule for what earns a row: a lane ran there, or a commit landed there. A repository a
     # lane merely touched (`recall`, 0 commits, no lane of its own) and one with no work tree to
-    # ask (`voice-generation`) both fail it, and both are still named in the chips and the honest
+    # ask (a research chip) both fail it, and both are still named in the chips and the honest
     # line -- dropped from the drawing, never from the account.
     order = sorted([n for n in names if lanes_by_repo.get(n) or commits_by_repo.get(n)],
                    key=lambda n: (arrival(n), n))

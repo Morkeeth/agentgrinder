@@ -67,7 +67,7 @@ class Geo:
         # profile's own label lives there. Without it a tall spike near the left edge is drawn
         # straight through the words `tool calls · peak 16/min` -- visible on the wave-4
         # `grind-nothing-shipped` desktop shot (in git history; that shot set left the working
-        # tree the same night) and on the one-row pigeon grind at 390.
+        # tree the same night) and on a one-row grind at 390.
         # Found by looking at the picture; no test would have said anything.
         self.head_room = head_room
 
@@ -113,7 +113,7 @@ def build(run: dict, geo: "Geo | None" = None) -> dict:
             by_path.setdefault(f, []).append(c)
 
     # A GRIND WITH ONE FILE STILL HAS A SHAPE, and it is not the trail. Six real sittings looked
-    # at side by side (scratchpad/sheet.py, 31 Aug 05:4x): the one-file pigeon grind drew a
+    # at side by side (scratchpad/sheet.py, 31 Aug 05:4x): a one-file grind drew a
     # two-line stub -- one hairline and a 74-unit profile -- under a headline about 54 minutes of
     # hands-off work, and it was the weakest of the six by a distance. The measurement it does
     # have is WHEN the work happened, so the fewer places there are, the more of the drawing goes
@@ -194,7 +194,7 @@ def build(run: dict, geo: "Geo | None" = None) -> dict:
                     # the agent's moving time would stamp "52m" on a box 57 minutes wide. Same
                     # `span_minutes` the headline uses, so the two surfaces cannot disagree.
                     mins=span_minutes(st["start"], st["end"]), tools=st["tool_calls"])
-        # A SHADE THAT COVERS EVERYTHING SHADES NOTHING. On a 10-minute pigeon grind the longest
+        # A SHADE THAT COVERS EVERYTHING SHADES NOTHING. On a 10-minute grind the longest
         # no-typing span was the whole 10 minutes, so the band washed the entire drawing pale
         # orange and the reader had nothing to compare it against. Above 90% of the width the
         # rectangle is dropped and only its label is kept -- the fact survives, the mark that

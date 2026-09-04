@@ -15,7 +15,7 @@ share is explicit; the run card is valuable solo even with zero friends).
 ## External evidence
 | Source | What it says | Confidence |
 |--------|--------------|------------|
-| Lenny's Podcast open transcript | Open a corpus, people build on it; distribution compounds (research/lenny-corpus in waveradio) | High |
+| Lenny's Podcast open transcript | Open a corpus, people build on it; distribution compounds (an existing corpus in another project) | High |
 | Strava | The activity card + kudos + segments loop is the retention engine, not the GPS | High |
 | Transcripto (live, PyPI 0.1.1) | Authorship signal (typed turns) already solved; on-ramp exists | High (ours) |
 | Wave Radio archive | Static, no-backend, shareable artifact pattern works for Oscar | High (ours) |
