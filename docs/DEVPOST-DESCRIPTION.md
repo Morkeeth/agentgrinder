@@ -20,8 +20,8 @@ human ever typed. Over a 40 minute window on my own machine on 3 September 2026,
 `python3 -m agentgrinder authorship` counted **334 records marked `type: "user"` and 12 of them,
 3.6%, were typed by a person**. The other 322 were tool results, injected skill bodies, harness
 envelopes and prompts one agent wrote to another. Rerun on a 31 minute window on 4 September it
-counted 95 records and 4 typed by a person, 4.2%, so the gap is a property of the format and not of
-one unlucky afternoon. Every dashboard built on that field is inflating
+counted 95 records and 4 typed by a person, 4.2%, and again later that day over a wider window,
+244 records and 4 typed, 1.6%. The share moves with the window. The gap does not. Every dashboard built on that field is inflating
 the number it puts in front of you. METR's 2025 randomized trial on experienced open source
 developers found the same gap in the other direction: they believed the agent made them 20% faster
 and the stopwatch said 19% slower. So the one number that matters, how much verified work a
@@ -140,7 +140,7 @@ pip install -e ".[coach,dev]"
 python3 -m agentgrinder coach samples/sample_session.jsonl   # the agent, keyless, offline
 python3 scripts/show-refusal.py                              # watch the verdict tool refuse
 python3 scripts/claim-calibration-report.py                  # every published figure, recomputed
-python3 -m pytest -q                                         # 159 passed
+python3 -m pytest -q                                         # 170 passed
 ```
 
 The calibration report is worth thirty seconds of a judge's time, because it **exits non-zero on
@@ -217,6 +217,16 @@ count. The site is at **https://agentgrinder.vercel.app**.
   because that is not another person, and it refuses True on a weak identity, because an email local
   part is not a GitHub login. Both published runs predate the column being populated, so both read
   null today. The rule is measured and wired; nothing has been published through it yet.
+- **All three harnesses now read their own file writes, commits and repository.** Until 4 September
+  the Cursor and Codex cards printed a dash for files touched, commits, artifacts and reach, with a
+  tooltip blaming the harness. The tooltip was wrong: Cursor's `Write` and `StrReplace` blocks carry
+  an absolute path on every one of the 2,279 edit blocks in the 298 transcripts on this machine, and
+  Codex names every path it wrote in `patch_apply_end` and its working directory in `session_meta`.
+  Both parsers read them now, a failed patch is not counted as a write, and reach answers from git
+  on all three. What a Cursor and Codex card still does **not** carry is the grind trace and the
+  verified-per-turn headline: the trace needs a timestamp on each edit and Cursor stamps typed turns
+  only, and the headline needs the claim rule, which is deliberately left unwired so the published
+  precision keeps describing the population it was measured on.
 - **Correction rate and produced over promised print a dash.** They are real numbers owned by tools
   that are not wired in yet. A dash is never blank here: hovering it names the tool that owns the
   number and says what it would need.
@@ -267,27 +277,30 @@ app. No runtime dependencies for the local card path.
 
 ## The numbers, and the command behind each
 
-Every figure in the text above, re-run on 4 September 2026 at commit `60a0c49`. The repository
+Every figure in the text above, re-measured on 4 September 2026 at commit `cd9a1a3`. Each row is
+anchored to that commit, so it stays true after the branch moves; re-run the table at whatever
+commit is actually submitted, because two of these rows change with every merge. The repository
 counts move as the repository does; the coach numbers on the bundled sample do not, because the
 keyless path is deterministic.
 
 | Number | Command | Result |
 |---|---|---|
-| 95 `type: "user"` records, 4 typed by a person, 4.2%, over a 31 minute window | `python3 -m agentgrinder authorship` | `4 4.2% human` of `95 100.0% total`, parts sum to the total |
+| 244 `type: "user"` records, 4 typed by a person, 1.6% | `python3 -m agentgrinder authorship` | `4 1.6% human` of `244 100.0% total`, parts sum to the total |
 | 334 records and 12 typed, 3.6%, over a 40 minute window on 3 September | same command, previous day | the reading the text quotes first |
+| 95 records and 4 typed, 4.2%, over a 31 minute window earlier on 4 September | same command, same day | three readings, 1.6% to 4.2%: the share moves with the window, the order of magnitude does not |
 | 8 tool calls on the sample, 3 typed turns, 1 of 2 claims verified, 1 of 2 files on disk, 0.67 verified per turn | `python3 -m agentgrinder coach samples/sample_session.jsonl` | exit 0, `tools dispatched 8 (by the Strands event loop; hook logged 8)` |
 | The refusal reasons | the five tools called in order, then `write_verdict(..., claims_verified=2, artifacts_produced=2, ...)` | `accepted: False`, two reasons, `tools_said` block |
 | precision 0.63 (0.43 to 0.83), recall 0.66 (0.46 to 0.83) on the held-out half | `python3 scripts/claim-calibration-report.py` | the table, recomputed from `docs/claim-calibration.json` |
 | Claude Code 0.72 / 0.68, Codex 0.86 / 0.62, Cursor not resolved | same command | per-harness rows, with 114, 44 and 40 labelled lines |
 | The calibration check fails on the thin stratum | `python3 scripts/claim-calibration-report.py; echo $?` | `FAIL: cursor is under the floor at 4 predicted positives while carrying 34.9 percent of the weight`, exit `1` |
-| 159 tests | `python3 -m pytest -q` | `159 passed in 13.44s` |
-| 143 tracked files | `git ls-files \| wc -l` | 143 |
-| 70 commits, first on 31 August 2026 | `git rev-list --count HEAD` | 70, first commit `2026-08-31 23:43:39 +0200` |
+| 170 tests | `python3 -m pytest -q` | `170 passed in 14.82s` |
+| 145 tracked files | `git ls-files \| wc -l` | 145 |
+| 73 commits, first on 31 August 2026 | `git rev-list --count HEAD` | 73, first commit `2026-08-31 23:43:39 +0200` |
 | 7 coach columns and `reach` live on the hosted database | `select *` on `public.runs` with the site's publishable key | `claims`, `claims_verified`, `artifacts_produced`, `coach_verdict`, `coach_plan`, `coach_tool_calls`, `progress_verdict`, plus `reach`, all nullable |
 | Live site and hosted card reachable | `curl -o /dev/null -w "%{http_code}"` on `/` and on `/?run=28d5d0b7...` | 200 and 200 |
 | The published figure is on the live site, not only in the tree | `curl -s https://agentgrinder.vercel.app/methodology \| grep -c 0.63` | 1, and the root page matches `precision 0.63` twice in the card tooltips |
 | 2 profiles, 2 publicly readable runs, 1 of them coached, 0 by anyone but the author | `GET /rest/v1/runs` and `/profiles` with `Prefer: count=exact`, publishable key | `content-range: 0-1/2` on both; one row has `coach_tool_calls` 37 |
-| 7,503 participants in the field | `curl -sL https://agentsforhumans.devpost.com/` | `Participants (7503)` |
+| 7,509 participants in the field | `curl -sL https://agentsforhumans.devpost.com/` | `Participants (7509)` |
 
 Two figures above are quoted from outside this repository, and neither was measured here. The METR
 figure (20% believed faster, 19% measured slower) is from METR's 2025 randomized controlled trial on
