@@ -1,0 +1,178 @@
+"""Cursor and Codex read their own file writes, their own commits and their own repository.
+
+Until 4 September 2026 both parsers returned `None` for files touched, commits, artifacts and
+reach, and the card printed a dash with a sentence blaming the harness. The sentence was wrong.
+The facts were in the transcripts the whole time:
+
+  Cursor  `Write` and `StrReplace` tool_use blocks carry an absolute `path`. Measured over the
+          298 transcripts on the author's machine: 2,279 such blocks, every path absolute, 2,233
+          still on disk. `Shell` carries the command string, so `git commit` is countable.
+  Codex   `patch_apply_end` carries `changes`, a dict keyed by absolute path, with a `success`
+          flag. `session_meta` carries `cwd`. Every record carries an ISO timestamp.
+
+What this file holds is the behaviour, on fixtures written here. Two rules are load-bearing and
+each has its own test: a failed patch is not a write, and a count that has no source stays None
+rather than becoming a zero.
+
+The claim rule is deliberately NOT wired into either parser. Its published precision was measured
+over a line population produced by the parsers as they stood, and feeding a new harness in would
+move that population while the number stayed still. tests/test_claim_rule.py holds that seam.
+"""
+import json
+import os
+import subprocess
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from agentgrinder import reach
+from agentgrinder.ingest import parse_cursor_session, parse_codex_session
+
+
+def _repo(tmp_path, name="proj"):
+    root = tmp_path / name
+    (root / "src").mkdir(parents=True)
+    subprocess.run(["git", "init", "-q", str(root)], check=True)
+    return root
+
+
+def _cursor(tmp_path, blocks, turns=2):
+    """A Cursor transcript: `turns` typed turns with timestamps, then one assistant message."""
+    lines = []
+    for i in range(turns):
+        lines.append(json.dumps({"role": "user", "message": {"content":
+            f"<timestamp>Wednesday, Sep 03, 2026, {10 + i}:00 AM</timestamp>"
+            "<user_query>go</user_query>"}}))
+    lines.append(json.dumps({"role": "assistant", "message": {"content": blocks}}))
+    path = tmp_path / "c.jsonl"
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return str(path)
+
+
+def _codex(tmp_path, records, cwd):
+    # COMPACT, no spaces after the colons. `_codex_count` counts typed turns with a substring
+    # scan rather than json.loads, because Codex writes megabyte lines; a pretty-printed fixture
+    # would silently report zero typed turns and this whole file would test nothing.
+    dump = lambda o: json.dumps(o, separators=(",", ":"))
+    lines = [dump({"type": "session_meta", "timestamp": "2026-09-03T10:00:00.000Z",
+                   "payload": {"type": "session_meta", "cwd": str(cwd)}}),
+             dump({"type": "event_msg", "timestamp": "2026-09-03T10:01:00.000Z",
+                   "payload": {"type": "user_message"}})]
+    for i, payload in enumerate(records):
+        lines.append(dump({"type": "event_msg",
+                           "timestamp": "2026-09-03T10:%02d:00.000Z" % (2 + i),
+                           "payload": payload}))
+    path = tmp_path / "rollout-t.jsonl"
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return str(path)
+
+
+# ---- Cursor ---------------------------------------------------------------------------------
+
+def test_cursor_reads_the_files_it_wrote(tmp_path):
+    root = _repo(tmp_path)
+    made = root / "src" / "a.py"
+    made.write_text("x = 1\n", encoding="utf-8")
+    gone = root / "src" / "never.py"        # written in the transcript, absent on disk
+    run = parse_cursor_session(_cursor(tmp_path, [
+        {"type": "tool_use", "name": "Write", "input": {"path": str(made), "contents": "x"}},
+        {"type": "tool_use", "name": "StrReplace",
+         "input": {"path": str(gone), "old_string": "a", "new_string": "b"}},
+        {"type": "tool_use", "name": "Read", "input": {"path": str(made)}},
+    ]))
+    assert run["files_touched"] == 2          # Read is not a write
+    assert run["artifacts_produced"] == 1     # only the one that exists on disk
+    assert run["route_legend"] == ["src"]
+    assert len(run["route"]) == 2
+
+
+def test_cursor_counts_a_commit_from_its_shell_tool(tmp_path):
+    root = _repo(tmp_path)
+    run = parse_cursor_session(_cursor(tmp_path, [
+        {"type": "tool_use", "name": "Write", "input": {"path": str(root / "src" / "a.py")}},
+        {"type": "tool_use", "name": "Shell", "input": {"command": "git commit -m x"}},
+        {"type": "tool_use", "name": "Shell", "input": {"command": "ls -la"}},
+    ]))
+    assert run["commits"] == 1
+
+
+def test_cursor_finds_the_repository_from_the_files_it_wrote(tmp_path):
+    """Cursor never states a working directory, so the repository comes from the writes."""
+    root = _repo(tmp_path)
+    run = parse_cursor_session(_cursor(tmp_path, [
+        {"type": "tool_use", "name": "Write", "input": {"path": str(root / "src" / "a.py")}},
+    ]))
+    # a real answer from reach.py, not the old "this harness cannot supply it"
+    assert run["reach"] is None
+    assert run["reach_reason"] == reach.R_NO_COMMITS
+
+
+def test_cursor_that_wrote_nothing_reports_nothing(tmp_path):
+    run = parse_cursor_session(_cursor(tmp_path, [
+        {"type": "tool_use", "name": "Read", "input": {"path": "/tmp/x"}},
+    ]))
+    assert run["files_touched"] is None
+    assert run["artifacts_produced"] is None
+    assert run["reach_reason"] == reach.R_NO_FILES
+
+
+# ---- Codex ----------------------------------------------------------------------------------
+
+def test_codex_reads_the_patches_it_applied(tmp_path):
+    root = _repo(tmp_path, "codexproj")
+    made = root / "src" / "b.py"
+    made.write_text("y = 2\n", encoding="utf-8")
+    run = parse_codex_session(_codex(tmp_path, [
+        {"type": "patch_apply_end", "success": True,
+         "changes": {str(made): {"type": "update"},
+                     str(root / "src" / "absent.py"): {"type": "add"}}},
+    ], cwd=root))
+    assert run["files_touched"] == 2
+    assert run["artifacts_produced"] == 1
+    assert run["route_legend"] == ["src"]
+
+
+def test_codex_does_not_count_a_failed_patch_as_a_write(tmp_path):
+    """An attempt is not an artifact. This is the ceiling problem in a different column."""
+    root = _repo(tmp_path, "codexproj")
+    run = parse_codex_session(_codex(tmp_path, [
+        {"type": "patch_apply_end", "success": False,
+         "changes": {str(root / "src" / "c.py"): {"type": "add"}}},
+    ], cwd=root))
+    assert run["files_touched"] is None
+    assert run["artifacts_produced"] is None
+
+
+def test_codex_counts_a_commit_from_its_exec_tool(tmp_path):
+    root = _repo(tmp_path, "codexproj")
+    run = parse_codex_session(_codex(tmp_path, [
+        {"type": "custom_tool_call", "name": "exec", "input": '{"cmd":["git","commit","-m","x"]}'},
+        {"type": "custom_tool_call", "name": "exec", "input": '{"cmd":["ls"]}'},
+    ], cwd=root))
+    assert run["commits"] == 1
+
+
+def test_codex_draws_a_window_from_its_own_timestamps(tmp_path):
+    root = _repo(tmp_path, "codexproj")
+    run = parse_codex_session(_codex(tmp_path, [
+        {"type": "patch_apply_end", "success": True,
+         "changes": {str(root / "src" / "d.py"): {"type": "add"}}},
+    ], cwd=root))
+    assert run["started"] is not None
+    assert run["duration_s"] and run["duration_s"] > 0
+    # a repository AND a window, so reach.py answers rather than the harness excusing itself
+    assert run["reach_reason"] == reach.R_NO_COMMITS
+
+
+# ---- the rule both parsers must keep -------------------------------------------------------
+
+def test_neither_parser_invents_a_zero(tmp_path):
+    """A count with no source is None. A zero is an assertion that nothing happened."""
+    cur = parse_cursor_session(_cursor(tmp_path, []))
+    cod = parse_codex_session(_codex(tmp_path, [], cwd=tmp_path / "nope"))
+    for run in (cur, cod):
+        for field in ("files_touched", "commits", "artifacts_produced",
+                      "artifacts_promised", "corrections", "reach"):
+            assert run[field] is None, f"{run['harness']} invented {field} = {run[field]!r}"
+        assert run["reach_reason"]
+        assert "claims" not in run and "claims_verified" not in run

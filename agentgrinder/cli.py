@@ -596,8 +596,14 @@ def _grind(args) -> int:
         run = parse_cursor_session(path, athlete=args.athlete)
         out = Path(args.out)
         out.write_text(render_card(build_activity(run)), encoding="utf-8")
-        print(f"\n  Cursor transcripts carry no file paths and no commits, so the grind trace"
-              f"\n  cannot be drawn for them. The v1 card is rendered instead -> {out}\n")
+        # This sentence used to read "Cursor transcripts carry no file paths and no commits".
+        # Both halves were false: `Write` and `StrReplace` carry an absolute `path`, and `Shell`
+        # carries the command. What is genuinely missing is a time on each of those events, and
+        # every mark on the grind trace is a timestamp. Cursor stamps typed turns only.
+        drawn = "files, commits and reach are read from the transcript"
+        print(f"\n  Cursor card -> {out}"
+              f"\n  {drawn}. The grind trace is not drawn: Cursor stamps a time on typed"
+              f"\n  turns only, and every mark on the trace is one timestamp.\n")
         if getattr(args, "coach", None) is not None:
             # asked for explicitly and cannot be delivered: say which fields are missing, and do
             # not push. Publishing a run the person asked to have coached, uncoached, is the
@@ -631,7 +637,10 @@ def _grind(args) -> int:
         run = parse_codex_session(path, athlete=args.athlete)
         out = Path(args.out)
         out.write_text(render_card(build_activity(run)), encoding="utf-8")
-        print(f"\n  Codex rollouts carry no file-route trace yet — v1 card with real prompt/tool counts -> {out}\n")
+        print(f"\n  Codex card -> {out}"
+              f"\n  files, commits and reach are read from the transcript: patch_apply_end names"
+              f"\n  every path it wrote, and session_meta names the working directory. The grind"
+              f"\n  trace is not drawn yet.\n")
         if getattr(args, "coach", None) is not None:
             print(coach_degraded_banner("Codex", run)); return 1
         if args.push:

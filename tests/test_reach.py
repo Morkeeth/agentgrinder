@@ -301,15 +301,52 @@ def test_the_claude_reader_carries_reach_and_its_reason(tmp_path):
     assert run["reach_reason"] == reach.R_NO_COMMITS
 
 
-def test_a_cursor_run_and_a_codex_run_are_null_because_the_harness_cannot_supply_it(tmp_path):
+def test_a_cursor_run_and_a_codex_run_name_the_fact_they_are_missing(tmp_path):
+    """Both used to print "this harness cannot supply it". Both sentences were false.
+
+    Cursor's transcript carries absolute paths for every file it writes, and Codex records a cwd
+    in `session_meta` and stamps an ISO timestamp on every record. So the reason a dash appears is
+    a fact about THIS session, and the parsers now say which one. A session that wrote nothing
+    still gets a dash; it just gets an accurate sentence with it.
+    """
     cur = tmp_path / "c.jsonl"
     cur.write_text('{"role":"user","message":{"content":"<timestamp>Wednesday, Sep 03, 2026, '
                    '10:00 AM</timestamp><user_query>go</user_query>"}}\n', encoding="utf-8")
     run = parse_cursor_session(str(cur))
-    assert run["reach"] is None and run["reach_reason"] == reach.R_NO_REPO
+    # nothing written, so no repository can be found from the files
+    assert run["reach"] is None and run["reach_reason"] == reach.R_NO_FILES
 
     cod = tmp_path / "rollout-x.jsonl"
     cod.write_text('{"type":"session_meta","payload":{"cwd":"/x/y"}}\n'
                    '{"type":"user_message","content":"go"}\n', encoding="utf-8")
     run = parse_codex_session(str(cod))
+    # one record, so no window can be drawn; that is the missing fact, not the harness
     assert run["reach"] is None and run["reach_reason"] == reach.R_NO_WINDOW
+
+
+def test_a_codex_run_whose_cwd_is_gone_says_so(tmp_path):
+    cod = tmp_path / "rollout-y.jsonl"
+    cod.write_text(
+        '{"type":"session_meta","timestamp":"2026-09-03T10:00:00.000Z",'
+        '"payload":{"cwd":"/no/such/directory","type":"session_meta"}}\n'
+        '{"type":"event_msg","timestamp":"2026-09-03T10:05:00.000Z",'
+        '"payload":{"type":"user_message"}}\n'
+        '{"type":"event_msg","timestamp":"2026-09-03T10:06:00.000Z","payload":{"type":"x"}}\n',
+        encoding="utf-8")
+    run = parse_codex_session(str(cod))
+    assert run["reach"] is None and run["reach_reason"] == reach.R_CWD_GONE
+
+
+def test_a_codex_run_outside_a_work_tree_says_so(tmp_path):
+    outside = tmp_path / "notarepo"
+    outside.mkdir()
+    cod = tmp_path / "rollout-z.jsonl"
+    cod.write_text(
+        '{"type":"session_meta","timestamp":"2026-09-03T10:00:00.000Z",'
+        '"payload":{"cwd":"%s","type":"session_meta"}}\n'
+        '{"type":"event_msg","timestamp":"2026-09-03T10:05:00.000Z",'
+        '"payload":{"type":"user_message"}}\n'
+        '{"type":"event_msg","timestamp":"2026-09-03T10:06:00.000Z","payload":{"type":"x"}}\n'
+        % outside, encoding="utf-8")
+    run = parse_codex_session(str(cod))
+    assert run["reach"] is None and run["reach_reason"] == reach.R_CWD_NOT_REPO
