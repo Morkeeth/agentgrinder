@@ -184,6 +184,64 @@ Oscar's friends. Both are his.
 
 **B1, B2 and B3 are untouched**, because two are a merge and one is a ruling.
 
+## Addendum 2: re-run on the merged result, and one finding this audit missed
+
+*The audit above describes `60a0c49`. The lane branch was merged into `main` locally at `76fc2a0`
+on Oscar's ruling, which is exactly the moment the audit's own last line applies. Re-run as a cold
+clone of the merged tree, `env -i`, empty `HOME`. 148 tracked files, 174 tests pass.*
+
+### B2 is closed in the tree, checked with the same fixture
+
+The Cursor fixture that produced the false sentence was run again against the merged clone. Same
+transcript, same command, before and after:
+
+- **60a0c49:** `"Cursor transcripts carry no file paths and no commits, so the grind trace cannot
+  be drawn for them."` The produced over promised cell read a dash on both sides.
+- **76fc2a0:** `"files, commits and reach are read from the transcript. The grind trace is not
+  drawn: Cursor stamps a time on typed turns only."` The same cell now reads 1 over a dash.
+
+The sentence a friend is told is true, and it names what is genuinely missing rather than blaming
+their harness. C1, C2 and C3 also verified closed on the merged clone: `authorship` says "nothing
+to check", `history` says "Nothing to rank yet", `vibe` names every path searched, `demo` still
+works cold. No traceback from any of them. `scripts/claim-calibration-report.py` exits 1 with the
+cursor stratum named, which is the intended state.
+
+### B1 is NOT closed, and the merge did not close it
+
+`main` is nine commits ahead of `origin/main`. Nothing has been pushed and nothing has been
+deployed, because neither was asked for and both are separate acts. **A friend cloning the public
+repository right now still gets `60a0c49`, and is still told the false sentence.** A local merge
+changes what is true in this working copy, not what is true for a stranger.
+
+### B4, NEW AND THE MOST SERIOUS THING IN THIS DOCUMENT: a private project map is in the public repo
+
+Found by a review panel, not by this audit, and verified here at the published object.
+
+**Promised:** the public nightrun card redacts repository and lane names.
+**Happened:** the redactor works, and the un-redacted original was committed beside its own
+redacted output. Both are tracked and both are on `origin/main` today.
+
+| file, on `origin/main` | size | private project names |
+|---|---|---|
+| `nightrun-public.html` | 102,457 b | **0**, with 350 `repo N` labels in their place |
+| `nightrun.html` | 104,247 b | **164**: aistrava 64, cleared 50, agent-attack 18, zup 14, transcripto 9, oscar-labs 9 |
+
+Neither file is served by the website; `vercel.json` publishes `site/` and both of these sit at the
+repository root. So the exposure is the public GitHub repository, not the live URL. It is still a
+**one-way door that is already open**: the file is in every clone and fork made since it was
+committed.
+
+**Fix:** Oscar's, because removing it from the published history needs a rewrite and a force push,
+which are his acts and not reversible by anyone else. Deleting the file at `HEAD` does not remove
+it from the log.
+
+**And why this audit did not find it.** The privacy check above scanned the full history for
+service-role keys, JWTs, AWS keys, GitHub tokens and OpenAI keys, and reported clean. That result
+was correct and it was about the wrong object. The leak is not a credential, it is a map of what
+Oscar is working on, sitting in a 104 KB HTML file next to the redacted copy that proves somebody
+already knew it needed redacting. A privacy check that only knows the shape of a secret cannot see
+a secret with a different shape.
+
 ## The order to fix in
 
 1. Merge and push the lane branch. B1 and B2 close together, and nothing else can be evaluated
