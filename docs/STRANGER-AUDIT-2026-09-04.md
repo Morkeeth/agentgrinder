@@ -153,6 +153,37 @@ should come down when the audience changes.
 
 ---
 
+## Addendum: what has been fixed since this audit ran
+
+*Appended after the findings, not folded into them. The findings above describe `60a0c49` and are
+left exactly as they were recorded, because an audit edited to match the fix is no longer evidence
+of anything.*
+
+**C1, C2 and C3 are closed** on the lane branch, and each is held by a test.
+
+- `authorship` on an empty window now says there is nothing to check and stops, instead of printing
+  a table of zeros and a green OK. A second test asserts the sum still prints when there IS a
+  population, so the check was watched going both ways rather than only silenced.
+- `history` prints its honest `0 grinds` line and stops, instead of five empty section headings.
+- `vibe` and `roast` now print `no_session_message()`, the same text `grind` uses: every path
+  searched, and `demo` as the next step. The helper already existed; they were not calling it.
+
+Verified cold afterwards under `env -i` with an empty `HOME`, the same conditions the findings were
+collected under.
+
+One note on the tests, because it is the same lesson as the audit itself. The first version of the
+`authorship` test faked `HOME` by monkeypatching `os.path.expanduser`. It passed alone and failed
+in the suite: by the time it ran, other tests had already imported the modules that resolve those
+paths, so the real machine's 354 records walked into a test about an empty machine. It now drives
+the branch directly. A test whose result depends on which tests ran before it is not measuring what
+it claims to measure.
+
+**C4 and C5 are open and are not this lane's to close.** C4 changes what a share command produces,
+and C5 is a decision about what the site says to an audience that just changed from judges to
+Oscar's friends. Both are his.
+
+**B1, B2 and B3 are untouched**, because two are a merge and one is a ruling.
+
 ## The order to fix in
 
 1. Merge and push the lane branch. B1 and B2 close together, and nothing else can be evaluated

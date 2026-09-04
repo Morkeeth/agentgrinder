@@ -176,3 +176,74 @@ def test_neither_parser_invents_a_zero(tmp_path):
             assert run[field] is None, f"{run['harness']} invented {field} = {run[field]!r}"
         assert run["reach_reason"]
         assert "claims" not in run and "claims_verified" not in run
+
+
+# ---- the empty machine: no green check over a population of zero -----------------------------
+#
+# Found by the stranger audit on 4 Sep 2026, by running the CLI under `env -i` with an empty HOME.
+# `authorship` printed the full table of zeros and then "parts sum to the total: 0 + 0 + 0 + 0 + 0
+# = 0  OK". The sum is real and the OK means nothing: an identity over an empty population passes
+# whatever the classifier does, so it is a check that cannot go red, printed by the one tool whose
+# whole subject is a number that is correct about the wrong object.
+
+def test_authorship_prints_no_ok_when_there_is_nothing_to_check(monkeypatch, capsys):
+    """Drives the empty-window branch directly rather than by faking HOME.
+
+    The first version of this test monkeypatched `os.path.expanduser`. It passed alone and failed
+    in the suite, because by then another test had already imported the modules that resolve those
+    paths, so the real machine's 354 records walked into a test about an empty one. A test whose
+    result depends on which tests ran before it is not measuring what it claims to measure.
+    """
+    from agentgrinder import cli, fleet
+    monkeypatch.setattr(fleet, "collect", lambda *a, **k: {
+        "started": "2026-09-04T10:00:00", "ended": "2026-09-04T10:30:00",
+        "lanes": [], "sessions": [],
+        "authorship": {"gate": "test", "user_records_total": 0,
+                       "by_category": {c: 0 for c in
+                                       ("human", "tool_result", "injected", "orchestrator", "harness")},
+                       "keystrokes_in_lane_transcripts": 0}})
+    rc = cli.main(["authorship"])
+    out = capsys.readouterr().out
+    assert rc == 0
+    # the exact green check, not the substring "OK", so the assertion names what it forbids
+    assert "parts sum to the total" not in out, "the sum is printed over an empty population"
+    assert "= 0  OK" not in out, "an empty machine is still being shown a green check"
+    assert "nothing to check" in out
+
+
+def test_authorship_still_prints_the_sum_when_there_is_a_population(monkeypatch, capsys):
+    """The check must still fire when it means something. Watched going the other way."""
+    from agentgrinder import cli, fleet
+    cats = {"human": 4, "tool_result": 85, "injected": 6, "orchestrator": 0, "harness": 0}
+    monkeypatch.setattr(fleet, "collect", lambda *a, **k: {
+        "started": "2026-09-04T10:00:00", "ended": "2026-09-04T10:30:00",
+        "lanes": [], "sessions": [],
+        "authorship": {"gate": "test", "user_records_total": sum(cats.values()),
+                       "by_category": cats, "keystrokes_in_lane_transcripts": 0}})
+    rc = cli.main(["authorship"])
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "parts sum to the total: 4 + 85 + 6 + 0 + 0 = 95  OK" in out
+
+
+def test_history_does_not_print_empty_rankings(monkeypatch, capsys):
+    from agentgrinder import cli, history
+    monkeypatch.setattr(history, "load", lambda *a, **k: [])
+    rc = cli.main(["history"])
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "0 grinds on this machine" in out
+    assert "by tool calls:" not in out, "five empty headings read like a broken command"
+    assert "Nothing to rank yet" in out
+
+
+def test_vibe_and_roast_name_where_they_looked(monkeypatch, capsys):
+    """`grind` names all four transcript paths and offers `demo`. These printed three words."""
+    from agentgrinder import cli
+    monkeypatch.setattr(cli, "_load_latest_run", lambda *a, **k: None)
+    for cmd in ("vibe", "roast"):
+        rc = cli.main([cmd])
+        out = capsys.readouterr().out
+        assert rc == 1, cmd
+        assert "~/.claude/projects" in out and "~/.cursor" in out and "~/.codex" in out, cmd
+        assert "agentgrinder demo" in out, cmd

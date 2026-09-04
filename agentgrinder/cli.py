@@ -298,7 +298,7 @@ def main(argv=None) -> int:
         from .meme import format_vibe, vibe_or_default
         run = _load_latest_run(getattr(args, "session", None))
         if not run:
-            print("no session found"); return 1
+            print(no_session_message()); return 1
         label, line = vibe_or_default(run)
         if args.as_json:
             print(json.dumps({"vibe": label, "line": line}, indent=2))
@@ -309,7 +309,7 @@ def main(argv=None) -> int:
         from .meme import format_roast, roast_shape
         run = _load_latest_run(getattr(args, "session", None))
         if run is None:
-            print("no session found"); return 1
+            print(no_session_message()); return 1
         if args.as_json:
             print(json.dumps({"roast": roast_shape(run)}, indent=2))
         else:
@@ -430,6 +430,10 @@ def main(argv=None) -> int:
         h = load()
         print(f"\n  {len(h):,} grinds on this machine "
               f"(every sitting in ~/.claude/projects with a human turn, 30-minute idle rule)\n")
+        if not h:
+            # Five empty section headings under an honest "0 grinds" reads like a broken command.
+            print("  Nothing to rank yet. Run a session, then:  python3 -m agentgrinder grind\n")
+            return 0
         for key, label in MEASURES:
             col = {"stretch": "stretch_s", "moving": "moving_s", "tools": "tools",
                    "edits": "edits", "prompts": "typed"}[key]
@@ -487,6 +491,19 @@ def main(argv=None) -> int:
         print(f"\n  type:user records {run['started'][:19]} -> {run['ended'][:19]}"
               f"   ({len(run['lanes'])} lane transcripts + {len(run['sessions'])} sessions)")
         print(f"  gate: {a['gate']}\n")
+        if tot == 0:
+            # A CHECK THAT SAYS OK ABOUT NOTHING. Until 4 Sep 2026 an empty machine got the full
+            # table of zeros and then "parts sum to the total: 0 + 0 + 0 + 0 + 0 = 0  OK". The sum
+            # is real and the OK is meaningless: an identity over an empty population passes
+            # whatever the classifier does, so a reader is shown a green check that cannot go red.
+            # This tool's whole subject is a number that is correct about the wrong object, and it
+            # was printing one. Found by running the CLI with an empty HOME, which is the only way
+            # anyone was ever going to see it.
+            print("  no type:user records in this window, so there is nothing to check."
+                  "\n  The category table and its sum are printed only when there is a population"
+                  "\n  to sum: an identity over zero passes whatever the classifier does, so"
+                  "\n  a pass printed here would be a check that cannot go red.\n")
+            return 0
         w = max(len(c) for c in CATEGORIES)
         for c in CATEGORIES:
             n = a["by_category"][c]
