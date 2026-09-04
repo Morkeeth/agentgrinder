@@ -162,6 +162,10 @@ count. The site is at **https://agentgrinder.vercel.app**.
 
 ## Honest limits
 
+This project's whole claim is that a number without a source is a guess. Its own headline number
+was one until 3 September, and the first two bullets below are the receipt for it no longer being
+one. Read the length of this section as the product working rather than as a disclaimer.
+
 - **The claim rule publishes its own error rate, and it missed its target.** A rule decides what
   counts as a claim, so that rule has an error rate. 396 lines of assistant text from real sessions
   were hand-labelled against a rubric written before the sample was opened, split by session into a

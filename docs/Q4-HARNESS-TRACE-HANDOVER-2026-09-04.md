@@ -36,7 +36,7 @@ moves that population while the number sits still, and the suite would stay gree
 sequence is: recalibrate on a labelled set for that harness, republish, then wire it. Not the
 other way round.
 
-## The blocker: the trace card asks for an authorship breakdown only Claude Code can supply
+## The blocker: both trace cards ask for an authorship breakdown only Claude Code can supply
 
 This is the finding. It was not in the plan and it changes the size of the remainder.
 
@@ -48,8 +48,23 @@ assert sum(cats.values()) == naive          # the five categories sum to the raw
 assert cats["human"] == run["turns_typed"]  # and the human category IS the denominator
 ```
 
-Those exist because the card prints the sum on screen so a reader can check the correction it is
-making. `authorship.classify` produces those categories, and its first line is
+**The same two asserts sit in `fleetcard.py:47` and `:48`, not only `solocard.py:177` and `:178`.**
+The constraint is on two renderers, so anyone following this file to teach a second harness to
+render would meet the second pair the hard way.
+
+The fleet card's own comment explains why they are there better than anything else in this
+document, and it was written before today:
+
+> five DISJOINT categories that must add up to the raw total they are correcting. The version this
+> replaced printed "tool results, injected context, and the 1,357 lane briefs" as three things,
+> when the third was 1,324 of the first. It called harness-written tool output human-authored
+> briefs, inside the paragraph whose whole job is to prove the card does not inflate a count.
+> Categories that must sum cannot drift like that.
+
+That is this run's entire subject, sitting in the repository as a comment: a number that was
+correct about the wrong object, inside the sentence whose job was to prove it was not.
+
+`authorship.classify` produces those categories, and its first line is
 `if rec.get("type") != "user": return None`. It then reads `isMeta`, `isSidechain` and a tool
 result shape. Every one of those is a Claude Code field. A Codex record is
 `{"type": "event_msg", "payload": {"type": "user_message"}}`, so `classify` returns `None` for all
@@ -62,8 +77,9 @@ So the Codex trace needs one of two things, and only the first is honest:
    `event_msg`/`user_message` with the `<recommended_plugins>`, `<environment_context>` and
    `<turn_aborted>` markers already listed in `ingest._INJECT_MARKERS`. This is a day, and it is
    the same shape of work `authorship.py` was for Claude Code.
-2. Loosening the two asserts. **Do not.** They are the reason the card's correction can be checked
-   by the person reading it.
+2. Loosening the two asserts, in either renderer. **Do not.** They are the reason the card's
+   correction can be checked by the person reading it, and the comment quoted above is what the
+   card looked like before they existed.
 
 The rest of the Codex trace is comparatively cheap once 1 exists: `patch_apply_end` gives per-file
 edits with timestamps, `session_meta.cwd` gives the repository, and `gitwork` supplies the commits
