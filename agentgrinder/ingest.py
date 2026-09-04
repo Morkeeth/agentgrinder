@@ -14,6 +14,7 @@ from datetime import datetime
 
 from . import gitwork, reach as reachmod
 from .authorship import is_human_turn
+from .project_identity import identity as project_identity
 from .claims import ClaimTracker, is_tool_result, result_text
 
 _EDIT_TOOLS = {"Edit", "Write", "NotebookEdit"}
@@ -382,7 +383,10 @@ def parse_cursor_session(path: str, athlete: str = "you") -> dict:
     route = [_region_of(fp, repo_root) for fp in edits]
     return {
         "athlete": athlete, "title": title, "harness": "Cursor", "project": proj,
+        "project_identity": project_identity(repo_root or os.path.dirname(os.path.dirname(os.path.dirname(path)))),
         "started": (min(pts).isoformat() if pts else None),
+        "trace_basis": "typed-turn order; spacing is not elapsed time",
+        "capabilities": {"timed_trace": False, "claim_evidence": False, "authorship": True},
         "duration_s": dur, "turns_typed": typed, "tool_calls": tool_calls,
         "files_touched": len(files) if files else None,
         "commits": commits if edits or commits else None,
@@ -444,18 +448,13 @@ def latest_codex_session() -> str | None:
 
 
 def _codex_count(path: str) -> tuple[int, int] | None:
-    """Fast typed/tool estimate without full JSON parse of megabyte lines."""
-    typed = tools = 0
+    """Count native events, independent of whitespace and without tool-result duplicates."""
+    from .native_trace import codex_activity
     try:
-        with open(path, encoding="utf-8") as fh:
-            for line in fh:
-                if '"type":"user_message"' in line and "<recommended_plugins>" not in line:
-                    typed += 1
-                if '"role":"assistant"' in line and '"type":"' in line:
-                    tools += line.count('"type":"') - line.count('"type":"message"')
+        activity = codex_activity(path)
     except OSError:
         return None
-    return (typed, max(tools, 0)) if typed else None
+    return (activity['typed'], activity['tools']) if activity['typed'] else None
 
 
 # CODEX WRITES FILES THROUGH ONE EVENT, AND IT NAMES THEM. `patch_apply_end` carries
@@ -544,10 +543,9 @@ def parse_codex_session(path: str, athlete: str = "you") -> dict:
     written = set(edits)
     files = set(edits)
 
-    buckets = min(24, max(1, typed))
-    rhythm = [0] * buckets
-    for i in range(typed):
-        rhythm[min(buckets - 1, i * buckets // typed)] += 1
+    from .native_trace import codex_activity
+    native = codex_activity(path)
+    rhythm = native["rhythm"]
 
     proj = os.path.basename(cwd) if cwd else os.path.basename(path).replace(".jsonl", "")[:32]
     title = f"{proj} session"
@@ -575,6 +573,12 @@ def parse_codex_session(path: str, athlete: str = "you") -> dict:
         "athlete": athlete,
         "title": title,
         "harness": "Codex",
+        "project_identity": project_identity(cwd),
+        "parser_version": "codex-native-2026-09-04",
+        "authorship": native["authorship"],
+        "trace": native["trace"],
+        "trace_basis": native["trace_basis"],
+        "capabilities": {"timed_trace": bool(native["trace"]), "claim_evidence": False, "authorship": True},
         "project": proj,
         "started": (min(stamps).isoformat() if stamps else None),
         "duration_s": (int((max(stamps) - min(stamps)).total_seconds()) if len(stamps) >= 2 else None),

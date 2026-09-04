@@ -40,29 +40,20 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from agentgrinder.claims import (ClaimTracker, _GENERIC_BAD, _GENERIC_OK, claims_in,
+from agentgrinder.claims import (ClaimTracker, _GENERIC_BAD, _GENERIC_OK, claims_in, evidence_kind,
                                  is_tool_result, result_text)
 from agentgrinder.authorship import is_human_turn
 from agentgrinder.ingest import CLAUDE_GLOB
 
 
 def branch_of(claim, results):
-    """('token' | 'generic' | None) for one claim against one turn's results.
+    """Report which production evidence arm matched. The matcher owns the rule.
 
-    Mirrors `evidence_matches` exactly, in the same order, and reports which arm returned True.
-    It does not call it, because the whole point is to see inside it; the two are held together
-    by a test that asserts this function agrees with `evidence_matches` on every claim.
+    The independent labelled evaluation belongs in tests/test_evidence_scope.py; this
+    report measures current branch usage, not accuracy and not the historical split.
     """
-    generic = False
-    for text in results:
-        if not text:
-            continue
-        for tok in claim.tokens:
-            if tok in text:
-                return "token"
-        if _GENERIC_OK.search(text) and not _GENERIC_BAD.search(text):
-            generic = True
-    return "generic" if generic else None
+    kinds = {evidence_kind(claim, text) for text in results}
+    return "token" if "token" in kinds else "generic" if "generic" in kinds else None
 
 
 class BranchTracker(ClaimTracker):

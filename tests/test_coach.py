@@ -205,4 +205,6 @@ def test_cli_grind_coach_json_carries_the_verdict_fields(tmp_path):
     # clone into any other folder used to red this one test and nothing else, so a contributor's
     # first `pytest` was 60 passed, 1 failed. Measured 3 Sep 2026 in ./clone1.
     assert run["progress"]["verdict"] == "baseline"
-    assert f"baseline on {os.path.basename(REPO)}" in run["progress_line"]
+    # Linked worktrees share one project identity; the label follows git's common repository.
+    common = subprocess.check_output(["git", "-C", REPO, "rev-parse", "--path-format=absolute", "--git-common-dir"], text=True).strip()
+    assert f"baseline on {os.path.basename(os.path.dirname(common))}" in run["progress_line"]

@@ -6,6 +6,8 @@ from real work, never invented.
 
 > Grind in public. Ship with proof.
 
+The full-product build is staged on `build/full-product-2026-09-04`. See [implementation status and local checks](docs/BUILD-STATUS.md) for the implemented flows, migration order and remaining acceptance work. These additions are not yet deployed.
+
 ## Start here — one command, no account, nothing to configure
 
 ```bash
@@ -133,10 +135,12 @@ network for the negative case:
 a *claim* is a line of assistant text whose sentences assert, as accomplished fact, that work in
 this session is finished, correct, or checked. Headings, table rows, labels that introduce a list,
 questions, plans, conditions, imperatives, quoted output and descriptions of how a thing behaves are
-not claims. It is *verified* when a tool result **in the same human turn** (the span between two
-typed turns, before or after the claim) carries a matching token: a `test_*` name or file path from
-the claim line, or a generic success token (`N passed`, a line starting `OK`, `exit 0`) that is not
-contradicted by `N failed` / `FAILED` / `Traceback` in the same result. *Artifacts produced* =
+not claims. The evidence matcher changed on 4 September 2026. A test claim needs successful
+output **in the same human turn**, with every named test or file matched. A failed result cannot
+support it. A generic suite result can support an unnamed suite claim, but cannot support a named
+test, file creation, deployment or compound completion claim. Those stay unknown. This is text
+matching, not independent proof of execution; the detector scores below do not measure this matcher.
+*Artifacts produced* =
 distinct Edit/Write paths that exist on disk when the transcript is parsed.
 
 **The rule publishes its own error bar.** 396 lines of assistant text from real sessions were hand

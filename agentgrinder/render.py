@@ -52,10 +52,17 @@ def _five_row(cells: list[Cell]) -> str:
 
 
 def render_card(a: Activity) -> str:
+    from dataclasses import replace, fields
+    a = replace(a, **{f.name: escape(getattr(a, f.name)) for f in fields(a) if isinstance(getattr(a, f.name), str)})
     initial = (a.athlete or "?")[0].upper()
-    pb = '<span class="pb" title="high sustained cadence">★ focus PB</span>' if a.focus_pb else ""
-    route = _route_svg(a.rhythm)
+    pb = '<span class="pb" title="high sustained cadence">High cadence</span>' if a.focus_pb else ""
+    if a.trace:
+        from .native_trace import svg
+        route = svg(a.trace, a.trace_basis)
+    else:
+        route = _route_svg(a.rhythm) + ("<small>" + a.trace_basis + "</small>" if a.trace_basis else "")
     five = _five_row(a.five)
+    coach = (f'<section style="padding:20px"><h2>Next session</h2><small>{a.coach_mode}</small><p>{a.coach_verdict}</p><p style="white-space:pre-wrap">{a.coach_plan}</p></section>' if a.coach_verdict else "")
     hl_title = ("verified per turn = (verified claims + artifacts produced) ÷ typed turns · "
                 + escape(a.headline_formula))
     return f'''<!doctype html>
@@ -143,6 +150,7 @@ def render_card(a: Activity) -> str:
       <div><span>Commits</span><br><b>{a.commits}</b></div>
       <div><span>Cadence</span><br><b>{a.prompts_per_hour}</b></div>
     </div>
+    {coach}
     <div class="foot">
       <div class="kudo">🔥 <b>kudos</b></div>
       <div class="kudo">💬 comment</div>

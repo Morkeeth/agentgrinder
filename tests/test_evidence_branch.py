@@ -29,6 +29,7 @@ from agentgrinder.claims import claims_in, evidence_matches  # noqa: E402
 
 # Every line here was written for this file. No transcript text appears in this repository.
 CLAIM_LINES = [
+    "The suite passed.",
     "Fixed tests/test_bucket.py and test_edges passes.",
     "Added the retry helper and the suite is green at 42 tests.",
     "Deployed the worker; the health check answers 200.",
@@ -81,9 +82,9 @@ def test_the_stronger_arm_wins_whichever_result_carries_it():
     to come first. The split has to look at the whole turn before deciding.
     """
     claim = _claim("Fixed tests/test_bucket.py and test_edges passes.")
-    assert ebr.branch_of(claim, ["exit 0", "tests/test_bucket.py touched"]) == "token"
-    assert ebr.branch_of(claim, ["tests/test_bucket.py touched", "exit 0"]) == "token"
-    assert ebr.branch_of(claim, ["exit 0"]) == "generic"
+    assert ebr.branch_of(claim, ["exit 0", "test_edges PASSED"]) == "token"
+    assert ebr.branch_of(claim, ["test_edges PASSED", "exit 0"]) == "token"
+    assert ebr.branch_of(claim, ["exit 0"]) is None
 
 
 def test_a_contradicted_result_does_not_verify():
@@ -101,7 +102,7 @@ def test_a_claim_naming_nothing_can_only_ever_reach_the_weak_arm():
     """
     claim = _claim("Deployed the worker; the health check answers 200.")
     assert not claim.tokens
-    assert ebr.branch_of(claim, ["tests/test_bucket.py ..... 5 passed"]) == "generic"
+    assert ebr.branch_of(claim, ["tests/test_bucket.py ..... 5 passed"]) is None
     assert ebr.branch_of(claim, ["nothing relevant here"]) is None
 
 

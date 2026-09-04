@@ -1,51 +1,25 @@
-r"""The claim rule: which lines of the agent's own text are claims about work done, and which
-of those carried tool evidence in the same trace.
+r"""Claim detection and conservative same-turn test-evidence matching.
 
-MEASURED, 3 Sep 2026. 396 assistant lines were hand-labelled against a rubric written before the
-sample was opened, sampled in three strata across three harnesses, split by session into a tuning
-half and a held-out half. On the half it was never tuned on this rule reads precision 0.63 and
-recall 0.66, against 0.32 and 0.37 for the rule it replaces. Numbers, the design, and the error bars:
-docs/CLAIM-RULE-CALIBRATION-2026-09-03.md, counts in docs/claim-calibration.json.
+The claim detector was calibrated on 396 labelled assistant lines on 3 September 2026.
+Its held-out corpus-wide precision is 0.63 and recall 0.66; see the dated calibration
+report and per-harness limitations. Those figures measure detection of claim lines,
+NOT whether the matched evidence proves a claim.
+The prior v0 detector measured 0.32 precision and 0.37 recall on that held-out set.
 
-THAT HEADLINE IS A BLEND, and one of the three strata under it is not measured (added 4 Sep 2026).
-Split by harness on the held-out half: Claude Code 0.72 precision / 0.68 recall over 114 labelled
-lines carrying 62.9% of the population weight; Codex 0.86 / 0.62 over 44 lines carrying 2.2%; Cursor
-NOT RESOLVED, because the rule predicted 4 positives in total there (1 true, 3 false) from 40 lines
-carrying 34.9%, and a precision off 4 predicted positives runs 0.00 to 0.86. So 0.63 sits BELOW
-Claude Code's own 0.72, dragged down by a stratum nobody has labelled enough of. Reproduce it all
-with scripts/claim-calibration-report.py, which exits non-zero while that stratum is thin.
+Evidence rule `test-outcomes-2026-09-04` rejects failure output before considering a
+positive result. Named tests require exact token boundaries and matching positive
+output. A generic passing summary can support only an unnamed test/suite claim.
+Compound claims about deployment, file creation or another operation remain unknown.
+A filename appearing in output does not establish that the file changed.
 
-  claim     = a line of assistant TEXT whose sentences assert, as accomplished fact, that work in
-              this session is finished, correct, or checked (`is_claim_line`). Headings, table rows,
-              labels that introduce a list, questions, plans, intentions, conditions, imperatives,
-              quoted output and descriptions of how a thing behaves are NOT claims, and each of
-              those rejections is a measured error of the v0 rule it replaces.
-  evidence  = a tool_result in the SAME HUMAN TURN (the span between two typed turns) whose text
-              carries a token that matches the claim:
-                - a test name from the claim line      (test_\w+)
-                - a file path from the claim line      (something/with.ext)
-                - a generic success token              ("N passed", a line starting "OK", "exit 0" / "exit code 0")
-                  which does NOT count if the same result also says "N failed" / "FAILED" / "Traceback"
-  verified  = the claim has at least one such evidence result
+The evidence rule's field precision and recall remain unmeasured. Same-turn matching
+still does not establish independent verification, command identity or causal impact.
+Artifact existence and git outcomes have separate coach tools. Historical branch-share
+measurements describe the older rule and must not be presented as current measurements.
 
-WHAT REPLACED WHAT. v0 was one vocabulary regex over a whole line
-(passes|passed|fixed|done|deployed|works|green|verified|ships?|shipped). Measured against the label
-set it ran at precision 0.32 on the held-out half: two of every three lines it called a claim were a
-heading, a plan, a table row or a piece of advice, and it missed two thirds of the real ones. Its own docstring said "most sessions read
-100% verified"; over 590 real sittings the median is 0.09. Both statements were unmeasured, and both
-were wrong. The rule here is still one deterministic pass of small regexes over a line, no model and
-no network, but it reads each SENTENCE, rejects the shapes that are not assertions, and requires an
-assertion of completion, a named check outcome, or a first-person report of work.
-
-DEVIATION, stated: the brief said "followed ... by a tool_use". In real traces the agent runs the
-check FIRST and then states the claim, so a strictly-after window marks almost every true claim
-unverified — a red light nobody audits. The window is therefore the whole human turn, either side
-of the claim. Evidence from a different human turn never counts.
-
-STILL UNMEASURED, stated plainly: `evidence_matches`. Whether a claim was correctly matched to its
-evidence has no label set, so the verified SHARE inherits an unknown error even though the claim
-count no longer does. A generic "N passed" in the same turn still verifies any claim beside it.
-No prompt text leaves this function — it returns counts.
+A claim is a line asserting accomplished work; plans, instructions, headings and quoted
+output are excluded. Evidence may precede the claim within its human turn, because agents
+usually run a check before reporting its result. Evidence from another turn does not count.
 """
 from __future__ import annotations
 
@@ -238,15 +212,37 @@ def claims_in(text: str) -> list[Claim]:
     return out
 
 
+EVIDENCE_VERSION = "test-outcomes-2026-09-04"
+_TEST_SUBJECT = re.compile(r"\b(?:tests?|suite|pytest|test_\w+)\b", re.I)
+_OTHER_OUTCOME = re.compile(r"\b(?:deploy\w*|merg\w*|commit\w*|shipp?\w*|creat\w*|wrote|written|added|remov\w*|renam\w*|updated|built|landed)\b", re.I)
+_PASS_RESULT = re.compile(r"\b(?:PASSED|PASS|passed|ok)\b")
+_FAIL_RESULT = re.compile(r"\b(?:FAILED|FAIL|Traceback|Error|Exception)\b|\b[1-9]\d* (?:failed|errors?)\b", re.I)
+
+
+def evidence_kind(claim: Claim, result_text: str) -> str | None:
+    """Classify conservative test evidence, never infer a file/deploy outcome from a string.
+
+    Named tests require exact token boundaries and a positive outcome. Generic test summaries
+    support only unnamed test claims. Compound claims about another operation remain unknown.
+    This is a same-turn text matcher, not independent verification or a measured accuracy score.
+    """
+    if not result_text or _FAIL_RESULT.search(result_text):
+        return None
+    if not _TEST_SUBJECT.search(claim.line) or _OTHER_OUTCOME.search(claim.line):
+        return None
+    if not (_GENERIC_OK.search(result_text) or _PASS_RESULT.search(result_text)):
+        return None
+    tests = set(re.findall(r"(?<![\w/])test_\w+\b(?!\.\w)", claim.line))
+    targets = tests or {token for token in claim.tokens if "." in token or "/" in token}
+    if targets:
+        if all(re.search(r"(?<![\w./-])" + re.escape(tok) + r"(?![\w./-])", result_text) for tok in targets):
+            return "token"
+        return None
+    return "generic" if _GENERIC_OK.search(result_text) else None
+
+
 def evidence_matches(claim: Claim, result_text: str) -> bool:
-    if not result_text:
-        return False
-    for tok in claim.tokens:
-        if tok in result_text:
-            return True
-    if _GENERIC_OK.search(result_text) and not _GENERIC_BAD.search(result_text):
-        return True
-    return False
+    return evidence_kind(claim, result_text) is not None
 
 
 class ClaimTracker:

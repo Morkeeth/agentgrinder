@@ -1,4 +1,8 @@
 __pycache__/
+build/
+node_modules/
+*.egg-info/
+.pytest_cache/
 *.pyc
 card.html
 .DS_Store

@@ -20,8 +20,8 @@ What leaves a tool, and what never does:
 
 The claim rule is the calibrated rule from `claims.py`, lifted into a tool the agent calls per
 claim: evidence is a tool result in the SAME human turn, before or after the claim, carrying a
-token from the claim line (a test name, a path) or a generic success token not contradicted in
-the same result. The claim side is measured (precision 0.63, recall 0.66 on a held-out set); the
+successful test output matching every named test or file, without failed output. Generic suite
+output supports only unnamed suite claims. Deployment and compound claims remain unknown. The claim side is measured (precision 0.63, recall 0.66 on a held-out set); the
 evidence side is not. The coach adds per-claim judgement (which token, which turn) and a refusal
 to write a number it did not check.
 """
@@ -139,9 +139,8 @@ def read_run(ctx: CoachContext) -> dict:
         claims=[dict(id=c["id"], turn=c["turn"], line=c["line"]) for c in ctx.claims],
         results_per_turn={str(t): len(v) for t, v in sorted(ctx.results.items())},
         artifacts=[dict(id=a["id"], label=a["label"], where=a["where"]) for a in ctx.artifacts],
-        rule="a claim is verified by a tool result in the same human turn carrying a token from "
-             "the claim line, or an uncontradicted success token (claims.py; the claim side is "
-             "calibrated, the evidence side is not)",
+        rule="Same-turn successful test output must match each named target. Generic suite success "
+             "supports only unnamed suite claims. The matcher has no measured accuracy yet.",
     )
 
 

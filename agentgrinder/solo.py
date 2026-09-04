@@ -303,6 +303,7 @@ def parse_solo(path: str, athlete: str = "you", pick: int = -1, gap: int = SITTI
             win_cwds[c] = win_cwds.get(c, 0) + 1
     cwd = max(win_cwds, key=win_cwds.get) if win_cwds else ""
     repo = gitwork.repo_of(cwd) if cwd else None
+    from .project_identity import identity as project_identity
     repo_name, repo_root = repo if repo else (os.path.basename(cwd.rstrip("/")) or "session", None)
 
     # ---- git is the witness for what shipped. Same window as the drawing, offset explicit.
@@ -400,7 +401,7 @@ def parse_solo(path: str, athlete: str = "you", pick: int = -1, gap: int = SITTI
     # The card only quotes the headline back as a typed sentence when it really is one.
     prompt_shown = bool(show_paths and privacy.safe_prompt(s["first_prompt"], opt_in=True))
     run = dict(
-        athlete=athlete, harness="Claude Code", title=title, project=repo_name,
+        athlete=athlete, harness="Claude Code", title=title, project=repo_name, project_identity=project_identity(cwd),
         prompt_shown=prompt_shown, paths_opted_in=bool(show_paths),
         # repo_root / cwd / source were absolute paths on the author's machine and travelled in
         # every `--json` dump. The card never needed them; only the repo NAME is printed.

@@ -5,9 +5,8 @@ The defect this file pins, measured 3 Sep 2026 in a 3.12 venv with the Strands S
 verdict, no warning, and exited 0. This was not a missing dependency; the coach had no inputs. The
 README's own claim is "it never degrades quietly", and this was the one place it did.
 
-A Cursor or Codex transcript carries no file paths, no commits and no claim lines, so three of the
-coach's five tools have nothing to read. The fix names those fields and exits non-zero. Nothing
-about either harness is fabricated to make the coach run.
+Cursor and Codex now get an activity coach with explicit capability limits. Unsupported claim
+evidence remains unknown, and a provider failure still prevents publishing.
 """
 import os
 import subprocess
@@ -33,19 +32,18 @@ def test_the_banner_names_the_fields_the_parsed_run_actually_lacks():
     assert "claims" in text2
 
 
-def test_cursor_plus_coach_exits_non_zero_and_says_which_fields_are_missing(tmp_path):
-    proc = run_grind(cursor_home(tmp_path / "home"), tmp_path, "--coach")
-    assert proc.returncode != 0, proc.stdout
-    assert "DEGRADED" in proc.stdout
-    for field in ("files_touched", "commits", "claims", "claims_verified", "artifacts_produced"):
-        assert field in proc.stdout, field
-    assert (tmp_path / "card.html").exists()   # the card the run did produce is still written
-
-
-def test_codex_plus_coach_exits_non_zero_and_says_which_fields_are_missing(tmp_path):
-    proc = run_grind(codex_home(tmp_path / "home"), tmp_path, "--coach")
-    assert proc.returncode != 0, proc.stdout
-    assert "DEGRADED" in proc.stdout and "Codex" in proc.stdout
+def test_cursor_and_codex_coach_reports_supported_activity_without_inventing_claims(tmp_path,monkeypatch):
+    import json
+    import pytest
+    pytest.importorskip('strands')
+    monkeypatch.setenv('PYTHONPATH',os.pathsep.join(sys.path))
+    for harness,home in [('cursor',cursor_home),('codex',codex_home)]:
+        proc=run_grind(home(tmp_path/harness),tmp_path,'--coach','--json')
+        assert proc.returncode==0,proc.stdout+proc.stderr
+        run=json.loads(proc.stdout)
+        assert run['coach_tool_calls']==2
+        assert run['coach_numbers']['claims_verified'] is None
+        assert 'unavailable' in run['coach_verdict']
 
 
 def test_cursor_without_coach_is_still_a_clean_exit_zero_and_no_false_alarm(tmp_path):
@@ -61,12 +59,16 @@ def test_codex_without_coach_is_still_a_clean_exit_zero_and_no_false_alarm(tmp_p
     assert "DEGRADED" not in proc.stdout
 
 
-def test_a_degraded_coach_request_does_not_push(tmp_path):
-    """Publishing a run the person asked to have coached, uncoached, is the quiet degrade again."""
-    proc = run_grind(cursor_home(tmp_path / "home"), tmp_path, "--coach", "--push")
-    assert proc.returncode != 0
-    assert "push ->" not in proc.stdout
-    assert "#import=" not in proc.stdout
+def test_a_failed_native_coach_never_opens_publish(tmp_path,monkeypatch):
+    from agentgrinder.cli import main
+    from agentgrinder.coach import native
+    from test_harness_auto import CURSOR_LINES
+    source=tmp_path/'cursor.jsonl';source.write_text(CURSOR_LINES)
+    def unavailable(*args):raise RuntimeError('fixture provider unavailable')
+    def opened(*args):raise AssertionError('Publishing must not run after a failed coach')
+    monkeypatch.setattr(native,'review_activity',unavailable)
+    monkeypatch.setattr('webbrowser.open',opened)
+    assert main(['grind',str(source),'--harness','cursor','--coach','--push','--no-series'])==1
 
 
 def test_no_cursor_or_codex_field_is_invented_to_feed_the_coach(tmp_path):
@@ -84,7 +86,7 @@ def test_no_cursor_or_codex_field_is_invented_to_feed_the_coach(tmp_path):
                    '10:00 AM</timestamp><user_query>go</user_query>"}}\n', encoding="utf-8")
     cod = tmp_path / "rollout-x.jsonl"
     cod.write_text('{"type":"session_meta","payload":{"cwd":"/no/such/dir"}}\n'
-                   '{"type":"user_message","content":"go"}\n', encoding="utf-8")
+                   '{"type":"event_msg","timestamp":"2026-09-03T10:01:00Z","payload":{"type":"user_message","message":"go"}}\n', encoding="utf-8")
     for run, harness in ((parse_cursor_session(str(cur)), "Cursor"),
                          (parse_codex_session(str(cod)), "Codex")):
         assert run["harness"] == harness

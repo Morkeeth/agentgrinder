@@ -5,12 +5,14 @@ import base64
 import json
 import os
 import urllib.parse
+from .contract import public_revision, validate_run
 
 DEFAULT_URL = os.environ.get("AGENTGRINDER_URL", "https://agentgrinder.vercel.app")
 
 
 def export_run(run: dict) -> dict:
     """Allowlisted fields only — must match site/index.html importRun()."""
+    validate_run(run)
     rig = run.get("rig") or {}
     rhythm = run.get("rhythm") or run.get("series")
     out = {
@@ -41,12 +43,14 @@ def export_run(run: dict) -> dict:
         "started": run.get("started"),
         "rhythm": rhythm,
         "route": run.get("route"),
+        "trace_basis": run.get("trace_basis"),
         "rig_mcps": rig.get("mcps"),
         "rig_skills": rig.get("skills"),
         "rig_share_names": rig.get("share_names"),
         "rig_mcp_names": rig.get("mcp_names") if rig.get("share_names") else None,
         "rig_notes": rig.get("notes") or rig.get("stack_notes"),
     }
+    out.update(public_revision(run))
     return {k: v for k, v in out.items() if v is not None}
 
 

@@ -26,11 +26,13 @@ def test_the_payload_is_stashed_before_the_redirect_and_the_fragment_is_not_the_
     body = body[:body.index("\nasync function viewShareRun(")]
     assert "stashImport(m[1]);" in body
     i_stash = body.index("stashImport(m[1])")
-    i_oauth = body.index("signInWithOAuth", i_stash - 400)
-    assert i_stash < i_oauth, "the stash must be written before the page navigates away"
+    i_dialog = body.index("showSignIn()", i_stash)
+    assert i_stash < i_dialog, "the stash must be written before opening sign-in"
+    signin=HTML[HTML.index("function showSignIn(){"):HTML.index("async function refreshAuth()") ]
+    assert signin.index("stashImport") < signin.index("signInWithOAuth")
     # a fragment cannot come back through OAuth, so it must not be what we ask to come back to.
     # Comment lines are dropped first: the comment above the fix quotes the old call by name.
-    code = "".join(l for l in body.splitlines() if not l.lstrip().startswith("//"))
+    code = "".join(l for l in (body+signin).splitlines() if not l.lstrip().startswith("//"))
     assert "redirectTo:location.href" not in code.replace(" ", "")
     assert "redirectTo:location.origin" in code.replace(" ", "")
 

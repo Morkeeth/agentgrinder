@@ -28,8 +28,8 @@ CURSOR_LINES = (
 )
 CODEX_LINES = (
     '{"type":"session_meta","payload":{"cwd":"/Users/alice/code/myapp"}}\n'
-    '{"type":"user_message","content":"build the thing"}\n'
-    '{"role":"assistant","content":[{"type":"tool_use"}]}\n'
+    '{"type":"event_msg","timestamp":"2026-09-03T10:01:00Z","payload":{"type":"user_message","message":"build the thing"}}\n'
+    '{"type":"response_item","timestamp":"2026-09-03T10:02:00Z","payload":{"type":"function_call","name":"test","call_id":"fixture-call"}}\n'
 )
 
 
@@ -66,14 +66,14 @@ def test_the_default_is_auto_not_claude():
 def test_a_cursor_only_machine_gets_a_card_from_the_advertised_one_liner(tmp_path):
     proc = run_grind(cursor_home(tmp_path / "home"), tmp_path)
     assert proc.returncode == 0, proc.stdout + proc.stderr
-    assert "auto -> cursor" in proc.stdout
+    assert "auto -> cursor" in proc.stderr
     assert (tmp_path / "card.html").exists()
 
 
 def test_a_codex_only_machine_gets_a_card_from_the_advertised_one_liner(tmp_path):
     proc = run_grind(codex_home(tmp_path / "home"), tmp_path)
     assert proc.returncode == 0, proc.stdout + proc.stderr
-    assert "auto -> codex" in proc.stdout
+    assert "auto -> codex" in proc.stderr
     assert (tmp_path / "card.html").exists()
 
 

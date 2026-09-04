@@ -318,7 +318,7 @@ def test_a_cursor_run_and_a_codex_run_name_the_fact_they_are_missing(tmp_path):
 
     cod = tmp_path / "rollout-x.jsonl"
     cod.write_text('{"type":"session_meta","payload":{"cwd":"/x/y"}}\n'
-                   '{"type":"user_message","content":"go"}\n', encoding="utf-8")
+                   '{"type":"event_msg","timestamp":"2026-09-03T10:01:00Z","payload":{"type":"user_message","message":"go"}}\n', encoding="utf-8")
     run = parse_codex_session(str(cod))
     # one record, so no window can be drawn; that is the missing fact, not the harness
     assert run["reach"] is None and run["reach_reason"] == reach.R_NO_WINDOW

@@ -13,7 +13,7 @@ from .ingest import parse_session, latest_session, parse_cursor_session, latest_
 from .profile import build_profile
 from .render import render_profile
 
-SAMPLE = Path(__file__).resolve().parent.parent / "samples" / "sample_run.json"
+SAMPLE = Path(__file__).resolve().parent / "data" / "sample_run.json"
 
 
 # --coach ON A HARNESS THAT CANNOT FEED IT.
@@ -40,7 +40,7 @@ def coach_degraded_banner(harness: str, run: dict) -> str:
         f"!! {harness} sessions do not carry: {', '.join(missing)}.",
         "!! The coach checks every claim against the evidence in its own turn, every written file",
         "!! against the disk, and every file against git. None of those three has an input here,",
-        "!! and nothing was invented to fill them. The grind trace cannot be drawn either.",
+        "!! and nothing was invented to fill them. Available activity is still shown on the card.",
         "!!",
         "!! The v1 card with the real prompt and tool counts was still written.",
         "!! For a coached run:  python3 -m agentgrinder grind --harness claude --coach",
@@ -97,7 +97,7 @@ def _render(run: dict, out: Path, open_it: bool) -> None:
     print("  " + " · ".join(f"{c.label} {c.value}" + (" (cost)" if c.cost else "") for c in a.five))
     print(f"\n  cost: {a.distance} | {a.moving_time} | {a.pace}")
     print(f"  effort {a.effort} · {a.segments} · {a.commits} commits · {a.prompts_per_hour}"
-          + ("  ★ focus PB" if a.focus_pb else ""))
+          + ("  high cadence" if a.focus_pb else ""))
     print(f"\n  card -> {out}\n")
     if open_it:
         webbrowser.open(out.resolve().as_uri())
@@ -106,6 +106,14 @@ def _render(run: dict, out: Path, open_it: bool) -> None:
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="agentgrinder")
     sub = p.add_subparsers(dest="cmd", required=True)
+    from .practices import add_parser as add_practice_parser
+    add_practice_parser(sub)
+    from .agent_api import add_parser as add_agent_parser
+    add_agent_parser(sub)
+    from .capture import add_parser as add_capture_parser
+    add_capture_parser(sub)
+    from .rig_config import add_parser as add_rig_parser
+    add_rig_parser(sub)
     d = sub.add_parser("demo", help="render the bundled sample run")
     d.add_argument("--no-open", action="store_true")
     c = sub.add_parser("card", help="render a run JSON to a card")
@@ -244,6 +252,19 @@ def main(argv=None) -> int:
     pr.add_argument("username"); pr.add_argument("--runs", default="samples")
     pr.add_argument("-o", "--out", default="profile.html"); pr.add_argument("--no-open", action="store_true")
     args = p.parse_args(argv)
+
+    if args.cmd == "rig-config":
+        from .rig_config import run_cli
+        return run_cli(args)
+    if args.cmd == "capture":
+        from .capture import run_cli
+        return run_cli(args)
+    if args.cmd == "practice":
+        from .practices import run_cli
+        return run_cli(args)
+    if args.cmd == "agent":
+        from .agent_api import run_cli
+        return run_cli(args)
 
     if args.cmd == "privacycheck":
         from .privacy import check_files
@@ -603,7 +624,7 @@ def _grind(args) -> int:
         if not picked:
             print(no_session_message()); return 1
         harness, auto_path = picked
-        print(f"  auto -> {harness} ({Path(auto_path).name})")
+        print(f"  auto -> {harness} ({Path(auto_path).name})",file=sys.stderr)
         # For Claude, leave args.session unset: latest_grind() below picks the SITTING inside the
         # transcript, and pinning the path here would silently switch every Claude user's default
         # card to the last sitting (pick=-1) instead of the one that rule chooses.
@@ -617,35 +638,13 @@ def _grind(args) -> int:
         path = args.session or latest_cursor_session()
         if not path:
             print("no Cursor session under ~/.cursor/projects/*/agent-transcripts"); return 1
-        run = parse_cursor_session(path, athlete=args.athlete)
-        out = Path(args.out)
-        out.write_text(render_card(build_activity(run)), encoding="utf-8")
-        # This sentence used to read "Cursor transcripts carry no file paths and no commits".
-        # Both halves were false: `Write` and `StrReplace` carry an absolute `path`, and `Shell`
-        # carries the command. What is genuinely missing is a time on each of those events, and
-        # every mark on the grind trace is a timestamp. Cursor stamps typed turns only.
-        drawn = "files, commits and reach are read from the transcript"
-        print(f"\n  Cursor card -> {out}"
-              f"\n  {drawn}. The grind trace is not drawn: Cursor stamps a time on typed"
-              f"\n  turns only, and every mark on the trace is one timestamp.\n")
-        if getattr(args, "coach", None) is not None:
-            # asked for explicitly and cannot be delivered: say which fields are missing, and do
-            # not push. Publishing a run the person asked to have coached, uncoached, is the
-            # quiet degrade wearing a different hat.
-            print(coach_degraded_banner("Cursor", run)); return 1
-        if args.push:
-            from .push import import_url
-            from .ingest import detect_rig
-            run["rig"] = detect_rig()
-            if getattr(args, "share_rig_names", False):
-                run["rig"]["share_names"] = True
-            url = import_url(run, args.push_url)
-            print(f"\n  push -> {url}\n")
-            webbrowser.open(url)
-            return 0
-        if not args.no_open:
-            webbrowser.open(out.resolve().as_uri())
-        return 0
+        from .contract import capture_digest
+        source_digest=capture_digest(path)
+        try:
+            run = parse_cursor_session(path, athlete=args.athlete)
+        except ValueError as e:
+            print(str(e),file=sys.stderr);return 1
+        return _native_grind(run, args, path, source_digest)
 
     if harness == "codex":
         from .ingest import parse_codex_session, latest_codex_session
@@ -658,6 +657,8 @@ def _grind(args) -> int:
             for g in CODEX_GLOBS:
                 print(f"      {g}")
             print("\n  try:  python3 -m agentgrinder demo\n"); return 1
+        from .contract import capture_digest
+        source_digest=capture_digest(path)
         try:
             run = parse_codex_session(path, athlete=args.athlete)
         except ValueError as e:
@@ -666,27 +667,7 @@ def _grind(args) -> int:
                   "\n  A rollout with no human turn has no cost to divide by, so there is no"
                   "\n  card to draw. Run without --session to take the newest one you typed in.\n")
             return 1
-        out = Path(args.out)
-        out.write_text(render_card(build_activity(run)), encoding="utf-8")
-        print(f"\n  Codex card -> {out}"
-              f"\n  files, commits and reach are read from the transcript: patch_apply_end names"
-              f"\n  every path it wrote, and session_meta names the working directory. The grind"
-              f"\n  trace is not drawn yet.\n")
-        if getattr(args, "coach", None) is not None:
-            print(coach_degraded_banner("Codex", run)); return 1
-        if args.push:
-            from .push import import_url
-            from .ingest import detect_rig
-            run["rig"] = detect_rig()
-            if getattr(args, "share_rig_names", False):
-                run["rig"]["share_names"] = True
-            url = import_url(run, args.push_url)
-            print(f"  push -> {url}\n")
-            webbrowser.open(url)
-            return 0
-        if not args.no_open:
-            webbrowser.open(out.resolve().as_uri())
-        return 0
+        return _native_grind(run, args, path, source_digest)
 
     pick = args.pick
     if args.session:
@@ -721,6 +702,8 @@ def _grind(args) -> int:
         print()
         return 0
 
+    from .contract import capture_digest
+    source_digest = capture_digest(path)
     try:
         run = parse_solo(path, athlete=args.athlete, pick=pick, gap=args.gap * 60,
                          show_paths=getattr(args, "show_paths", False))
@@ -733,6 +716,11 @@ def _grind(args) -> int:
     # (~/.agentgrinder/series.db, counts only). Baseline under two; helped/hurt after.
     if not getattr(args, "no_series", False):
         from .engine.series import record_and_attach
+        from .contract import capture_digest
+        if source_digest != capture_digest(path):
+            print("  The transcript changed during analysis. Run again to measure a stable session.")
+            return 1
+        run["input_digest"] = source_digest
         record_and_attach(run)
     if args.as_json:
         print(json.dumps(run, indent=2)); return 0
@@ -804,6 +792,43 @@ def _grind(args) -> int:
             webbrowser.open(out.resolve().as_uri())
     return 0
 
+
+
+def _native_grind(run, args, path, source_digest):
+    from .contract import capture_digest
+    from .engine.series import record_and_attach
+    if source_digest != capture_digest(path):
+        print('The transcript changed during analysis. Try again.',file=sys.stderr);return 1
+    run['input_digest']=source_digest
+    if not args.no_series and run.get('started'):
+        record_and_attach(run)
+    requested=getattr(args,'coach',None) not in (None,'none')
+    coach_text=None
+    if requested:
+        try:
+            from .coach.native import review_activity
+            if args.coach=='bedrock':print('Bedrock receives activity counts and accepted practice context for this review.',file=sys.stderr)
+            coach_text=review_activity(run,args.coach)
+        except ImportError:
+            print(coach_install_hint(),file=sys.stderr);return 1
+        except Exception as error:
+            print('Activity coach failed: '+str(error),file=sys.stderr);return 1
+    if args.as_json:
+        print(json.dumps(run,indent=2));return 0
+    _render(run,Path(args.out),False)
+    print('  '+run.get('trace_basis','Trace timing unavailable'))
+    if coach_text:print(coach_text)
+    if args.push:
+        from .push import import_url
+        from .ingest import detect_rig
+        run['rig']=detect_rig()
+        if args.share_rig_names:run['rig']['share_names']=True
+        url=import_url(run,args.push_url)
+        print('  Review the import before publishing. Nothing has been uploaded.')
+        webbrowser.open(url)
+    elif not args.no_open:
+        webbrowser.open(Path(args.out).resolve().as_uri())
+    return 0
 
 def _run_coach_into(run: dict, path: str, pick: int, gap_s: int, mode: str, athlete: str) -> str | None:
     """Run the coach on the same sitting and copy its verdict fields into `run`.

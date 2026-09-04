@@ -139,12 +139,12 @@ def test_parse_session_counts_claims_and_produced(tmp_path):
     p.write_text("\n".join(json.dumps(x) for x in lines) + "\n")
     r = parse_session(str(p))
     assert r["turns_typed"] == 2
-    # one claim per LINE ("passes ... done" is one line); 'Fixed it.' has no evidence in its turn
-    assert (r["claims"], r["claims_verified"]) == (2, 1)
+    # The compound line also promises a deploy. Passing tests do not prove that claim.
+    assert (r["claims"], r["claims_verified"]) == (2, 0)
     assert r["artifacts_produced"] == 1                    # never.md was not written to disk
     assert r["artifacts_promised"] is None and r["corrections"] is None and r["reach"] is None
     a = build_activity(r)
-    assert a.headline == f"{(1 + 1) / 2:.2f}"
+    assert a.headline == f"{(0 + 1) / 2:.2f}"
 
 
 # ---- 3 Sep: the other three surfaces never headline prompts either -----------------------------

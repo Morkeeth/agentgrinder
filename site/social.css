@@ -1,0 +1,28 @@
+.social-nav{display:flex;gap:18px;flex-wrap:wrap;margin:12px 0 24px;font-size:14px}
+.mobile-product-nav{display:none}
+#social-body .card{padding:20px;margin-bottom:16px}
+#challenge-body .card{padding:20px;margin-bottom:16px;overflow-wrap:anywhere}
+#challenge-body .panel{padding:20px}
+.review-history{padding:16px 0;border-top:1px solid var(--rule);margin-top:16px}
+#challenge-body dt{font-size:12px;color:var(--muted);margin-top:12px}
+#challenge-body dd{margin:4px 0 12px}
+.reply p{white-space:pre-wrap;overflow-wrap:anywhere}
+.reply small{color:var(--muted);font-size:12px}
+.reply button{margin-right:8px;margin-top:8px}
+.reply-form{display:grid;gap:14px;padding:20px 0}
+.reply-form label,#create-crew label{display:block;font-size:13px}
+.reply-form textarea,.reply textarea{display:block;box-sizing:border-box;width:100%;min-height:100px;margin-top:8px;padding:12px;border:1px solid var(--rule);border-radius:8px;background:var(--bg);color:inherit;font:inherit}
+#create-crew{padding:20px;display:grid;gap:16px}
+#share-crew-form{padding:20px;display:grid;gap:16px;margin-top:20px}
+#crew-invite{overflow-wrap:anywhere;margin-top:16px}
+.social-follow{margin-top:12px}
+@media(max-width:600px){.social-nav{justify-content:space-between;gap:12px}.reply-form button{width:100%}}
+@media(max-width:700px){.mobile-product-nav{display:flex;gap:20px;overflow-x:auto;padding:12px 18px;white-space:nowrap;border-bottom:1px solid var(--rule);font-size:13px}.mobile-product-nav[hidden]{display:none}}
+
+#practice-body .card,#practice-body .panel{padding:20px;margin-bottom:18px;overflow-wrap:anywhere}.comparison{display:grid;grid-template-columns:1fr 1fr;gap:12px}.comparison small{display:block;color:var(--muted)}
+
+#signin-dialog{border:1px solid var(--rule);border-radius:12px;background:var(--bg);color:inherit;padding:24px;width:min(420px,calc(100% - 32px));box-sizing:border-box}#signin-dialog::backdrop{background:rgba(0,0,0,.45)}
+
+#scrapbook-extras .panel{padding:20px}#scrapbook-extras .panel h3{margin-top:0}
+
+.octacon-board{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:20px 0}.octacon-place{padding:16px;border:1px solid var(--rule);overflow-wrap:anywhere;min-height:110px}.octacon-place.open{border-style:dashed;color:var(--muted);display:grid;place-items:center}@media(max-width:700px){.octacon-board{grid-template-columns:repeat(2,minmax(0,1fr))}}

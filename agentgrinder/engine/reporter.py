@@ -11,16 +11,23 @@ from __future__ import annotations
 
 from typing import Literal
 
-Verdict = Literal["baseline", "helped", "hurt", "unchanged"]
+Verdict = Literal["baseline", "helped", "hurt", "unchanged", "unmeasured", "incomparable"]
 
 
 def verdict(readings: list[dict], *, direction: str = "up", at: str | None = None) -> tuple[Verdict, float | None]:
     """Label the reading that started at `at` (default: the last) against the measured reading before it."""
-    measured = [r for r in readings if r.get("value") is not None]
+    readings = sorted(readings, key=lambda r: r["started"])
     if at is not None:
-        measured = [r for r in measured if r["started"] <= at]
+        readings = [r for r in readings if r["started"] <= at]
+        if not readings or readings[-1]["started"] != at:
+            return "unmeasured", None
+    if readings and readings[-1].get("value") is None:
+        return "unmeasured", None
+    measured = [r for r in readings if r.get("value") is not None]
     if len(measured) < 2:
         return "baseline", None
+    if any(measured[-2].get(k) != measured[-1].get(k) for k in ("rule_version", "parser_version")):
+        return "incomparable", None
     before, after = measured[-2]["value"], measured[-1]["value"]
     delta = round(after - before, 4)
     if delta == 0:
@@ -31,12 +38,15 @@ def verdict(readings: list[dict], *, direction: str = "up", at: str | None = Non
 
 def progress(readings: list[dict], run: dict, prediction: dict | None = None) -> dict:
     """The card's progress block for `run`, from the series it now belongs to."""
+    readings = sorted(readings, key=lambda row: row["started"])
     label, delta = verdict(readings, at=run.get("started"))
     measured = [r for r in readings if r.get("value") is not None and r["started"] <= (run.get("started") or "")]
     prev = measured[-2] if len(measured) >= 2 else None
+    if label == "unmeasured":
+        prev = measured[-1] if measured else None
     return dict(
         verdict=label, delta=delta,
-        value=(measured[-1]["value"] if measured else None),
+        value=(measured[-1]["value"] if measured and label != "unmeasured" else None),
         previous_value=(prev["value"] if prev else None),
         previous_started=(prev["started"] if prev else None),
         runs_on_project=len([r for r in readings if r["started"] <= (run.get("started") or "")]),
@@ -49,6 +59,10 @@ def progress_line(p: dict | None, project: str) -> str:
     if not p:
         return ""
     n = p.get("runs_on_project") or 0
+    if p["verdict"] == "unmeasured":
+        return f"unmeasured on {project}: this grind has no measured headline to compare."
+    if p["verdict"] == "incomparable":
+        return f"incomparable on {project}: the measurement rules changed; the original baseline is preserved."
     if p["verdict"] == "baseline":
         why = ("this is the first grind recorded on it" if n <= 1
                else "the previous grind had no headline to compare against")

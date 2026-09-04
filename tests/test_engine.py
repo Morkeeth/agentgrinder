@@ -45,7 +45,7 @@ def test_unmeasured_reading_is_null_and_does_not_count(tmp_path):
     nohead = dict(project="p", started="2026-09-02T10:00:00+02:00", turns_typed=3, commits=0,
                   claims=None, claims_verified=None, artifacts_produced=None)
     run = record_and_attach(nohead, path=db)
-    assert run["progress"]["verdict"] == "baseline"
+    assert run["progress"]["verdict"] == "unmeasured"
     conn = log.connect(db)
     rows = log.list_readings(conn, "p")
     assert len(rows) == 2 and rows[1]["value"] is None
@@ -87,7 +87,7 @@ def test_prediction_is_consumed_by_the_next_grind_on_that_project(tmp_path):
 def test_verdict_rule_direct():
     rs = [dict(started="1", value=0.5), dict(started="2", value=None), dict(started="3", value=0.75)]
     assert verdict(rs) == ("helped", 0.25)
-    assert verdict(rs, at="2") == ("baseline", None)
+    assert verdict(rs, at="2") == ("unmeasured", None)
     assert verdict(rs, direction="down") == ("hurt", 0.25)
     assert progress_line(None, "p") == ""
     p = progress(rs, dict(started="3"))

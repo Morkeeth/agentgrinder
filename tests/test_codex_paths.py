@@ -14,8 +14,8 @@ from agentgrinder import ingest
 from agentgrinder.ingest import CODEX_GLOBS, codex_session_files, latest_codex_session
 
 LINE = ('{"type":"session_meta","payload":{"cwd":"/tmp/proj"}}\n'
-        '{"type":"user_message","content":"do the thing"}\n'
-        '{"role":"assistant","content":[{"type":"tool_use"}]}\n')
+        '{"type":"event_msg","timestamp":"2026-09-03T10:01:00Z","payload":{"type":"user_message","message":"do the thing"}}\n'
+        '{"type":"response_item","timestamp":"2026-09-03T10:02:00Z","payload":{"type":"function_call","name":"test","call_id":"fixture-call"}}\n')
 
 
 def _codex_home(tmp_path, monkeypatch):

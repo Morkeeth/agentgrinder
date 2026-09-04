@@ -132,6 +132,25 @@ def headline(run: dict) -> tuple[str, str]:
             f'<b>{typed}</b> typed prompt{"" if typed == 1 else "s"} in <b>{wall_m}</b> minutes.')
 
 
+def _practice_block(run: dict) -> str:
+    items = run.get("practice_context") or []
+    if not items:
+        return ""
+    parts = ['<section class="verdict"><div class="who">Your chosen practices · private</div>']
+    for practice in items:
+        parts.append(f'<p><b>{_esc(practice["title"])}</b></p>')
+        if practice.get("expected"):
+            parts.append(f'<p>What you expected: {_esc(practice["expected"])}</p>')
+        attempts = practice.get("attempts") or []
+        if attempts:
+            latest = attempts[0]
+            parts.append(f'<p>Last review: {_esc(latest.get("outcome") or "not reviewed yet")} · tried: {_esc(latest["tried"])}</p>')
+        else:
+            parts.append('<p>No attempt recorded yet.</p>')
+    parts.append('</section>')
+    return "".join(parts)
+
+
 def _verdict_block(run: dict) -> str:
     """The coach's verdict and the series line. Null-safe: a run with neither draws nothing,
     a run with one draws that one. Every sentence here was written from tool results or from
@@ -464,6 +483,7 @@ def render_solo_card(run: dict, title: str | None = None, ranks: dict | None = N
     </div>
     <div class="fiverow">{five}</div>
     {_verdict_block(run)}
+    {_practice_block(run)}
 
     <div class="grp">Cost — what the grind spent</div>
     <div class="stats">

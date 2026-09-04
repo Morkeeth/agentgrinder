@@ -113,6 +113,11 @@ class Activity:
     focus_pb: bool         # a light 'personal best' flag when cadence is high
     rhythm: list[int]      # the route profile
     # THE HEADLINE — verified per turn — and the five numbers of a run
+    trace: list = field(default_factory=list)
+    trace_basis: str = ""
+    coach_verdict: str = ""
+    coach_plan: str = ""
+    coach_mode: str = ""
     headline: str = "—"                        # e.g. "0.21"
     headline_val: float | None = None
     headline_formula: str = ""                 # "(6 verified + 4 artifacts) ÷ 47 typed turns"
@@ -216,6 +221,11 @@ def build_activity(run: dict) -> Activity:
         prompts_per_hour=f"{pph:.1f}/h" if pph else "—",
         focus_pb=focus_pb,
         rhythm=[int(x) for x in rhythm],
+        coach_verdict=run.get("coach_verdict") or "",
+        coach_plan="\n".join(x for x in [run.get("coach_plan"),run.get("private_coach_plan")] if x),
+        coach_mode=run.get("coach_mode") or "",
+        trace=run.get("trace") or [],
+        trace_basis=run.get("trace_basis") or "",
         headline=hl.text,
         headline_val=hl.value,
         headline_formula=hl.formula,

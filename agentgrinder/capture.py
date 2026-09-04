@@ -1,0 +1,163 @@
+"""Opt-in local transcript scanning. Scanning never starts a network client."""
+from __future__ import annotations
+import glob
+import hashlib
+import json
+import os
+from pathlib import Path
+import sqlite3
+import time
+from .contract import capture_digest
+
+
+def connect(root=None):
+    root = Path(root or Path.home() / '.agentgrinder' / 'capture')
+    root.mkdir(parents=True, exist_ok=True, mode=0o700)
+    db = sqlite3.connect(root / 'capture.db')
+    db.row_factory = sqlite3.Row
+    db.executescript('''
+      create table if not exists settings(key text primary key,value text not null);
+      create table if not exists ignored(path text primary key);
+      create table if not exists ignored_projects(project text primary key);
+      create table if not exists drafts(id text primary key,source text not null,harness text not null,
+       started text not null,digest text not null,payload text not null,updated_at text not null default CURRENT_TIMESTAMP,
+       unique(source,harness,started));
+    ''')
+    os.chmod(root / 'capture.db', 0o600)
+    return db
+
+
+def sources():
+    from .ingest import CLAUDE_GLOB, CURSOR_GLOB, CODEX_GLOBS
+    found = []
+    for harness, patterns in [('claude', [CLAUDE_GLOB]), ('cursor', [CURSOR_GLOB]), ('codex', CODEX_GLOBS)]:
+        for pattern in patterns:
+            found.extend((harness, Path(p)) for p in glob.glob(os.path.expanduser(pattern), recursive=True) if Path(p).is_file())
+    return sorted(set(found), key=lambda item: (item[0], str(item[1])))
+
+
+def read_run(harness, path, pick=-1):
+    from .ingest import parse_codex_session, parse_cursor_session
+    from .solo import parse_solo
+    if harness == 'claude':
+        return parse_solo(str(path), pick=pick)
+    return {'codex': parse_codex_session, 'cursor': parse_cursor_session}[harness](str(path))
+
+
+def scan(db, selected=None):
+    state = db.execute("select value from settings where key='paused'").fetchone()
+    report = {'paused': bool(state and state[0] == 'true'), 'created': 0, 'updated': 0, 'unchanged': 0, 'ignored': 0, 'retry': 0, 'unreadable': 0}
+    if report['paused']:
+        return report
+    ignored = [Path(r[0]) for r in db.execute('select path from ignored')]
+    ignored_projects = {r[0] for r in db.execute('select project from ignored_projects')}
+    for harness, source in selected if selected is not None else sources():
+        path = Path(source).resolve()
+        if any(path == folder or folder in path.parents for folder in ignored):
+            report['ignored'] += 1
+            continue
+        try:
+            digest = capture_digest(path)
+            prior = db.execute('select digest from drafts where source=? and harness=? order by updated_at desc limit 1', (str(path), harness)).fetchone()
+            if prior and prior[0] == digest:
+                report['unchanged'] += 1
+                continue
+            if harness == 'claude':
+                from .solo import human_sittings
+                runs = [read_run(harness, path, pick=i+1) for i in range(len(human_sittings(str(path))))]
+            else:
+                runs = [read_run(harness, path)]
+            if capture_digest(path) != digest:
+                report['retry'] += 1
+                continue
+            for run in runs:
+                if run.get('project') in ignored_projects:
+                    report['ignored'] += 1
+                    continue
+                run['input_digest'] = digest
+                started = run.get('started') or 'unknown'
+                identity = hashlib.sha256(json.dumps([str(path), harness, started]).encode()).hexdigest()
+                existed = db.execute('select 1 from drafts where id=?', (identity,)).fetchone()
+                # Parsed card text remains private. Export uses the separate public allowlist.
+                with db:
+                    db.execute("""insert into drafts(id,source,harness,started,digest,payload) values(?,?,?,?,?,?)
+                    on conflict(id) do update set digest=excluded.digest,payload=excluded.payload,updated_at=CURRENT_TIMESTAMP""",
+                               (identity, str(path), harness, started, digest, json.dumps(run)))
+                report['updated' if existed else 'created'] += 1
+        except (OSError, ValueError, TypeError):
+            report['unreadable'] += 1
+    return report
+
+
+def add_parser(sub):
+    parser = sub.add_parser('capture', help='scan local sessions into private drafts; never upload')
+    parser.add_argument('--directory', help='private capture database directory')
+    commands = parser.add_subparsers(dest='capture_command', required=True)
+    for name in ('scan', 'watch'):
+        p = commands.add_parser(name)
+        p.add_argument('--session', help='one transcript; omit to backfill discovered transcripts')
+        p.add_argument('--harness', choices=['claude', 'cursor', 'codex'], default='claude')
+        if name == 'watch':
+            p.add_argument('--interval', type=int, default=60)
+    for name in ('pause', 'resume', 'list'):
+        commands.add_parser(name)
+    for name in ('ignore', 'unignore'):
+        commands.add_parser(name).add_argument('path', help='transcript or directory to exclude')
+    for name in ('ignore-project', 'unignore-project'):
+        commands.add_parser(name).add_argument('project', help='exact local project label to exclude')
+    p = commands.add_parser('show'); p.add_argument('id'); p.add_argument('--measure',action='store_true',help='record the captured counts as an immutable local measurement'); p.add_argument('--export', action='store_true', help='print the public allowlist instead of the private draft')
+    p = commands.add_parser('delete'); p.add_argument('id')
+
+
+def run_cli(args):
+    db = connect(args.directory)
+    try:
+        name = args.capture_command
+        if name in ('pause', 'resume'):
+            with db:
+                db.execute("insert into settings values('paused',?) on conflict(key) do update set value=excluded.value", ('true' if name == 'pause' else 'false',))
+            output = {'paused': name == 'pause'}
+        elif name in ('ignore', 'unignore'):
+            path = str(Path(args.path).expanduser().resolve())
+            with db:
+                if name == 'ignore': db.execute('insert or ignore into ignored values(?)', (path,))
+                else: db.execute('delete from ignored where path=?', (path,))
+            output = {'ignored': [r[0] for r in db.execute('select path from ignored')]}
+        elif name in ('ignore-project', 'unignore-project'):
+            with db:
+                if name == 'ignore-project': db.execute('insert or ignore into ignored_projects values(?)', (args.project,))
+                else: db.execute('delete from ignored_projects where project=?', (args.project,))
+            output = {'ignored_projects': [r[0] for r in db.execute('select project from ignored_projects')]}
+        elif name == 'list':
+            output = [dict(row) for row in db.execute('select id,harness,started,updated_at from drafts order by updated_at desc')]
+        elif name in ('show', 'delete'):
+            row = db.execute('select payload from drafts where id=?', (args.id,)).fetchone()
+            if not row: raise ValueError('Draft not found. Use capture list.')
+            output = json.loads(row[0])
+            if name == 'delete':
+                with db: db.execute('delete from drafts where id=?', (args.id,))
+                output = {'deleted': args.id, 'note': 'Ignore its source before scanning again to keep it excluded.'}
+            else:
+                if args.measure:
+                    if not output.get('started'):raise ValueError('This draft has no session timestamp; a comparison cannot be recorded.')
+                    from .engine.series import record_and_attach
+                    record_and_attach(output,command='agentgrinder capture show --measure')
+                if args.export:
+                    from .push import export_run
+                    output = export_run(output)
+        else:
+            if name == 'watch' and args.interval < 5: raise ValueError('Scan interval must be at least five seconds.')
+            selected = [(args.harness, args.session)] if args.session else None
+            while True:
+                output = scan(db, selected)
+                if name != 'watch': break
+                print(json.dumps(output), flush=True)
+                time.sleep(args.interval)
+        print(json.dumps(output, indent=2))
+        return 0
+    except (ValueError, OSError) as error:
+        print(str(error)); return 1
+    except KeyboardInterrupt:
+        return 0
+    finally:
+        db.close()

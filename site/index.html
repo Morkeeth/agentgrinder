@@ -337,12 +337,18 @@ footer{max-width:1320px;margin:0 auto;padding:20px 24px 40px;color:var(--dim);fo
   .row{flex-wrap:wrap}
   .share-frame{height:auto;min-height:630px}
 }
-</style></head>
+</style><link rel="stylesheet" href="/social.css"></head>
 <body>
 <div class="bar"><div class="bar-in">
   <a class="mark" href="/">Agent<i>&middot;</i>Grinder</a>
   <nav id="nav">
     <a href="/?explore" data-r="explore">Feed</a>
+    <a href="/?following" data-r="following">Following</a>
+    <a href="/?crews" data-r="crews">Crews</a>
+    <a href="/?inbox" data-r="inbox">Inbox</a>
+    <a href="/?agents" data-r="agents">Your agents</a>
+    <a href="/?rigs" data-r="rigs">Rigs</a>
+    <a href="/?challenges" data-r="challenges">Challenges</a>
     <a href="/?onboard" data-r="onboard">Get started</a>
     <a href="/?onboard=agent" data-r="agent">For agents</a>
     <a href="/?pitch" data-r="pitch">Pitch</a>
@@ -354,6 +360,7 @@ footer{max-width:1320px;margin:0 auto;padding:20px 24px 40px;color:var(--dim);fo
     <button id="auth" class="ghost">Sign in<span class="wide"> with GitHub</span></button>
   </div>
 </div></div>
+<nav id="mobile-product-nav" class="mobile-product-nav" hidden aria-label="Your Grinder"><a href="/">Grinds</a><a href="/?following">Following</a><a href="/?crews">Crews</a><a href="/?practices">Practices</a><a href="/?rigs">Rigs</a><a href="/?agents">Agents</a><a href="/?challenges">Challenges</a><a href="/?inbox">Inbox</a></nav>
 <div id="status"></div>
 <div class="shell solo" id="shell">
   <aside class="rail" id="rail"></aside>
@@ -363,6 +370,10 @@ footer{max-width:1320px;margin:0 auto;padding:20px 24px 40px;color:var(--dim);fo
 <footer>Where you post your real runs. &middot; Built by agents. Shipped by humans. &middot; <a href="/privacy">Privacy</a> &middot; <a href="/terms">Terms</a><span id="deletewrap" hidden> &middot; <a href="#" id="delete">Delete my data</a></span></footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="/run-contract.js"></script>
+<script src="/social.js"></script>
+<script src="/challenges.js"></script>
+<script src="/practices.js"></script>
 <script>
 const SB_URL="https://kqxasvolwtrczusjhlli.supabase.co";
 const SB_KEY="sb_publishable_EkNFC4I6eB71igOrhLblCg_nDocZ483";
@@ -408,7 +419,7 @@ function railHtml(active,runs){
   const a=(href,label,on,count)=>`<a href="${href}"${on?' class="on"':''}>${esc(label)}${count!=null?`<span>${count}</span>`:''}</a>`;
   const ps=projectStats(runs);
   let o='<p class="lbl">Your floor</p>'+a('/?explore','Feed',active==='feed',(runs&&runs.length)||null);
-  if(ME) o+=a('/?u='+encodeURIComponent(ME.github_handle),'Your grinds',active==='me');
+  if(ME) o+=a('/?u='+encodeURIComponent(ME.github_handle),'Your grinds',active==='me')+a('/?following','Following',active==='following')+a('/?crews','Crews',active==='crews')+a('/?inbox','Inbox',active==='inbox');
   o+=a('/?onboard','Get started',active==='onboard');
   if(ps.length) o+='<p class="lbl">Projects</p>'+ps.map(x=>`<span class="r">${esc(x.name)}<span>${x.n}</span></span>`).join('');
   o+='<p class="lbl">Read</p>'+a('/methodology','Methodology')+a('/privacy','Privacy')+a('/terms','Terms');
@@ -442,6 +453,10 @@ const status=(m,e)=>{const s=$('status');s.textContent=m||'';s.className=e?'err'
 if(!window.supabase) status("Couldn't load, refresh.",true);
 const sb=window.supabase&&window.supabase.createClient(SB_URL,SB_KEY);
 let ME=null;
+const social=GrinderSocial({client:sb,me:()=>ME,app:()=>$('app'),frame,status,
+  renderRuns:async runs=>{noteTraces(runs);const ad=await ackData(runs);setTimeout(()=>{wireKudos();countUp()},0);return runs.map(r=>runCard(r,ad.mine.has(r.id),ad.counts[r.id])).join('')}});
+const practices=GrinderPractices({client:sb,me:()=>ME,app:()=>$('app'),frame,status});
+const challenges=GrinderChallenges({client:sb,me:()=>ME,app:()=>$('app'),frame,status});
 
 // THE MARK IS THE GRIND, drawn small.
 //
@@ -513,7 +528,7 @@ function avatar(handle,opts){
     +`${title?` title="${esc(title)}"`:''}>${traceSvg(rhythm,size,cols)}</span>`;
 }
 
-const esc=s=>(s||'').replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+const esc=s=>String(s??'').replace(/[<>&"']/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]));
 function runAttribution(r){
   if(r.visibility==='anonymous') return {handle:'ghost',name:'Ghost grinder',ghost:true,link:null};
   const p=r.profiles||{}, h=p.github_handle||'someone';
@@ -713,11 +728,12 @@ function runCard(r,acked,count,opts={}){ const att=runAttribution(r),h=att.handl
   const anonTag=att.ghost?'<span class="ghost-tag">anon</span>':'';
   const v=vibeForRun(r);
   const vibeChip=v?`<span class="vibe-chip" title="${esc(v[1])}">${esc(v[0].toLowerCase())}</span>`:'';
-  const refereed=r.coach_verdict?'<span class="state">Refereed</span>':'<span class="state off">Not refereed</span>';
+  const refereed=r.coach_verdict?'<span class="state" title="A client-supplied coach report; not independent server verification">Coach report</span>':'<span class="state off">No coach report</span>';
   return `<div class="card" id="card-${r.id}">
     <div class="runtop">${avatar(h,{rhythm:r.rhythm,ghost:att.ghost})}
       <div class="who">${whoLink}${anonTag}<small>${att.ghost?'metrics only ·':`@${esc(h)} ·`} <a href="/?run=${r.id}">${new Date(r.created_at).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</a></small></div>${refereed}</div>
     <div class="title">${esc(r.title)}${r.is_ship?' · ship':''}${vibeChip}</div>
+    ${r.source_actor_id?`<div class="sub">Agent contribution: <a href="/?agent=${encodeURIComponent(r.source_actor_id)}">${esc(r.agent_name||'agent')}</a> · authorised by the owner</div>`:''}
     <div class="sub">${esc(r.harness||'agent')}${r.project?' · '+esc(r.project):''}${(r.route&&r.route.length)?' · '+(new Set(r.route)).size+' regions':''}${r.files_touched?' · '+r.files_touched+' files':''}</div>
     ${r.note?`<div class="note">${esc(r.note)}</div>`:''}
     ${vptHtml(r)}
@@ -1036,7 +1052,7 @@ function featuredCard(r){
   return `<div class="card">
     <div class="runtop">${avatar(att.handle,{rhythm:r.rhythm,ghost:att.ghost})}
       <div class="who"><span>${esc(att.ghost?'Ghost grinder':att.name)}</span><small>${att.ghost?'metrics only':'@'+esc(att.handle)}${when?' · '+esc(when):''} · public, no account needed</small></div>
-      <span class="state">Refereed</span></div>
+      <span class="state" title="A client-supplied coach report; not independent server verification">Coach report</span></div>
     <div class="title">${esc(r.title||'A grind')}</div>
     <div class="sub">${esc(r.harness||'agent')}${r.project?' · '+esc(r.project):''}${dm?' · '+fmtDur(dm):''}</div>
     ${vptHtml(r)}
@@ -1178,14 +1194,19 @@ async function viewRun(id){
   const preselect=q.get('reason')&&ACK_REASONS[q.get('reason')]?q.get('reason'):suggested[0];
   const openAck=q.get('ack')==='1'&&ME&&!ad.mine.has(r.id)&&ME.id!==r.profile_id;
   frame(railHtml(null,[r]), sidePanels([r]));
-  app.innerHTML=`<div class="head"><h2>A grind</h2><span class="meta">${esc(r.visibility==='public'?'public':'link only')}</span></div>`
+  app.innerHTML=`<div class="head"><h2>A grind</h2><span class="meta">${esc(r.visibility==='public'?'public':r.crew_shared?'Crew members':r.visibility==='private'?'private':'link only')}</span></div>`
     +runCard(r,ad.mine.has(r.id),ad.counts[r.id]||acks.length,{picker:openAck,suggested,selected:preselect})
     +`<div class="head"><h2>ACKs</h2><span class="meta">${acks.length}</span></div><div class="panel">`+ackListHtml(acks)+`</div>`
     +`<div class="cta"><a class="act" href="/?share=1&run=${r.id}">Share card</a>
       <a class="act" href="/?share=1&run=${r.id}&roast=1">Roast card</a>
-      <span class="hint"><a href="/?u=${encodeURIComponent((r.profiles||{}).github_handle||'')}">see the profile</a></span></div>`;
+      <span class="hint"><a href="/?u=${encodeURIComponent((r.profiles||{}).github_handle||'')}">see the profile</a></span></div><section id="grind-crew-share"></section><section id="grind-thread"></section>`;
   wireKudos(); if(openAck){ const card=$('card-'+id); if(card) wireAckPicker(card,r,preselect); }
   if(q.get('ack')) history.replaceState(null,'',`/?run=${id}`);
+  await social.thread(id,$('grind-thread'));
+  await social.askControl(r,$('grind-thread'));
+  await social.shareControl(r,$('grind-crew-share'));
+  await challenges.declareRig(r,$('grind-crew-share'));
+  await social.featureControl(r,$('grind-crew-share'));
   countUp();
 }
 
@@ -1225,7 +1246,7 @@ async function viewExplore(){
       <input id="f_project" placeholder="project">
       <input id="f_note" placeholder="what did this session do? (optional, you write it)">
       <div class="row"><div><label>prompts</label><input id="f_prompts" type="number"></div><div><label>minutes</label><input id="f_dur" type="number"></div><div><label>commits</label><input id="f_commits" type="number"></div></div>
-      <div class="row"><select id="f_vis"><option value="public">public</option><option value="link">link-only</option><option value="private">private</option></select><button id="publish">Push run</button></div>
+      <div class="row"><select id="f_vis"><option value="public">public</option><option value="link">link-only · anyone with the link can read</option><option value="private">private</option></select><button id="publish">Push run</button></div>
     </div></div>`;
   app.innerHTML=(ME?composer:uploadBlock())+`<div id="trend"></div>
     <div class="head"><h2>Latest runs</h2><span class="meta">${R.length||'none yet'}</span></div>`
@@ -1265,6 +1286,7 @@ async function viewProfile(handle){
   frame(railHtml(mine?'me':null,R), sidePanels(R,{mine:!!mine}));
   app.innerHTML=`<div class="phero">${avatar(handle,{size:36,agent:isAgentProfile(prof)})}
       <div><h1>${esc(prof.name||handle)}</h1><div class="h">@${esc(handle)}${setup?' · '+esc(setup):''}</div></div></div>
+    <div id="social-follow" class="social-follow"></div><section id="scrapbook-extras"></section>
     <div class="ptotals num"><div class="hero" title="${esc(VPT_TIP+' · '+T.vptFormula)}" style="cursor:help"><div class="k">verified per turn</div><div class="v">${T.vpt}</div></div>
       <div><div class="k">runs</div><div class="v" data-count="${T.runs}">0</div></div>
       <div><div class="k">prompts · cost</div><div class="v" data-count="${T.prompts}">0</div></div>
@@ -1285,18 +1307,35 @@ async function viewProfile(handle){
     <div class="head"><h2>${mine?'Your runs':'Runs'}</h2><span class="meta">${R.length||'none yet'}${mine?` · <a href="/?share=1&u=${encodeURIComponent(handle)}">share the Scrapbook card</a>`:''}</span></div>
     ${R.length?(await (async()=>{const ad=await ackData(R);return R.map(r=>runCard(r,ad.mine.has(r.id),ad.counts[r.id])).join('');})()):'<div class="card"><div class="empty">No runs yet.</div></div>'}`;
   wireKudos(); countUp();
+  await social.followControl(prof,$('social-follow'));
+  await social.scrapbook(prof,$('scrapbook-extras'));
   if(mine) $('savep').addEventListener('click',async()=>{
     const {error}=await sb.from('profiles').update({name:$('e_name').value||null,rig:{...(prof.rig||{}),notes:$('e_skills').value||'',share_names:!!$('e_share_names')?.checked,mcp_names:(prof.rig||{}).mcp_names||[]}}).eq('id',prof.id);
     status(error?error.message:'Saved.',!!error); if(!error) viewProfile(handle); });
 }
 
+function showSignIn(){
+  if(!sb){status('Sign-in is unavailable. Please refresh.',true);return;}
+  const imported=location.hash.match(/import=([^&]+)/);if(imported&&!stashImport(imported[1])){status('This browser could not preserve the draft for sign-in. Keep this tab open and save your run JSON before continuing in another tab.',true);return;}
+  try{sessionStorage.setItem('ag_social_return',location.search)}catch(_){}
+  let dialog=$('signin-dialog');if(dialog)dialog.remove();
+  dialog=document.createElement('dialog');dialog.id='signin-dialog';dialog.setAttribute('aria-labelledby','signin-title');dialog.innerHTML='<h2 id="signin-title">Keep your grind</h2><p>Sign in to publish, join a Crew and return to your work.</p><button id="signin-github">Continue with GitHub</button><form id="signin-email" class="reply-form"><label>Email<input name="email" type="email" autocomplete="email" required></label><p>Your email stays out of your public handle.</p><button>Send a sign-in link</button></form><p id="signin-state" role="status"></p><button class="ghost" id="signin-close">Close</button>';
+  document.body.append(dialog);dialog.showModal();$('signin-close').onclick=()=>dialog.close();
+  $('signin-github').onclick=async()=>{const {error}=await sb.auth.signInWithOAuth({provider:'github',options:{redirectTo:location.origin+'/'}});if(error)$('signin-state').textContent='GitHub sign-in could not start. Try again.'};
+  $('signin-email').onsubmit=async e=>{e.preventDefault();const f=e.currentTarget,button=f.querySelector('button');button.disabled=true;try{const {error}=await sb.auth.signInWithOtp({email:f.elements.email.value,options:{emailRedirectTo:location.origin+'/'}});$('signin-state').textContent=error?'The sign-in link could not be sent. Try again or use GitHub.':'Check your email for the sign-in link. Keep this tab open to return to your draft.'}catch(_){$('signin-state').textContent='Sign-in could not connect. Try again.'}finally{button.disabled=false}};
+}
+
 async function refreshAuth(){ if(!sb)return;
   const {data:{session}}=await sb.auth.getSession();
-  if(session){ const u=session.user,h=u.user_metadata.user_name||u.user_metadata.preferred_username||u.email;
-    try{await sb.from('profiles').upsert({auth_uid:u.id,github_handle:h,name:u.user_metadata.full_name||h},{onConflict:'auth_uid'});}catch(e){}
+  if(session){ const u=session.user,meta=u.user_metadata||{},candidate=meta.user_name||meta.preferred_username||'';
+    const h=/^[a-z0-9_-]{1,60}$/i.test(candidate)?candidate:'grinder-'+u.id.slice(0,8);
+    const initialName=typeof meta.full_name==='string'&&!meta.full_name.includes('@')?meta.full_name:h;
+    const {error}=await sb.from('profiles').upsert({auth_uid:u.id,github_handle:h,name:initialName},{onConflict:'auth_uid',ignoreDuplicates:true});
+    if(error){status('Your profile could not load. Please try signing in again.',true);return;}
     const {data:p}=await sb.from('profiles').select('*').eq('auth_uid',u.id).single();
-    ME=p; $('me').innerHTML=`<a href="/?u=${encodeURIComponent(h)}">@${esc(h)}</a>`; $('auth').textContent='Sign out'; $('deletewrap').hidden=false;
+    ME=p; $('me').innerHTML=`<a href="/?u=${encodeURIComponent(p?.github_handle||h)}">@${esc(p?.github_handle||h)}</a>`; $('auth').textContent='Sign out'; $('deletewrap').hidden=false;
   } else { ME=null; $('me').textContent=''; $('auth').innerHTML='Sign in<span class="wide"> with GitHub</span>'; $('deletewrap').hidden=true; }
+  $('mobile-product-nav').hidden=!ME;
 }
 
 // The publish payload survives the OAuth round trip in sessionStorage, because it cannot survive
@@ -1304,7 +1343,7 @@ async function refreshAuth(){ if(!sb)return;
 // at location.hash. route() runs twice after a redirect (refreshAuth, then onAuthStateChange);
 // the hash is written before the stash is cleared, so the second pass still finds the payload.
 const IMPORT_STASH='ag_import';
-function stashImport(payload){ try{ sessionStorage.setItem(IMPORT_STASH,payload); }catch(_){} }
+function stashImport(payload){ try{ sessionStorage.setItem(IMPORT_STASH,payload);return sessionStorage.getItem(IMPORT_STASH)===payload; }catch(_){return false;} }
 function restoreImport(){
   let stash=null; try{ stash=sessionStorage.getItem(IMPORT_STASH); }catch(_){ return; }
   if(!stash) return;
@@ -1315,6 +1354,8 @@ function restoreImport(){
 function importRun(){
   const m=location.hash.match(/import=([^&]+)/); if(!m) return false;
   let run; try{ run=JSON.parse(atob(decodeURIComponent(m[1]))); }catch(_){ return false; }
+  try{ GrinderContract.validate(run); }
+  catch(error){ frame(null,null); $('app').innerHTML='<div class="card"><h2>This grind could not be imported</h2><p>'+esc(error.message)+'</p></div>'; return true; }
   const app=$('app');
   const rows=[['harness',run.harness],['project',run.project],['prompts (cost)',run.turns_typed],
     ['minutes',run.duration_s?Math.round(run.duration_s/60):null],['tool calls',run.tool_calls],
@@ -1322,26 +1363,28 @@ function importRun(){
     ['verified claims',run.claims_verified!=null&&run.claims!=null?`${run.claims_verified}/${run.claims}`:null],
     ['artifacts produced',run.artifacts_produced],
     ['reach',run.reach==null?null:(run.reach?'yes':'no')],
-    ['coach verdict',run.coach_verdict?String(run.coach_verdict).slice(0,160):null],
+    ['coach verdict',run.coach_verdict?String(run.coach_verdict):null],
     ['coach tool calls',run.coach_tool_calls],
-    ['vs your last grind',run.progress_verdict]].filter(r=>r[1]!=null&&r[1]!=='');
+    ['vs your last grind',run.progress_verdict],
+    ['measurement reference',run.measurement_revision],
+    ['baseline reference',run.baseline_revision]].filter(r=>r[1]!=null&&r[1]!=='');
   // The five-number parts and the coach verdict are saved when the runs table has their columns
   // (supabase/migrations/2026-09-03-coach.sql). On a database without them the insert is retried
   // without those fields and the card says so; nothing is invented and nothing fails silently.
   const unsaved='';
   frame(null,null);
-  app.innerHTML=`<div class="head"><h2>Publish this run?</h2><span class="meta">exactly these numbers, nothing else</span></div>
+  app.innerHTML=`<div class="head"><h2>Publish this grind?</h2><span class="meta">review the imported fields and choose an audience</span></div>
     <div class="panel">
       ${rows.map(r=>`<div class="p-row"><span>${r[0]}</span><span class="v"><b>${esc(String(r[1]))}</b></span></div>`).join('')}</div>${unsaved}
     <div class="panel"><div class="pad">
-    <p class="hint" style="margin:0 0 12px">No prompt text, no code. You can see everything above.</p>
+    <details><summary>Inspect all imported fields</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(JSON.stringify(run,null,2))}</pre></details><p class="hint" style="margin:12px 0">Review the coach text and any shared Rig names before publishing.</p>
     <input id="i_title" placeholder="Title (optional, you type this, not scraped)" value="${esc(run.project||'')} session">
     <input id="i_note" placeholder="what did this session do? (optional)">
     <label style="display:flex;align-items:center;gap:8px;margin:0 0 12px;font-size:13px;color:var(--muted)">
       <input type="checkbox" id="i_share_rig" ${run.rig_share_names?'checked':''}> Share MCP names on my rig (opt-in)
     </label>
     <input id="i_stack" placeholder="stack notes for friends (optional)" value="${esc(run.rig_notes||'')}">
-    <div class="row"><select id="i_vis"><option value="private">private</option><option value="public">public</option><option value="link">link-only</option><option value="anonymous">anonymous · ghost grind</option></select>
+    <div class="row"><select id="i_vis"><option value="private">private</option><option value="public">public</option><option value="link">link-only · anyone with the link can read</option><option value="anonymous">anonymous · ghost grind</option></select>
     <button id="i_pub">${ME?'Publish':'Sign in to publish'}</button></div></div></div>`;
   $('i_pub').addEventListener('click',async()=>{
     // SIGN-IN USED TO DESTROY THE RUN IT WAS CALLED TO PUBLISH. The whole payload lives in the
@@ -1350,10 +1393,10 @@ function importRun(){
     // back signed in, on an empty profile, with the run gone and no way to get it back short of
     // re-running the command. Stash it before leaving, put it back in route() on the way in.
     if(!ME){ stashImport(m[1]);
-      sb.auth.signInWithOAuth({provider:'github',options:{redirectTo:location.origin+'/'}}); return; }
+      showSignIn(); return; }
     const base={profile_id:ME.id,title:$('i_title').value||'Untitled run',
-      project:run.project||null,harness:run.harness||null,prompts:run.turns_typed||null,duration_s:run.duration_s||null,
-      commits:run.commits||null,tool_calls:run.tool_calls||null,files_touched:run.files_touched||null,
+      project:run.project||null,harness:run.harness||null,prompts:run.turns_typed??null,duration_s:run.duration_s??null,
+      commits:run.commits??null,tool_calls:run.tool_calls??null,files_touched:run.files_touched??null,
       rhythm:run.rhythm||null,note:$('i_note').value||null,visibility:$('i_vis').value,started_at:run.started||new Date().toISOString()};
     // the coach columns (nullable; migration 2026-09-03-coach.sql). Retry without them on a
     // database that does not have them yet, and say so.
@@ -1361,9 +1404,15 @@ function importRun(){
       reach:run.reach??null,
       coach_verdict:run.coach_verdict??null,coach_plan:run.coach_plan??null,coach_tool_calls:run.coach_tool_calls??null,
       progress_verdict:run.progress_verdict??null};
+    if(run.schema_version===1) Object.assign(coach,{schema_version:1,trace_basis:run.trace_basis||null,route:run.route||null,
+      measurement_revision:run.measurement_revision??null,baseline_revision:run.baseline_revision??null,
+      progress_delta:run.progress_delta??null});
     let {error}=await sb.from('runs').insert({...base,...coach});
     let partial=false;
-    if(error&&/column|schema cache/i.test(error.message||'')){ ({error}=await sb.from('runs').insert(base)); partial=!error; }
+    if(error&&/column|schema cache/i.test(error.message||'')){
+      if(run.schema_version===1){status('Publishing needs a site update to preserve this grind’s measurement references. Your draft is still here.',true);return;}
+      ({error}=await sb.from('runs').insert(base)); partial=!error;
+    }
     if(!error){
       const rig={...(ME.rig||{})};
       if(run.rig_mcps!=null) rig.mcps=run.rig_mcps;
@@ -1471,7 +1520,23 @@ async function viewEvent(){
 async function route(){ authErrorFromUrl();
   restoreImport();
   if(importRun()) return;
+  if(ME){try{const pending=sessionStorage.getItem('ag_social_return');if(pending&&/^\?(join|crew|crews|following|inbox|agents|agent|rigs|rigversion|practices|practice|experiments|experiment|challenges|challenge|run|u)(=|$)/.test(pending)){history.replaceState(null,'','/'+pending);sessionStorage.removeItem('ag_social_return');}}catch(_){}}
   const q=new URLSearchParams(location.search);
+  if(q.has('following'))return social.following();
+  if(q.has('inbox'))return social.inbox();
+  if(q.has('crews'))return social.crews();
+  if(q.has('experiments'))return practices.experiments(q.get('experiments'));
+  if(q.has('experiment'))return practices.experiment(q.get('experiment'));
+  if(q.has('crew'))return social.crew(q.get('crew'));
+  if(q.has('join'))return social.join(q.get('join'));
+  if(q.has('agents'))return social.agents();
+  if(q.has('agent'))return social.agentProfile(q.get('agent'));
+  if(q.has('practices'))return practices.index();
+  if(q.has('practice'))return practices.detail(q.get('practice'));
+  if(q.has('challenges'))return challenges.index();
+  if(q.has('challenge'))return challenges.show(q.get('challenge'));
+  if(q.has('rigs'))return challenges.rigs();
+  if(q.has('rigversion'))return challenges.rig(q.get('rigversion'));
   if(q.get('claim')) return viewClaim();
   if(q.get('pitch')!==null) return viewPitch();
   if(q.get('event')) return viewEvent();
@@ -1489,12 +1554,9 @@ document.addEventListener('DOMContentLoaded',()=>{
   $('auth').addEventListener('click',async()=>{ if(!sb){status('Refresh.',true);return;}
     const {data:{session}}=await sb.auth.getSession();
     if(session){await sb.auth.signOut();location.href='/';return;}
-    status('Redirecting to GitHub…');
-    const dest=location.origin+(ME?'/': '/?onboard');
-    const {error}=await sb.auth.signInWithOAuth({provider:'github',options:{redirectTo:dest}});
-    if(error)status(error.message,true); });
-  $('delete').addEventListener('click',async e=>{e.preventDefault(); if(!ME)return; if(!confirm('Delete your profile and all your runs? Cannot be undone.'))return;
-    await sb.from('profiles').delete().eq('id',ME.id); await sb.auth.signOut(); location.href='/'; });
+    showSignIn(); });
+  $('delete').addEventListener('click',async e=>{e.preventDefault(); if(!ME)return; if(!confirm('Delete your profile, runs, practices, agents and owned events? This also removes their discussion history. Transfer shared Crew ownership first. Cannot be undone.'))return;
+    const {error}=await sb.from('profiles').delete().eq('id',ME.id); if(error){status(error.message,true);return;} await sb.auth.signOut(); location.href='/'; });
   if(sb){ refreshAuth().then(route); sb.auth.onAuthStateChange(()=>refreshAuth().then(route)); } else route();
 });
 </script>

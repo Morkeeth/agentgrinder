@@ -1,0 +1,987 @@
+/* Social views use the same Supabase identity and server policies as the existing product. */
+window.GrinderSocial = function ({
+  client: db,
+  me,
+  app,
+  frame,
+  status,
+  renderRuns,
+}) {
+  const esc = (x) =>
+    String(x ?? "").replace(
+      /[&<>"']/g,
+      (c) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        })[c],
+    );
+  const byId = (id) => document.getElementById(id);
+  const uuid = (id) => typeof id === "string" && /^[0-9a-f-]{36}$/i.test(id);
+  const profile = (p) => p?.name || p?.github_handle || "A grinder";
+  const link = (p) =>
+    `<a href="/?u=${encodeURIComponent(p?.github_handle || "")}">${esc(profile(p))}</a>`;
+  const nav =
+    '<nav class="social-nav"><a href="/?following">Following</a><a href="/?crews">Crews</a><a href="/?inbox">Inbox</a></nav>';
+  function start(title, description) {
+    frame(null, null);
+    app().innerHTML =
+      nav +
+      `<div class="head"><h2>${esc(title)}</h2></div><p>${esc(description)}</p><div id="social-body" aria-live="polite">Loading…</div>`;
+  }
+  function signedIn() {
+    if (me()) return true;
+    byId("social-body").innerHTML =
+      '<div class="card"><p>Sign in to join the conversation. Your local grinds stay private.</p><button id="social-signin">Sign in</button></div>';
+    byId("social-signin").onclick = () => {
+      try {
+        sessionStorage.setItem("ag_social_return", location.search);
+      } catch (_) {}
+      byId("auth").click();
+    };
+    return false;
+  }
+  async function result(query) {
+    const r = await query;
+    if (r.error) throw new Error(r.error.message);
+    return r.data || [];
+  }
+  function fail(error) {
+    status(GrinderContract.message(error), true);
+  }
+  function empty(message) {
+    return `<div class="card"><p>${esc(message)}</p></div>`;
+  }
+
+  async function following() {
+    start(
+      "Your following feed",
+      "The real grinds of people you choose to follow.",
+    );
+    if (!signedIn()) return;
+    try {
+      const follows = await result(
+        db
+          .from("grinder_follows")
+          .select("followed_id")
+          .eq("follower_id", me().id),
+      );
+      if (!follows.length) {
+        byId("social-body").innerHTML =
+          empty(
+            "Follow a builder from their Scrapbook to bring their grinds here.",
+          ) + '<a href="/?explore">Explore public grinds</a>';
+        return;
+      }
+      const runs = await result(
+        db
+          .from("runs")
+          .select("*,profiles(github_handle,name,rig)")
+          .in(
+            "profile_id",
+            follows.map((f) => f.followed_id),
+          )
+          .in("visibility", ["public", "anonymous"])
+          .order("created_at", { ascending: false })
+          .limit(50),
+      );
+      byId("social-body").innerHTML = runs.length
+        ? await renderRuns(runs)
+        : empty("No public grinds from these builders yet.");
+    } catch (e) {
+      byId("social-body").innerHTML = empty(
+        "The following feed could not load. Your follows have not changed.",
+      );
+      fail(e);
+    }
+  }
+
+  async function followControl(person, slot) {
+    if (!slot || !me() || person.id === me().id) return;
+    try {
+      const rows = await result(
+        db
+          .from("grinder_follows")
+          .select("followed_id")
+          .eq("follower_id", me().id)
+          .eq("followed_id", person.id),
+      );
+      let active = rows.length > 0;
+      const button = document.createElement("button");
+      button.textContent = active ? "Following · unfollow" : "Follow";
+      slot.append(button);
+      button.onclick = async () => {
+        button.disabled = true;
+        try {
+          if (active)
+            await result(
+              db
+                .from("grinder_follows")
+                .delete()
+                .eq("follower_id", me().id)
+                .eq("followed_id", person.id),
+            );
+          else
+            await result(
+              db
+                .from("grinder_follows")
+                .upsert(
+                  { follower_id: me().id, followed_id: person.id },
+                  {
+                    onConflict: "follower_id,followed_id",
+                    ignoreDuplicates: true,
+                  },
+                ),
+            );
+          active = !active;
+          button.textContent = active ? "Following · unfollow" : "Follow";
+        } catch (e) {
+          fail(e);
+        } finally {
+          button.disabled = false;
+        }
+      };
+      const blocks = await result(
+        db
+          .from("grinder_blocks")
+          .select("blocked_id")
+          .eq("blocker_id", me().id)
+          .eq("blocked_id", person.id),
+      );
+      let blocked = blocks.length > 0;
+      const block = document.createElement("button");
+      block.className = "ghost";
+      block.textContent = blocked ? "Unblock" : "Block";
+      slot.append(block);
+      block.onclick = async () => {
+        block.disabled = true;
+        try {
+          if (blocked)
+            await result(
+              db
+                .from("grinder_blocks")
+                .delete()
+                .eq("blocker_id", me().id)
+                .eq("blocked_id", person.id),
+            );
+          else
+            await result(
+              db
+                .from("grinder_blocks")
+                .insert({ blocker_id: me().id, blocked_id: person.id }),
+            );
+          blocked = !blocked;
+          block.textContent = blocked ? "Unblock" : "Block";
+          status(
+            blocked
+              ? "Blocked interactions and signed-in feed visibility. Public pages remain readable when signed out."
+              : "Unblocked.",
+          );
+        } catch (e) {
+          fail(e);
+        } finally {
+          block.disabled = false;
+        }
+      };
+    } catch (e) {
+      slot.textContent = "Following is temporarily unavailable.";
+    }
+  }
+
+  async function thread(runId, slot) {
+    if (!slot || !uuid(runId)) return;
+    slot.innerHTML =
+      '<div class="head"><h2>Talk about this grind</h2></div><div class="thread-items" aria-live="polite">Loading replies…</div>';
+    const items = slot.querySelector(".thread-items");
+    let cursor = null;
+    async function page() {
+      let query = db
+        .from("grinder_replies")
+        .select(
+          "*,author:profiles!grinder_replies_author_id_fkey(github_handle,name)",
+        )
+        .eq("run_id", runId)
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
+        .limit(25);
+      if (cursor)
+        query = query.or(
+          `created_at.lt.${cursor.created_at},and(created_at.eq.${cursor.created_at},id.lt.${cursor.id})`,
+        );
+      const rows = await result(query);
+      if (!cursor) items.innerHTML = "";
+      for (const reply of rows) {
+        const article = document.createElement("article");
+        article.className = "card reply";
+        article.innerHTML = `<div>${link(reply.author)} ${reply.source_actor_id ? `· <a href="/?agent=${reply.source_actor_id}">${esc(reply.agent_name || "Agent")}</a>` : ""} <small>${esc(new Date(reply.created_at).toLocaleString())}${reply.edited_at ? " · edited" : ""}</small></div><p class="reply-body">${esc(reply.body)}</p>${reply.evidence_ref ? `<small>About: ${esc(reply.evidence_ref)}</small>` : ""}`;
+        if (me()?.id === reply.author_id) {
+          const edit = document.createElement("button");
+          edit.className = "ghost";
+          edit.textContent = "Edit";
+          edit.onclick = () => {
+            const area = document.createElement("textarea");
+            area.value = reply.body;
+            area.maxLength = 3000;
+            area.setAttribute("aria-label", "Edit your reply");
+            const save = document.createElement("button");
+            save.textContent = "Save";
+            const cancel = document.createElement("button");
+            cancel.className = "ghost";
+            cancel.textContent = "Cancel";
+            const form = document.createElement("div");
+            form.append(area, save, cancel);
+            article.append(form);
+            edit.disabled = true;
+            cancel.onclick = () => {
+              form.remove();
+              edit.disabled = false;
+            };
+            save.onclick = async () => {
+              save.disabled = true;
+              try {
+                await result(
+                  db
+                    .from("grinder_replies")
+                    .update({ body: area.value })
+                    .eq("id", reply.id),
+                );
+                await thread(runId, slot);
+              } catch (e) {
+                fail(e);
+                save.disabled = false;
+              }
+            };
+          };
+          const remove = document.createElement("button");
+          remove.className = "ghost";
+          remove.textContent = "Delete";
+          remove.onclick = async () => {
+            if (!confirm("Delete your reply?")) return;
+            remove.disabled = true;
+            try {
+              await result(
+                db.from("grinder_replies").delete().eq("id", reply.id),
+              );
+              article.remove();
+            } catch (e) {
+              fail(e);
+              remove.disabled = false;
+            }
+          };
+          article.append(edit, remove);
+        }
+        if (me() && me().id !== reply.author_id) {
+          const report = document.createElement("button");
+          report.className = "ghost";
+          report.textContent = "Report";
+          report.onclick = () => {
+            if (article.querySelector(".report-form")) return;
+            const form = document.createElement("form");
+            form.className = "report-form reply-form";
+            form.innerHTML =
+              '<label>Reason<textarea name="reason" required maxlength="2000"></textarea></label><button>Submit report</button>';
+            form.onsubmit = async (e) => {
+              e.preventDefault();
+              try {
+                await result(
+                  db
+                    .from("grinder_reports")
+                    .insert({
+                      reporter_id: me().id,
+                      run_id: runId,
+                      reply_id: reply.id,
+                      reason: form.elements.reason.value,
+                    }),
+                );
+                form.replaceWith(
+                  document.createTextNode(
+                    "Report recorded. No response time is promised.",
+                  ),
+                );
+              } catch (error) {
+                fail(error);
+              }
+            };
+            article.append(form);
+          };
+          article.append(report);
+        }
+        items.append(article);
+      }
+      if (!rows.length && !cursor)
+        items.innerHTML =
+          "<p>No replies yet. Ask about the work or the Rig.</p>";
+      slot.querySelector(".older-replies")?.remove();
+      if (rows.length === 25) {
+        cursor = rows[rows.length - 1];
+        const older = document.createElement("button");
+        older.className = "older-replies ghost";
+        older.textContent = "Earlier replies";
+        older.onclick = () => page().catch(fail);
+        slot.append(older);
+      }
+    }
+    try {
+      await page();
+    } catch (e) {
+      items.textContent = "Replies are temporarily unavailable.";
+      fail(e);
+      return;
+    }
+    if (me()) {
+      const form = document.createElement("form");
+      form.className = "reply-form";
+      form.innerHTML =
+        '<label>Your reply<textarea name="body" required maxlength="3000" placeholder="What did you learn from this grind?"></textarea></label><label>Evidence or step you mean (optional)<input name="evidence" maxlength="200"></label><button>Post reply</button>';
+      form.onsubmit = async (e) => {
+        e.preventDefault();
+        const button = form.querySelector("button");
+        button.disabled = true;
+        try {
+          await result(
+            db
+              .from("grinder_replies")
+              .insert({
+                run_id: runId,
+                author_id: me().id,
+                body: form.elements.body.value,
+                evidence_ref: form.elements.evidence.value || null,
+              }),
+          );
+          await thread(runId, slot);
+        } catch (error) {
+          fail(error);
+          button.disabled = false;
+        }
+      };
+      slot.append(form);
+    } else {
+      const note = document.createElement("p");
+      note.textContent = "Sign in to reply.";
+      slot.append(note);
+    }
+  }
+
+  async function inbox() {
+    start("Your inbox", "Recognition and conversations about your work.");
+    if (!signedIn()) return;
+    try {
+      const rows = await result(
+        db
+          .from("grinder_notifications")
+          .select(
+            "*,actor:profiles!grinder_notifications_actor_id_fkey(github_handle,name)",
+          )
+          .eq("recipient_id", me().id)
+          .order("created_at", { ascending: false })
+          .limit(50),
+      );
+      byId("social-body").innerHTML = rows.length
+        ? rows
+            .map(
+              (n) =>
+                `<article class="card">${link(n.actor)} ${n.kind === "reply" ? "replied to your grind" : n.kind === "ack" ? "ACKed your work" : "followed you"}${!n.read_at ? " · new" : ""}<p>${n.run_id ? `<a href="/?run=${encodeURIComponent(n.run_id)}">Open the grind</a>` : ""}</p><small>${esc(new Date(n.created_at).toLocaleString())}</small></article>`,
+            )
+            .join("")
+        : empty("Your ACKs and conversations will appear here.");
+      const unread = rows.filter((r) => !r.read_at).map((r) => r.id);
+      if (unread.length)
+        await result(
+          db
+            .from("grinder_notifications")
+            .update({ read_at: new Date().toISOString() })
+            .in("id", unread)
+            .eq("recipient_id", me().id),
+        );
+    } catch (e) {
+      byId("social-body").innerHTML = empty(
+        "Your inbox could not load. Try again.",
+      );
+      fail(e);
+    }
+  }
+
+  async function shareControl(run, slot) {
+    if (!slot || !me() || run.profile_id !== me().id) return;
+    try {
+      const memberships = await result(
+        db
+          .from("grinder_memberships")
+          .select("crew:grinder_crews(id,name)")
+          .eq("profile_id", me().id),
+      );
+      const choices = memberships.map((m) => m.crew).filter(Boolean);
+      if (!choices.length) {
+        slot.innerHTML =
+          '<a href="/?crews">Create or join a Crew to share this grind with its members.</a>';
+        return;
+      }
+      slot.innerHTML = `<form class="panel" id="share-crew-form"><label>Share with a Crew<select name="crew">${choices.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select></label><label>Audience<select name="audience"><option value="crew">Crew members only · removes public access</option><option value="public">Public and this Crew</option></select></label><button>Share grind with Crew</button></form>`;
+      slot.querySelector("form").onsubmit = async (e) => {
+        e.preventDefault();
+        const form = e.currentTarget;
+        form.querySelector("button").disabled = true;
+        try {
+          await result(
+            db.rpc("grinder_share_with_crew", {
+              grind: run.id,
+              crew: form.elements.crew.value,
+              keep_public: form.elements.audience.value === "public",
+            }),
+          );
+          status("Shared with your Crew.");
+          location.reload();
+        } catch (error) {
+          fail(error);
+          form.querySelector("button").disabled = false;
+        }
+      };
+    } catch (e) {
+      slot.textContent = "Crew sharing is temporarily unavailable.";
+    }
+  }
+
+  async function crews() {
+    start("Crews", "Build with people whose work you want to follow.");
+    if (!signedIn()) return;
+    try {
+      const memberships = await result(
+        db
+          .from("grinder_memberships")
+          .select("crew:grinder_crews(id,name,description,visibility)")
+          .eq("profile_id", me().id),
+      );
+      const rows = memberships.map((m) => m.crew).filter(Boolean);
+      byId("social-body").innerHTML =
+        (rows.length
+          ? rows
+              .map(
+                (c) =>
+                  `<article class="card"><h3><a href="/?crew=${c.id}">${esc(c.name)}</a></h3><p>${esc(c.description)}</p><small>${esc(c.visibility)} Crew</small></article>`,
+              )
+              .join("")
+          : empty("Create a Crew or join with an invitation.")) +
+        '<form id="create-crew" class="panel"><label>Crew name<input name="name" required maxlength="80"></label><label>Who can see the Crew?<select name="visibility"><option value="private">Members only</option><option value="public">Public</option></select></label><button>Create Crew</button></form>';
+      byId("create-crew").onsubmit = async (e) => {
+        e.preventDefault();
+        const form = e.currentTarget;
+        form.querySelector("button").disabled = true;
+        try {
+          const id = await result(
+            db.rpc("grinder_create_crew", {
+              crew_name: form.elements.name.value,
+              crew_visibility: form.elements.visibility.value,
+            }),
+          );
+          location.href = "/?crew=" + encodeURIComponent(id);
+        } catch (error) {
+          fail(error);
+          form.querySelector("button").disabled = false;
+        }
+      };
+    } catch (e) {
+      byId("social-body").innerHTML = empty("Crews could not load. Try again.");
+      fail(e);
+    }
+  }
+
+  async function crew(id) {
+    start("Crew", "A shared place for real work.");
+    if (!uuid(id)) {
+      byId("social-body").innerHTML = empty("This Crew link is invalid.");
+      return;
+    }
+    try {
+      const rows = await result(
+        db.from("grinder_crews").select("*").eq("id", id),
+      );
+      const c = rows[0];
+      if (!c) {
+        byId("social-body").innerHTML = empty(
+          "This Crew is private or unavailable.",
+        );
+        return;
+      }
+      const members = await result(
+        db
+          .from("grinder_memberships")
+          .select("profile_id,role,profile:profiles(github_handle,name)")
+          .eq("crew_id", id),
+      );
+      const mine = members.some((m) => m.profile_id === me()?.id),
+        owner = c.owner_id === me()?.id;
+      const runs = await result(
+        db
+          .from("runs")
+          .select("*,profiles(github_handle,name,rig)")
+          .eq("crew_id", id)
+          .order("created_at", { ascending: false })
+          .limit(50),
+      );
+      byId("social-body").innerHTML =
+        `<div class="card"><h2>${esc(c.name)}</h2><p>${esc(c.description)}</p>${mine ? `<p><a href="/?experiments=${id}">Crew experiments</a> · <a href="/?practices">Practices</a></p>` : ""}<small>${esc(c.visibility)} · ${members.length} members</small><p>${members.map((m) => link(m.profile) + (m.role === "owner" ? " · owner" : "")).join(" · ")}</p>${owner ? '<button id="invite-crew">Create single-use invite</button><div id="crew-invite"></div>' : mine ? '<button id="leave-crew" class="ghost">Leave Crew</button>' : ""}</div><div class="head"><h2>Crew grinds</h2></div>` +
+        (runs.length
+          ? await renderRuns(runs)
+          : empty("No grinds shared with this Crew yet."));
+      if (owner)
+        byId("invite-crew").onclick = async () => {
+          try {
+            const token = await result(db.rpc("grinder_invite", { crew: id }));
+            const url = location.origin + "/?join=" + encodeURIComponent(token);
+            byId("crew-invite").innerHTML =
+              '<label>Invite link · expires in seven days<input readonly value="' +
+              esc(url) +
+              '"></label><p>Share this link with one person. It can be used once.</p>';
+            byId("crew-invite").querySelector("input").select();
+          } catch (e) {
+            fail(e);
+          }
+        };
+      if (owner) {
+        const panel = document.createElement("section");
+        panel.className = "panel reply-form";
+        panel.innerHTML =
+          "<h3>Crew ownership and members</h3><p>Transfer ownership before leaving a shared Crew.</p>" +
+          members
+            .filter((m) => m.profile_id !== me().id)
+            .map(
+              (m) =>
+                `<div>${link(m.profile)} <button class="ghost" data-remove-member="${m.profile_id}">Remove</button> <button class="ghost" data-transfer-member="${m.profile_id}">Make owner</button></div>`,
+            )
+            .join("") +
+          '<button id="show-invites" class="ghost">Manage invitations</button><div id="invite-list"></div>';
+        byId("social-body").append(panel);
+        panel.querySelectorAll("[data-remove-member]").forEach(
+          (b) =>
+            (b.onclick = async () => {
+              if (!confirm("Remove this member from the Crew?")) return;
+              try {
+                await result(
+                  db.rpc("grinder_remove_member", {
+                    crew: id,
+                    member: b.dataset.removeMember,
+                  }),
+                );
+                await crew(id);
+              } catch (e) {
+                fail(e);
+              }
+            }),
+        );
+        panel.querySelectorAll("[data-transfer-member]").forEach(
+          (b) =>
+            (b.onclick = async () => {
+              if (
+                !confirm(
+                  "Transfer ownership to this member? They will control membership and invitations.",
+                )
+              )
+                return;
+              try {
+                await result(
+                  db.rpc("grinder_transfer_crew", {
+                    crew: id,
+                    new_owner: b.dataset.transferMember,
+                  }),
+                );
+                await crew(id);
+              } catch (e) {
+                fail(e);
+              }
+            }),
+        );
+        byId("show-invites").onclick = async () => {
+          try {
+            const invitations = await result(
+              db
+                .from("grinder_invites")
+                .select("id,expires_at,revoked,accepted_by")
+                .eq("crew_id", id)
+                .order("created_at", { ascending: false })
+                .limit(50),
+            );
+            byId("invite-list").innerHTML =
+              invitations
+                .map(
+                  (i) =>
+                    `<p>${i.accepted_by ? "Used" : i.revoked ? "Revoked" : "Expires " + esc(new Date(i.expires_at).toLocaleString())}${!i.accepted_by && !i.revoked ? ` <button class="ghost" data-revoke-invite="${i.id}">Revoke</button>` : ""}</p>`,
+                )
+                .join("") || "No invitations yet.";
+            byId("invite-list")
+              .querySelectorAll("[data-revoke-invite]")
+              .forEach(
+                (b) =>
+                  (b.onclick = async () => {
+                    try {
+                      await result(
+                        db
+                          .from("grinder_invites")
+                          .update({ revoked: true })
+                          .eq("id", b.dataset.revokeInvite),
+                      );
+                      b.replaceWith(document.createTextNode("Revoked"));
+                    } catch (e) {
+                      fail(e);
+                    }
+                  }),
+              );
+          } catch (e) {
+            fail(e);
+          }
+        };
+      }
+      if (mine && !owner)
+        byId("leave-crew").onclick = async () => {
+          if (!confirm("Leave this Crew?")) return;
+          try {
+            await result(
+              db.rpc("grinder_remove_member", { crew: id, member: me().id }),
+            );
+            location.href = "/?crews";
+          } catch (e) {
+            fail(e);
+          }
+        };
+    } catch (e) {
+      byId("social-body").innerHTML = empty("This Crew could not load.");
+      fail(e);
+    }
+  }
+
+  async function join(token) {
+    start(
+      "Join a Crew",
+      "An invitation gives you access to this Crew’s shared work.",
+    );
+    if (!signedIn()) return;
+    byId("social-body").innerHTML =
+      '<button id="join-crew">Accept invitation</button>';
+    byId("join-crew").onclick = async () => {
+      byId("join-crew").disabled = true;
+      try {
+        const id = await result(db.rpc("grinder_join_crew", { token }));
+        location.href = "/?crew=" + encodeURIComponent(id);
+      } catch (e) {
+        fail(e);
+        byId("join-crew").disabled = false;
+      }
+    };
+  }
+
+  async function agents() {
+    start(
+      "Your agents",
+      "Give each contributor an identity and only the access it needs.",
+    );
+    if (!signedIn()) return;
+    try {
+      const actors = await result(
+        db
+          .from("grinder_agents")
+          .select("*")
+          .eq("owner_id", me().id)
+          .order("created_at"),
+      );
+      byId("social-body").innerHTML =
+        actors
+          .map(
+            (a) =>
+              `<article class="card"><h3><a href="/?agent=${a.id}">${esc(a.name)}</a></h3><p>Agent · ${esc(a.visibility)}</p><button data-grant="${a.id}">Manage access</button><div id="access-${a.id}"></div></article>`,
+          )
+          .join("") +
+        '<form id="create-agent" class="panel reply-form"><label>Agent name<input name="name" required maxlength="80"></label><label>Profile visibility<select name="visibility"><option value="private">Private</option><option value="public">Public</option></select></label><button>Create agent profile</button></form>';
+      byId("create-agent").onsubmit = async (e) => {
+        e.preventDefault();
+        const form = e.currentTarget;
+        form.querySelector("button").disabled = true;
+        try {
+          await result(
+            db
+              .from("grinder_agents")
+              .insert({
+                owner_id: me().id,
+                name: form.elements.name.value,
+                visibility: form.elements.visibility.value,
+              }),
+          );
+          await agents();
+        } catch (error) {
+          fail(error);
+          form.querySelector("button").disabled = false;
+        }
+      };
+      document
+        .querySelectorAll("[data-grant]")
+        .forEach(
+          (button) => (button.onclick = () => access(button.dataset.grant)),
+        );
+    } catch (e) {
+      byId("social-body").innerHTML = empty("Agent profiles could not load.");
+      fail(e);
+    }
+  }
+
+  async function access(id) {
+    const slot = byId("access-" + id);
+    if (!slot) return;
+    try {
+      const tokens = await result(
+        db
+          .from("grinder_agent_tokens")
+          .select("id,agent_id,scopes,audiences,expires_at,revoked,created_at")
+          .eq("agent_id", id),
+      );
+      slot.innerHTML =
+        tokens
+          .map(
+            (t) =>
+              `<div class="card"><p>${esc(t.scopes.join(", "))} · ${esc(t.audiences.join(", "))}</p><small>Expires ${esc(new Date(t.expires_at).toLocaleString())}</small>${t.revoked ? "<p>Revoked</p>" : `<button data-revoke="${t.id}" class="ghost">Revoke access</button>`}</div>`,
+          )
+          .join("") +
+        '<form class="reply-form grant-form"><fieldset><legend>Permitted actions</legend>' +
+        ["draft", "publish", "reply", "ack"]
+          .map(
+            (s) =>
+              `<label><input type="checkbox" name="scope" value="${s}" ${s === "draft" ? "checked" : ""}> ${s}</label>`,
+          )
+          .join("") +
+        '</fieldset><fieldset><legend>Permitted audiences</legend><label><input type="checkbox" name="audience" value="private" checked> Private</label><label><input type="checkbox" name="audience" value="public"> Public · authorises outward actions without another click</label></fieldset><label>Expires in<select name="days"><option value="1">1 day</option><option value="7" selected>7 days</option><option value="30">30 days</option></select></label><p>Up to 60 actions per hour. You can revoke access at any time.</p><button>Grant selected access</button></form><div class="issued-token"></div>';
+      slot.querySelectorAll("[data-revoke]").forEach(
+        (button) =>
+          (button.onclick = async () => {
+            button.disabled = true;
+            try {
+              await result(
+                db
+                  .from("grinder_agent_tokens")
+                  .update({ revoked: true })
+                  .eq("id", button.dataset.revoke),
+              );
+              await access(id);
+            } catch (e) {
+              fail(e);
+              button.disabled = false;
+            }
+          }),
+      );
+      slot.querySelector("form").onsubmit = async (e) => {
+        e.preventDefault();
+        const form = e.currentTarget;
+        const scopes = [...form.querySelectorAll("[name=scope]:checked")].map(
+          (i) => i.value,
+        );
+        const audiences = [
+          ...form.querySelectorAll("[name=audience]:checked"),
+        ].map((i) => i.value);
+        if (!scopes.length || !audiences.length) {
+          status("Choose at least one action and audience.", true);
+          return;
+        }
+        form.querySelector("button").disabled = true;
+        try {
+          const issued = await result(
+            db.rpc("grinder_issue_agent_token", {
+              agent: id,
+              allowed_scopes: scopes,
+              allowed_audiences: audiences,
+              expires: new Date(
+                Date.now() + Number(form.elements.days.value) * 86400000,
+              ).toISOString(),
+            }),
+          );
+          const shown = slot.querySelector(".issued-token");
+          shown.innerHTML =
+            '<p>Save this credential now. It is shown only here and is not saved in this browser.</p><input type="password" readonly aria-label="Agent credential"><button class="ghost">Copy credential</button><p>Give it to your agent as AGENTGRINDER_AGENT_TOKEN. Do not put it in a prompt or public Rig.</p>';
+          shown.querySelector("input").value = issued.token;
+          shown.querySelector("button").onclick = async () => {
+            try {
+              await navigator.clipboard.writeText(issued.token);
+              status("Credential copied.");
+            } catch {
+              status("Copy from the credential field.", true);
+            }
+          };
+        } catch (error) {
+          fail(error);
+        } finally {
+          form.querySelector("button").disabled = false;
+        }
+      };
+    } catch (e) {
+      fail(e);
+      slot.textContent = "Access controls could not load.";
+    }
+  }
+
+  async function agentProfile(id) {
+    start(
+      "Agent",
+      "A contributor with a human owner and explicit permissions.",
+    );
+    if (!uuid(id)) {
+      byId("social-body").innerHTML = empty("Invalid agent link.");
+      return;
+    }
+    try {
+      const actors = await result(
+        db
+          .from("grinder_agents")
+          .select(
+            "*,owner:profiles!grinder_agents_owner_id_fkey(github_handle,name)",
+          )
+          .eq("id", id),
+      );
+      const actor = actors[0];
+      if (!actor) {
+        byId("social-body").innerHTML = empty(
+          "This agent is private or unavailable.",
+        );
+        return;
+      }
+      const runs = await result(
+        db
+          .from("runs")
+          .select("*,profiles(github_handle,name,rig)")
+          .eq("source_actor_id", id)
+          .order("created_at", { ascending: false })
+          .limit(50),
+      );
+      byId("social-body").innerHTML =
+        `<article class="card"><h2>${esc(actor.name)}</h2><p>Agent · owned by ${link(actor.owner)}</p><p>Contributions below were posted with access granted by its owner. Identity does not independently verify an outcome.</p></article>` +
+        (runs.length
+          ? await renderRuns(runs)
+          : empty("No visible grinds from this agent yet."));
+    } catch (e) {
+      fail(e);
+      byId("social-body").innerHTML = empty("This agent could not load.");
+    }
+  }
+  async function askControl(run, slot) {
+    if (!slot || !me() || !run.source_actor_id || run.visibility !== "public")
+      return;
+    const form = document.createElement("form");
+    form.className = "reply-form panel";
+    form.innerHTML =
+      '<h3>Ask this agent about the grind</h3><label>Your question<textarea name="question" required maxlength="2000"></textarea></label><p>The connected agent receives public counts and revision references. Raw test output and private transcripts are not included. It replies when its owner runs the integration.</p><button>Queue question</button>';
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      form.querySelector("button").disabled = true;
+      try {
+        await result(
+          db.rpc("grinder_ask_agent", {
+            agent: run.source_actor_id,
+            grind: run.id,
+            question_text: form.elements.question.value,
+          }),
+        );
+        form.replaceWith(
+          document.createTextNode(
+            "Question queued. A permitted response will appear in this thread.",
+          ),
+        );
+      } catch (error) {
+        fail(error);
+        form.querySelector("button").disabled = false;
+      }
+    };
+    slot.append(form);
+  }
+  async function scrapbook(person, slot) {
+    if (!slot) return;
+    try {
+      const agents = await result(
+        db
+          .from("grinder_agents")
+          .select("id,name,visibility")
+          .eq("owner_id", person.id)
+          .order("created_at", { ascending: false })
+          .limit(20),
+      );
+      const rigs = await result(
+        db
+          .from("grinder_rig_revisions")
+          .select("id,label,visibility")
+          .eq("owner_id", person.id)
+          .order("created_at", { ascending: false })
+          .limit(6),
+      );
+      let featured = "";
+      if (person.featured_run_id) {
+        const runs = await result(
+          db
+            .from("runs")
+            .select("*,profiles(github_handle,name,rig)")
+            .eq("id", person.featured_run_id)
+            .eq("profile_id", person.id)
+            .eq("visibility", "public"),
+        );
+        if (runs.length)
+          featured =
+            '<div class="head"><h2>Selected grind</h2></div>' +
+            (await renderRuns(runs));
+      }
+      slot.innerHTML =
+        featured +
+        (agents.length
+          ? '<div class="panel"><h3>Agents</h3>' +
+            agents
+              .map(
+                (a) =>
+                  `<p><a href="/?agent=${a.id}">${esc(a.name)}</a>${a.visibility === "private" ? " · only you" : ""}</p>`,
+              )
+              .join("") +
+            "</div>"
+          : "") +
+        (rigs.length
+          ? '<div class="panel"><h3>Rig versions</h3>' +
+            rigs
+              .map(
+                (r) =>
+                  `<p><a href="/?rigversion=${r.id}">${esc(r.label)}</a>${r.visibility === "private" ? " · only you" : ""}</p>`,
+              )
+              .join("") +
+            "</div>"
+          : "");
+    } catch (e) {
+      slot.textContent = "Agent and Rig details are temporarily unavailable.";
+    }
+  }
+  async function featureControl(run, slot) {
+    if (
+      !slot ||
+      !me() ||
+      run.profile_id !== me().id ||
+      run.visibility !== "public"
+    )
+      return;
+    const button = document.createElement("button");
+    button.textContent = "Feature in my Scrapbook";
+    button.onclick = async () => {
+      try {
+        await result(db.rpc("grinder_feature_run", { grind: run.id }));
+        status("Selected grind saved to your Scrapbook.");
+      } catch (e) {
+        fail(e);
+      }
+    };
+    slot.append(button);
+  }
+  return {
+    scrapbook,
+    featureControl,
+    askControl,
+    following,
+    followControl,
+    thread,
+    inbox,
+    crews,
+    crew,
+    join,
+    shareControl,
+    agents,
+    agentProfile,
+  };
+};

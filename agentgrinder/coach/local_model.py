@@ -42,6 +42,7 @@ class ScriptedLocalModel(Model):
     MODE_LABEL = "strands agent loop · local scripted model (no network, no spend)"
 
     def __init__(self, policy: Policy | None = None, **config: Any) -> None:
+        self.final_text = config.pop("final_text", FINAL_TEXT)
         self.policy: Policy = policy or coach_policy
         self._config: dict[str, Any] = {"model_id": "agentgrinder-coach-scripted-local", **config}
         self.calls: list[str] = []
@@ -68,7 +69,7 @@ class ScriptedLocalModel(Model):
         if step is None:
             last = history[-1] if history else None
             refused = bool(last and last[0] == "write_verdict" and last[2] and not last[2].get("accepted"))
-            yield {"contentBlockDelta": {"delta": {"text": REFUSED_TEXT if refused else FINAL_TEXT}}}
+            yield {"contentBlockDelta": {"delta": {"text": REFUSED_TEXT if refused else self.final_text}}}
             yield {"contentBlockStop": {}}
             yield {"messageStop": {"stopReason": "end_turn"}}
             return
