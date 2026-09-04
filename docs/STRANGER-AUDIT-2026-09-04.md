@@ -224,14 +224,15 @@ redacted output. Both are tracked and both are on `origin/main` today.
 | file, on `origin/main` | size | private project names |
 |---|---|---|
 | `nightrun-public.html` | 102,457 b | **0**, with 350 `repo N` labels in their place |
-| `nightrun.html` | 104,247 b | **164**: aistrava 64, cleared 50, agent-attack 18, zup 14, transcripto 9, oscar-labs 9 |
+| `nightrun.html` | 104,247 b | **164**, across six repositories, counted per name and not reproduced here |
 
 Neither file is served by the website; `vercel.json` publishes `site/` and both of these sit at the
 repository root. So the exposure is the public GitHub repository, not the live URL. It is still a
 **one-way door that is already open**: the file is in every clone and fork made since it was
 committed.
 
-**Fix:** Oscar's, because removing it from the published history needs a rewrite and a force push,
+**Fix, as first written:** Oscar's, because removing it from the published history needs a rewrite
+and a force push,
 which are his acts and not reversible by anyone else. Deleting the file at `HEAD` does not remove
 it from the log.
 
@@ -241,6 +242,71 @@ was correct and it was about the wrong object. The leak is not a credential, it 
 Oscar is working on, sitting in a 104 KB HTML file next to the redacted copy that proves somebody
 already knew it needed redacting. A privacy check that only knows the shape of a secret cannot see
 a secret with a different shape.
+
+## Addendum 3: B4 was priced, and the price is not what either option assumed
+
+*Oscar ruled: fix it, and the repository stays public for the hackathon. That rules out making it
+private and leaves deleting at HEAD or rewriting history. Measured before recommending, because the
+fact that decides between them was not in anyone's hands.*
+
+### The measurements
+
+| fact | value | how |
+|---|---|---|
+| forks of `Morkeeth/agentgrinder` | **0** | `gh repo view --json forkCount`, and `gh api .../forks` returns 0 |
+| stars | 0 | same call |
+| public since | 31 Aug 2026, four days | `createdAt` |
+| Wayback snapshot | **none** | `archive.org/wayback/available`, empty `archived_snapshots` |
+| commits touching `nightrun.html` | **1**, the initial public seed | `git log -- nightrun.html` |
+| anything worse than names inside it | **none**: 0 absolute paths, 0 emails, 0 URLs, 0 lane ids | regex scan of the file |
+
+On those numbers alone a history rewrite would genuinely close it, because there is no other copy
+in the world. That was the case for option two, and it is wrong, for a reason nobody had checked.
+
+### The names are not in that file. They are in the repository.
+
+Counted at `HEAD`, **excluding** `nightrun.html`, word-boundary matched:
+
+| | occurrences | tracked files |
+|---|---|---|
+| project A | 26 | 11 |
+| project B | 18 | 11 |
+| project C | 14 | 8 |
+| project D | 3 | 2 |
+| the vendored dependency | 51 | 22 |
+
+They are in source (`routemap.py`, `soloroute.py`, `history.py`, `fleet.py`, `mcp_server.py`), in
+two test files that use real project names as fixtures, in brand briefs, in memos, in the PRD, in
+`hack.md`, and in `profile.html`. One of them is not a leak at all: the vendored dependency is
+disclosed in the README on purpose, because the rules require disclosing pre-existing code.
+
+**So rewriting history to remove one file closes nothing.** The map is distributed. Option two
+costs a rewrite of every commit in the repository, since the file entered in the root commit, and
+leaves the exposure standing.
+
+### The recommendation
+
+**Take option one, and do not call it closed.**
+
+Done in this commit: `nightrun.html` is untracked and gitignored, with the reason written next to
+the entry. It was never referenced by anything except as the default `--out` filename, so nothing
+breaks. `nightrun-public.html`, the redacted render with zero occurrences, stays as the publishable
+artifact.
+
+That removes the one file where the names form a readable picture of the whole board, 164
+occurrences in one render, and it is honest about what it does not do: the file stays in the log,
+reachable by anyone who clones and runs `git log`.
+
+**What actually closes B4 is a repository-wide pass over roughly 30 files**, deciding per name
+whether it is a leak or a disclosure, and replacing the leaks with the `repo N` labels the redactor
+already produces. That is a sized job, it is not this addendum, and it should not be confused with
+the untracking above.
+
+### And one that is mine
+
+The first version of this audit documented the leak by reproducing it: the table in B4 listed all
+six project names and their counts, so the audit file itself became a thirty-first place they
+appear. Now corrected to counts without names. Writing down a leak is not a licence to copy it.
 
 ## The order to fix in
 

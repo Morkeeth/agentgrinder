@@ -7,3 +7,9 @@ card.html
 scratchpad/RED-before.html
 scratchpad/RED-after.html
 scratchpad/six.json
+
+# The night-run card is a build artifact rendered from THIS machine, and the un-redacted
+# render carries the project names of everything the run touched. It was committed once, in the
+# initial public seed, next to its own redacted output. Renders stay local; publish the
+# `-public` variant, which replaces every repository name with a `repo N` label.
+nightrun.html
