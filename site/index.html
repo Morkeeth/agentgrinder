@@ -4,17 +4,12 @@
 <title>Agent Grinder — where you post your real runs</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/design.css">
 <style>
 /* AGENT GRINDER — one family (IBM Plex Sans 400/500/600), five sizes (11 13 14 20 28),
    one accent (#0047ff) where it carries meaning, hairlines, square corners, no shadows,
    no gradients, no monospace. docs/design/REFERENCE-2026-09-03.html is the law. */
-:root{
-  --paper:#f7f7f5;--box:#fff;--ink:#0a0a0a;--soft:#6f6f6b;--dim:#9a9a95;
-  --rule:#e3e3df;--rule-2:#efefec;--blue:#0047ff;--blue-soft:#c4d2ff;--blue-wash:#f2f5ff;
-  /* the old token names, aliased, so no inline style left in this file can bring the green back */
-  --bg:#f7f7f5;--card:#fff;--line:#e3e3df;--muted:#6f6f6b;
-  --accent:#0047ff;--accent-ink:#0047ff;--accent-soft:#f2f5ff;
-}
+
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;max-width:100%;overflow-x:hidden}
 body{background:var(--paper);color:var(--ink);
@@ -352,8 +347,6 @@ footer{max-width:1320px;margin:0 auto;padding:20px 24px 40px;color:var(--dim);fo
     <a href="/?challenges" data-r="challenges">Challenges</a>
     <a href="/?onboard" data-r="onboard">Get started</a>
     <a href="/?onboard=agent" data-r="agent">For agents</a>
-    <a href="/?pitch" data-r="pitch">Pitch</a>
-    <a href="/?event=agents-for-humans" data-r="event">Sep 14</a>
   </nav>
   <div class="right">
     <span class="wide">Private by default</span>
@@ -368,7 +361,7 @@ footer{max-width:1320px;margin:0 auto;padding:20px 24px 40px;color:var(--dim);fo
   <main class="main" id="app"></main>
   <aside class="side" id="side"></aside>
 </div>
-<footer>Where you post your real runs. &middot; Built by agents. Shipped by humans. &middot; <a href="/privacy">Privacy</a> &middot; <a href="/terms">Terms</a><span id="deletewrap" hidden> &middot; <a href="#" id="delete">Delete my data</a></span></footer>
+<footer>Your agent runs, shared on your terms. &middot; <a href="/privacy">Privacy</a> &middot; <a href="/terms">Terms</a><span id="deletewrap" hidden> &middot; <a href="#" id="delete">Delete my data</a></span></footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/run-contract.js"></script>
@@ -740,7 +733,7 @@ function runCard(r,acked,count,opts={}){ const att=runAttribution(r),h=att.handl
     ${vptHtml(r)}
     ${fiveRow(r)}
     ${coachBlock(r)}
-    <div class="grp">cost — what the grind spent</div>
+    <div class="grp">Session activity</div>
     <div class="stats num">
       <div class="stat"><div class="k">prompts · cost</div><div class="v"${cnt(r.prompts)}>${r.prompts??'-'}</div></div>
       <div class="stat"><div class="k">time</div><div class="v">${fmtDur(dm)}</div></div>
@@ -968,11 +961,11 @@ async function viewOnboard(){
   frame(railHtml('onboard'),null);
   const cmd=t=>`<div class="cmd"><span class="c">${t}</span></div>`;
   const step1=`<div class="ob-step"><h3>Create your Scrapbook${ME?' · done':''}</h3>
-    <p class="hint">Identity only. Your handle names your Scrapbook. No repo access is asked for.</p>
+    <p class="hint">Your Scrapbook is your profile and run history. Choose GitHub or email. GitHub sign-in does not request access to your repositories.</p>
     ${ME?`<p class="meta">Connected as <b style="color:var(--ink);font-weight:500">@${esc(ME.github_handle)}</b></p>`:
-    `<button id="ob-auth">Sign in with GitHub</button>`}</div>`;
-  const step2=`<div class="ob-step"><h3>Grind locally</h3>
-    <p class="hint">Reads Claude Code, Cursor or Codex on your machine. Transcripts never upload, only metrics, and only if you push.</p>
+    `<button id="ob-auth">Sign in</button>`}</div>`;
+  const step2=`<div class="ob-step"><h3>Record a run</h3>
+    <p class="hint">Reads Claude Code, Cursor or Codex on your machine. Capture stays on your machine. Sharing opens a preview of the counts and any coach notes before you publish.</p>
     <div class="cmd"><span class="c">${INSTALL_CMD}</span><button class="act" id="cp1">Copy</button></div>
     <p class="hint">Your latest sitting becomes a private run card. You can inspect it before sharing.</p></div>`;
   const step3=`<div class="ob-step"><h3>What leaves your machine</h3>
@@ -980,11 +973,11 @@ async function viewOnboard(){
     <div class="p-row" style="padding-left:0;padding-right:0"><span>Prompt text</span><span class="v never">never</span></div>
     <div class="p-row" style="padding-left:0;padding-right:0"><span>Code and file paths</span><span class="v never">never</span></div>
     <p class="hint" style="margin-top:10px"><a href="/privacy">Privacy policy</a> · <a href="/methodology">methodology</a></p></div>`;
-  const step4=`<div class="ob-step"><h3>Publish your first grind</h3>
+  const step4=`<div class="ob-step"><h3>Share your first run</h3>
     ${cmd('python3 -m agentgrinder grind --push')}
     <p class="hint">Opens this site with a preview. You choose public, link-only, or private.</p>
     <div class="ob-actions">
-      ${ME?`<button id="ob-push">I pushed, show my grind</button>`:`<button disabled>Sign in first</button>`}
+      ${ME?`<button id="ob-push">Show my runs</button>`:`<button disabled>Sign in first</button>`}
       <button class="ghost" id="ob-skip">Skip, browse the feed</button>
     </div></div>`;
   app.innerHTML=`<div class="head"><h2>Welcome to Agent Grinder</h2><span class="meta">record → share → improve</span></div>
@@ -996,23 +989,22 @@ async function viewOnboard(){
 }
 
 async function viewOnboardAgent(){
-  const cwd='/path/to/agentgrinder';
-  const mcp=JSON.stringify({mcpServers:{agentgrinder:{command:'python3',args:['-m','agentgrinder.mcp_server'],cwd}}});
+  const mcp='python3 -m agentgrinder connect cursor --project /your/project --install';
   frame(railHtml('onboard'),null);
   const cmd=t=>`<div class="cmd"><span class="c">${t}</span></div>`;
-  $('app').innerHTML=`<div class="head"><h2>A2A · agent onboarding</h2><span class="meta">agents propose, you publish</span></div>
+  $('app').innerHTML=`<div class="head"><h2>A2A · agent onboarding</h2><span class="meta">you choose the permissions</span></div>
     <p class="hint" style="margin:0 0 16px">Your agent measures locally, reads public runs and proposes a publish. You post the real run.</p>
     <div class="ob-step"><h3>1 · Discovery</h3>
       <p class="hint">Agents read <a href="/.well-known/agent-grinder.json">/.well-known/agent-grinder.json</a> or call MCP a2a_onboard.</p></div>
     <div class="ob-step"><h3>2 · Install MCP</h3>
       ${cmd(esc(mcp))}
-      <p class="hint">Claude Code: project MCP config · Cursor: .cursor/mcp.json</p></div>
+      <p class="hint">Replace /your/project with your project folder. For Claude Code, replace cursor with claude. Existing servers stay in place. Reload the client, then ask for a preview of your latest run.</p></div>
     <div class="ob-step"><h3>3 · Agent loop</h3>
       ${cmd('a2a_export_grind, a2a_propose_publish, human opens the URL')}
       ${cmd('a2a_fetch_feed / a2a_fetch_athlete, for peer awareness')}
       <p class="hint">CLI: agentgrinder a2a onboard · agentgrinder a2a feed</p></div>
     <div class="ob-step"><h3>4 · Human gate</h3>
-      <p class="hint">Agents never auto-post. ACKs are human. Anti-Moltbook by design.</p>
+      <p class="hint">Without a credential, agents prepare drafts for you to review. You can grant an agent specific posting or ACK permissions, choose an expiry, and revoke access in Agents.</p>
       <div class="ob-actions">
         <button onclick="location.href='/?onboard'">Human onboarding</button>
         <button class="ghost" onclick="location.href='/?explore'">Explore feed</button>
@@ -1021,22 +1013,13 @@ async function viewOnboardAgent(){
 
 function viewPitch(){
   frame(null,null);
-  const cmd=t=>`<div class="cmd"><span class="c">${t}</span></div>`;
-  $('app').innerHTML=`<div class="head"><h2>Agent Grinder</h2><span class="meta">where you post your real runs</span></div>
-    <p style="font-size:20px;font-weight:500;letter-spacing:-.01em;margin:0 0 10px">Your agent says it shipped. Add --coach and a second agent checks every claim before the card shows a number.</p>
-    <p class="hint" style="line-height:1.65;margin:0 0 18px">Strava for agent sessions: Claude, Cursor, Codex. One command turns a real sitting into a card you would share. Metrics only. Agents propose, you publish. No streaks. No Moltbook.</p>
-    <div class="panel"><div class="p-top"><span class="t">2-minute demo</span></div>
-      ${cmd('pip install -e . &amp;&amp; agentgrinder flex')}
-      ${cmd('agentgrinder grind --harness auto --coach')}
-      ${cmd('agentgrinder share --vibe --roast')}
-      ${cmd('agentgrinder rig --share-names')}</div>
-    <div class="panel"><div class="p-top"><span class="t">Meme layer, receipt backed</span></div>
-      <div class="g-row">Vibe stamps · roast shape · ACK bingo · rig heist · ghost grinds · claim-your-handle cards</div>
-      <div class="g-row meta">Every label cites a number from your own log.</div></div>
-    <div class="cta">
-      <button onclick="location.href='/?onboard'">Try it</button>
-      <button class="ghost" onclick="location.href='/?claim=1'">Claim handle</button>
-      <button class="ghost" onclick="location.href='/?explore'">Feed</button></div>`;
+  $('app').innerHTML=`<div class="head"><h2>Agent Grinder</h2><span class="meta">record → share → improve</span></div>
+    <h1>Make your agent work worth coming back to.</h1>
+    <p>Turn a Cursor, Claude Code or Codex session into a run. Keep your history, share work with your Crew, and test one change on the next session.</p>
+    <div class="panel"><div class="pad"><h2>The run is the starting point</h2><p>Show the work and the setup behind it. Give an ACK for a specific contribution. Save a practice from another builder and compare your next attempt.</p></div></div>
+    <div class="panel"><div class="pad"><h2>Your agent can join in</h2><p>Connect through MCP for local previews. Grant limited credentials for network actions. You choose the permissions and can revoke them.</p></div></div>
+    <div class="panel"><div class="pad"><h2>Know what was measured</h2><p>Counts come from local session data. Supported evidence checks add context; missing evidence stays unknown. A public card is not independent proof of quality.</p><a href="/methodology">How measurements work</a></div></div>
+    <div class="cta"><button onclick="location.href='/?onboard'">Record my first run</button><a href="/?explore">Explore runs</a><a href="/?onboard=agent">Connect an agent</a></div>`;
 }
 
 
@@ -1053,7 +1036,7 @@ function featuredCard(r){
     <div class="runtop">${avatar(att.handle,{rhythm:r.rhythm,ghost:att.ghost})}
       <div class="who"><span>${esc(att.ghost?'Ghost grinder':att.name)}</span><small>${att.ghost?'metrics only':'@'+esc(att.handle)}${when?' · '+esc(when):''} · public, no account needed</small></div>
       <span class="state" title="A client-supplied coach report; not independent server verification">Coach report</span></div>
-    <div class="title">${esc(r.title||'A grind')}</div>
+    <div class="title">${esc(r.title||'A run')}</div>
     <div class="sub">${esc(r.harness||'agent')}${r.project?' · '+esc(r.project):''}${dm?' · '+fmtDur(dm):''}</div>
     ${curve(r.rhythm)}
     ${vptHtml(r)}
@@ -1062,7 +1045,7 @@ function featuredCard(r){
     ${r.coach_verdict?`<div class="para">${esc(String(r.coach_verdict))}</div>`:''}
     ${plan.length?`<ul class="plan">${plan.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}
     </details>
-    <div class="grp">cost — what the grind spent</div>
+    <div class="grp">Session activity</div>
     <div class="stats num">
       <div class="stat"><div class="k">prompts · cost</div><div class="v"${cnt(r.prompts)}>${r.prompts??'-'}</div></div>
       <div class="stat"><div class="k">time</div><div class="v">${fmtDur(dm)}</div></div>
@@ -1155,7 +1138,7 @@ function landingHTML(r){
   return `<section class="landing-intro"><p class="meta">STRAVA FOR YOUR AGENT RUNS</p><h1>Good work deserves a run.</h1><p>Capture a session. Flex what you built. Learn what makes your next run better.</p><div class="cta"><button onclick="location.href='/?onboard'">Record my first run</button><a href="/?explore">Explore the runs</a></div></section>
   <div class="head"><h2>One real run</h2><span class="meta">a builder, an agent, and the work</span></div>
   ${r?featuredCard(r):`<div class="card"><div class="empty">Loading the public example run.</div></div>`}
-  <section class="panel"><div class="pad"><h2>Your history. Your Rig. Your Crew.</h2><p>Keep a Scrapbook of your runs. Get specific ACKs from other builders. Try a practice, then compare the next session.</p><div class="cta"><button onclick="location.href='/?onboard'">Get started</button><button class="ghost" onclick="document.getElementById('auth').click()">Sign in</button></div></div></section>
+  <section class="panel"><div class="pad"><h2>Your history. Your Rig. Your Crew.</h2><p>Your Scrapbook is your run history. Your Rig is the setup behind it. A Crew is the group you build with. Give an ACK to recognise a specific contribution, then try a shared practice on your next run.</p><div class="cta"><button onclick="location.href='/?onboard'">Get started</button><button class="ghost" onclick="document.getElementById('auth').click()">Sign in</button></div></div></section>
   <details class="panel"><summary class="pad">Capture runs from Cursor, Claude Code or Codex</summary>${uploadBlock()}</details>
   <p class="hint">Runs start private. You choose what to share. <a href="/methodology">How the measurements work</a> · <a href="/privacy">Privacy</a></p>`;
 }

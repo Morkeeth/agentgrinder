@@ -106,6 +106,8 @@ def _render(run: dict, out: Path, open_it: bool) -> None:
 def main(argv=None) -> int:
     p = argparse.ArgumentParser(prog="agentgrinder")
     sub = p.add_subparsers(dest="cmd", required=True)
+    from .connect import add_parser as add_connect_parser
+    add_connect_parser(sub)
     from .practices import add_parser as add_practice_parser
     add_practice_parser(sub)
     from .agent_api import add_parser as add_agent_parser
@@ -252,6 +254,10 @@ def main(argv=None) -> int:
     pr.add_argument("username"); pr.add_argument("--runs", default="samples")
     pr.add_argument("-o", "--out", default="profile.html"); pr.add_argument("--no-open", action="store_true")
     args = p.parse_args(argv)
+
+    if args.cmd == "connect":
+        from .connect import run_cli
+        return run_cli(args)
 
     if args.cmd == "rig-config":
         from .rig_config import run_cli
@@ -441,7 +447,8 @@ def main(argv=None) -> int:
             repo = gitwork.repo_of(_os.getcwd())
             project = repo[0] if repo else _os.path.basename(_os.getcwd())
         conn = series_log.connect()
-        row = series_log.predict(conn, project, args.text)
+        from .project_identity import identity
+        row = series_log.predict(conn, project, args.text, identity(_os.getcwd()) if not args.project else None)
         conn.close()
         print(f"\n  predicted for {project}: {row['text']}"
               f"\n  the next grind on {project} shows it beside its verdict\n")
@@ -595,9 +602,11 @@ def _load_latest_run(session: str | None = None) -> dict | None:
         return None
     harness, path = picked
     if harness == "cursor":
-        return parse_cursor_session(path)
+        from .native_sittings import read_sitting
+        return read_sitting(path, harness)
     if harness == "codex":
-        return parse_codex_session(path)
+        from .native_sittings import read_sitting
+        return read_sitting(path, harness)
     found = latest_grind()
     if found:
         path, pick = found

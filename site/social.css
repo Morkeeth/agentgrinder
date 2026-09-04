@@ -11,7 +11,7 @@
 .reply button{margin-right:8px;margin-top:8px}
 .reply-form{display:grid;gap:14px;padding:20px 0}
 .reply-form label,#create-crew label{display:block;font-size:13px}
-.reply-form textarea,.reply textarea{display:block;box-sizing:border-box;width:100%;min-height:100px;margin-top:8px;padding:12px;border:1px solid var(--rule);border-radius:8px;background:var(--bg);color:inherit;font:inherit}
+.reply-form textarea,.reply textarea{display:block;box-sizing:border-box;width:100%;min-height:100px;margin-top:8px;padding:12px;border:1px solid var(--rule);border-radius:2px;background:var(--bg);color:inherit;font:inherit}
 #create-crew{padding:20px;display:grid;gap:16px}
 #share-crew-form{padding:20px;display:grid;gap:16px;margin-top:20px}
 #crew-invite{overflow-wrap:anywhere;margin-top:16px}
@@ -21,7 +21,7 @@
 
 #practice-body .card,#practice-body .panel{padding:20px;margin-bottom:18px;overflow-wrap:anywhere}.comparison{display:grid;grid-template-columns:1fr 1fr;gap:12px}.comparison small{display:block;color:var(--muted)}
 
-#signin-dialog{border:1px solid var(--rule);border-radius:12px;background:var(--bg);color:inherit;padding:24px;width:min(420px,calc(100% - 32px));box-sizing:border-box}#signin-dialog::backdrop{background:rgba(0,0,0,.45)}
+#signin-dialog{border:1px solid var(--rule);border-radius:2px;background:var(--bg);color:inherit;padding:24px;width:min(420px,calc(100% - 32px));box-sizing:border-box}#signin-dialog::backdrop{background:rgba(0,0,0,.45)}
 
 #scrapbook-extras .panel{padding:20px}#scrapbook-extras .panel h3{margin-top:0}
 

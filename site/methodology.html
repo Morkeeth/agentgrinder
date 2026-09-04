@@ -1,31 +1,19 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AGENT GRINDER, coaching methodology</title>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800&family=Space+Mono&display=swap" rel="stylesheet">
-<style>body{margin:0;background:#f3f2ec;color:#1c1913;font:16px/1.6 "Archivo",-apple-system,sans-serif}
-main{max-width:660px;margin:0 auto;padding:44px 20px 90px}h1{font-size:26px;letter-spacing:-.02em}
-h2{font-size:15px;text-transform:uppercase;letter-spacing:.12em;color:#726c5e;border-bottom:1.5px solid #1c1913;padding-bottom:7px;margin-top:34px}
-a{color:#134e33}.mono{font-family:"Space Mono",monospace}table{width:100%;border-collapse:collapse;font-size:14px;margin-top:10px}
-td{border-top:1px solid #e0ded3;padding:9px 6px;vertical-align:top}code{background:#e4ede6;padding:1px 5px;border-radius:4px}</style></head>
-<body><main>
+
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="/design.css"></head>
+<body class="reading-page"><header><a href="/">Agent·Grinder</a><a href="/?onboard">Record a run</a></header><main>
 <h1>How the coach earns trust</h1>
-<p>Every recommendation is either a <b>verified fact about your own history</b>, or a <b>documented
-best-practice with a source</b>. No invented scores. No fake precision. If we can't ground it, we don't say it.</p>
-
-<h2>What the coach may say</h2>
-<p><b>Verified.</b> Facts re-derivable from your local transcripts: real ranks, real counts, real ratios.</p>
-<p><b>Grounded + cited.</b> Best-practices from top agentic engineers, applied to a characteristic we
-detect in your session, each with a source.</p>
-<p><b>Descriptive.</b> Real ratios stated plainly, never dressed as a verdict.</p>
-<p>We retired the arbitrary "grind score" and threshold labels. They were manufactured rigor. What
-you see instead is your <b>verify-and-ship rate</b> and real, cited signals.</p>
-
-<h2>The cited checklist</h2>
-<table>
-<tr><td>No <code>CLAUDE.md</code> / <code>.cursor/rules</code> in the project</td><td>Add a rules file, the highest-ROI fix. A rules file cut agent mistakes ~41% to 11%. <a href="https://www.aibuilderclub.com/blog/karpathy-claude-md-rules">source</a></td></tr>
-<tr><td>High tool activity, nothing shipped</td><td>Verify and ship, don't just run. "Agentic engineering" is explicit objectives plus verification loops.</td></tr>
-<tr><td>Session sprawls, low depth</td><td>One bounded objective per session.</td></tr>
-</table>
-
+<p>Grinder records your session activity and helps you test a change on the next run. Counts describe what the reader found. They do not measure the value of your work.</p>
+<h2>Read your run</h2>
+<p><b>Activity:</b> typed turns, tool calls, timing and other fields supported by your harness. A missing field stays unknown.</p>
+<p><b>Evidence:</b> Claude Code checks can connect a claim to a named result in the same turn. The matcher can make mistakes. Cursor and Codex do not currently receive claim-verification scores.</p>
+<p><b>Improvement:</b> compare sessions from the same project, try a practice, and record whether to keep or change it. A better ratio alone does not show that a practice caused the improvement.</p>
+<p><b>Public runs:</b> measurements and coach reports are supplied by the publishing client. They are not independently verified by the server.</p>
+<h2>The coach</h2>
+<p>The optional coach uses Strands tools to inspect supported session data. Local mode uses a scripted model; Bedrock is an optional network mode. Advice is a proposal to test, not a measured guarantee.</p>
+<p>Evidence matching was tightened on 5 September to reject unrelated generic success and failed or skipped named tests. The historical evidence breakdown below describes the earlier matcher; no new accuracy result is claimed for that change.</p>
+<details><summary>Calibration method and historical results</summary>
 <h2>How the claim rule was calibrated</h2>
 <p>The card counts <b>claims</b> your agent made and how many carried evidence in the same turn. A
 rule decides what a claim is, so that rule has an error rate, and until 3 September 2026 nobody had
@@ -113,9 +101,8 @@ all</b>, so for the rest there is nothing for the stronger rule to match on.</p>
 verifications are wrong. It says four in five rest on a rule whose accuracy nobody has measured.
 Reproduce it with <code>python3 scripts/evidence-branch-report.py</code>.</p>
 
-<h2>What we will not fake</h2>
-<p>We never compare your metrics to a top engineer's <i>session</i> metrics, because those are private,
-nobody has them. Any "beat Karpathy's cadence" would be fabricated. We don't quote a number without
-its source.</p>
+</details>
+<h2>What the numbers cannot tell you</h2>
+<p>Session counts do not establish code quality, business value or which agent is best. Compare the task, the outcome and the evidence alongside the numbers.</p>
 <p><a href="/">back to AGENT GRINDER</a></p>
 </main></body></html>

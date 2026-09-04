@@ -24,50 +24,30 @@ def _claude_stats() -> dict:
     )
 
 
-def _cursor_stats(scan: int = 80) -> dict:
-    files = sorted(
-        glob.glob(os.path.expanduser(CURSOR_GLOB)),
-        key=os.path.getmtime,
-        reverse=True,
-    )[:scan]
-    grinds = prompts = moving_s = 0
-    for f in files:
+def _native_stats(files, harness):
+    from .native_sittings import sittings
+    parser = {'cursor': parse_cursor_session, 'codex': parse_codex_session}[harness]
+    runs = []
+    for path in files:
         try:
-            run = parse_cursor_session(f)
+            runs.extend(parser(path, records=group) for group in sittings(path, harness))
         except (OSError, ValueError):
             continue
-        grinds += 1
-        prompts += run.get("turns_typed") or 0
-        moving_s += run.get("duration_s") or 0
-    return dict(
-        harness="Cursor",
-        grinds=grinds,
-        prompts=prompts,
-        moving_s=moving_s,
-        tools=0,
-        commits=0,
-    )
+    durations = [r.get('duration_s') for r in runs]
+    return dict(harness={'cursor':'Cursor','codex':'Codex'}[harness],
+        grinds=len(runs), prompts=sum(r.get('turns_typed') or 0 for r in runs),
+        moving_s=sum(durations) if all(d is not None for d in durations) else None,
+        tools=sum(r.get('tool_calls') or 0 for r in runs),
+        time_basis='elapsed session time', source=f'{len(files)} recent transcript files')
 
 
-def _codex_stats(scan: int = 5) -> dict:
-    files = codex_session_files()[:scan]   # both trees; see ingest.CODEX_GLOBS
-    grinds = prompts = tools = 0
-    for f in files:
-        hit = _codex_count(f)
-        if not hit:
-            continue
-        t, tc = hit
-        grinds += 1
-        prompts += t
-        tools += tc
-    return dict(
-        harness="Codex",
-        grinds=grinds,
-        prompts=prompts,
-        moving_s=0,
-        tools=tools,
-        commits=0,
-    )
+def _cursor_stats(scan: int = 80) -> dict:
+    files = sorted(glob.glob(os.path.expanduser(CURSOR_GLOB)), key=os.path.getmtime, reverse=True)[:scan]
+    return _native_stats(files, 'cursor')
+
+
+def _codex_stats(scan: int = 80) -> dict:
+    return _native_stats(codex_session_files()[:scan], 'codex')
 
 
 def local_flex() -> list[dict]:
@@ -103,15 +83,12 @@ def format_flex(rows: list[dict] | None = None) -> str:
         h = r["harness"]
         g = r["grinds"]
         p = r["prompts"]
-        mins = r["moving_s"] // 60
-        lines.append(f"  {h:<14}  {g:>4} grinds  {p:>6} prompts  {mins:>5}m moving")
+        mins = f"{r['moving_s'] // 60}m" if r.get('moving_s') is not None else 'unknown'
+        basis = r.get('time_basis', 'moving time')
+        lines.append(f"  {h:<14}  {g:>4} runs  {p:>6} prompts  {mins} {basis}")
+        lines.append(f"    source: {r.get('source', 'saved local history')}")
     lines.append("\n  post any grind:  agentgrinder grind --push\n")
-    try:
-        from .meme import ghost_ratio
-        tag, gl = ghost_ratio(sum(r["grinds"] for r in rows), 0)
-        lines.insert(-1, f"  ghost flex · {tag}: {gl}\n")
-    except Exception:
-        pass
+    lines.append("  Sources and time definitions differ. These totals do not rank agent quality.")
     return "\n".join(lines)
 
 

@@ -66,6 +66,8 @@ def connect(path: str | None = None) -> sqlite3.Connection:
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
     conn.executescript(SCHEMA)
+    if 'project_identity' not in {r[1] for r in conn.execute('PRAGMA table_info(predictions)')}:
+        conn.execute('ALTER TABLE predictions ADD COLUMN project_identity TEXT')
     if "revision_id" not in {r[1] for r in conn.execute("PRAGMA table_info(readings)")}:
         conn.execute("ALTER TABLE readings ADD COLUMN revision_id TEXT")
     # Existing installations retain the exact measurement they previously stored. We cannot
@@ -148,22 +150,31 @@ def list_readings(conn: sqlite3.Connection, project: str, project_identity: str 
     return [dict(r) for r in rows]
 
 
-def predict(conn: sqlite3.Connection, project: str, text: str) -> dict:
+def resolve_project_identity(conn, project):
+    identities = {json.loads(r[0]).get('project_identity') for r in conn.execute('SELECT payload FROM measurement_revisions WHERE project=?',(project,))}
+    identities.discard(None)
+    if len(identities)>1:
+        raise ValueError('More than one repository has this name. Select a source measurement or run predict from the intended repository without --project.')
+    return next(iter(identities),None)
+
+
+def predict(conn: sqlite3.Connection, project: str, text: str, project_identity: str | None = None) -> dict:
     """Write down what you expect the next grind on this project to do, before it happens."""
     text = (text or "").strip()
     if not text:
         raise ValueError("a prediction needs words")
     made = _now()
-    cur = conn.execute("INSERT INTO predictions (project, text, made_at) VALUES (?,?,?)", (project, text, made))
+    project_identity = project_identity or resolve_project_identity(conn, project)
+    cur = conn.execute("INSERT INTO predictions (project, text, made_at,project_identity) VALUES (?,?,?,?)", (project, text, made,project_identity))
     conn.commit()
     return dict(id=cur.lastrowid, project=project, text=text, made_at=made)
 
 
-def take_prediction(conn: sqlite3.Connection, project: str, started: str) -> dict | None:
+def take_prediction(conn: sqlite3.Connection, project: str, started: str, project_identity: str | None = None) -> dict | None:
     """The newest unconsumed prediction on this project, made before the sitting started,
     marked as consumed by it. None when there is nothing pending."""
-    row = conn.execute("SELECT * FROM predictions WHERE project = ? AND (consumed_by IS NULL OR consumed_by = ?) "
-                       "AND made_at <= ? ORDER BY made_at DESC LIMIT 1", (project, started, started)).fetchone()
+    row = conn.execute("SELECT * FROM predictions WHERE project = ? AND project_identity IS ? AND (consumed_by IS NULL OR consumed_by = ?) "
+                       "AND made_at <= ? ORDER BY made_at DESC LIMIT 1", (project, project_identity, started, started)).fetchone()
     if row is None:
         return None
     conn.execute("UPDATE predictions SET consumed_by = ? WHERE id = ?", (started, row["id"]))

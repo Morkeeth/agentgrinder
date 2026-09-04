@@ -72,3 +72,13 @@ def choose(groups, pick=-1):
     index = len(groups)-1 if pick in (None,-1) else pick-1
     if index < 0 or index >= len(groups): raise ValueError("Choose a sitting between 1 and %d (or -1 for latest)" % len(groups))
     return groups[index]
+
+
+def read_sitting(path, harness, athlete='you', pick=-1, gap=1800):
+    """One shared session boundary for CLI, MCP and comparisons."""
+    if harness == 'claude':
+        from .solo import parse_solo
+        return parse_solo(path, athlete=athlete, pick=pick, gap=gap)
+    from .ingest import parse_codex_session, parse_cursor_session
+    parser = {'codex': parse_codex_session, 'cursor': parse_cursor_session}[harness]
+    return parser(path, athlete=athlete, records=choose(sittings(path, harness, gap), pick))

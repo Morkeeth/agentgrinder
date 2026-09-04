@@ -239,7 +239,7 @@ def test_web_app_never_headlines_prompts():
     assert "heroN:vptText(r), heroK:'verified per turn'" in src
     # the run card: headline block, five row, then prompts under COST — in that order
     card = src[src.index("function runCard("):src.index("function wireKudos(")]
-    assert card.index("${vptHtml(r)}") < card.index("${fiveRow(r)}") < card.index("cost — what the grind spent") < card.index("${r.prompts??'-'}")
+    assert card.index("${vptHtml(r)}") < card.index("${fiveRow(r)}") < card.index("Session activity") < card.index("${r.prompts??'-'}")
     assert '<div class="k">prompts</div>' not in card
     assert '<div class="k">prompts · cost</div>' in card
     # the profile totals lead with verified per turn; prompts is labelled cost

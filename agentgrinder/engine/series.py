@@ -10,7 +10,7 @@ def record_and_attach(run: dict, path: str | None = None, command: str = "agentg
     try:
         revision = log.record_run(conn, run, command=command)
         project = run.get("project") or "session"
-        pred = log.take_prediction(conn, project, run["started"])
+        pred = log.take_prediction(conn, project, run["started"],run.get('project_identity'))
         baseline = log.get_revision(conn, revision.get("baseline_revision_id"))
         comparison = ([baseline] if baseline else []) + [revision]
         p = progress(comparison, run, pred)
@@ -18,7 +18,7 @@ def record_and_attach(run: dict, path: str | None = None, command: str = "agentg
         p["revision_id"] = revision["revision_id"]
         p["baseline_revision_id"] = revision.get("baseline_revision_id")
         from ..practices import context
-        run["practice_context"] = context(conn, project)
+        run["practice_context"] = context(conn, project,run.get('project_identity'))
     finally:
         conn.close()
     run["progress"] = p

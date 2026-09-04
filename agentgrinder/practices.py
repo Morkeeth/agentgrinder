@@ -21,6 +21,11 @@ CREATE TABLE IF NOT EXISTS practice_attempts (
 
 def setup(conn):
     conn.executescript(SCHEMA)
+    if 'project_identity' not in {r[1] for r in conn.execute('PRAGMA table_info(practices)')}:
+        conn.execute('ALTER TABLE practices ADD COLUMN project_identity TEXT')
+        for row in conn.execute('SELECT id,source_revision FROM practices WHERE source_revision IS NOT NULL').fetchall():
+            source = log.get_revision(conn,row['source_revision']) or {}
+            conn.execute('UPDATE practices SET project_identity=? WHERE id=?',(source.get('project_identity'),row['id']))
 
 
 def accept(conn, project: str, title: str, expected: str = "", source_revision: str | None = None) -> dict:
@@ -28,13 +33,17 @@ def accept(conn, project: str, title: str, expected: str = "", source_revision: 
     project, title = project.strip(), title.strip()
     if not project or not title or len(title)>500 or len(expected)>2000:
         raise ValueError("A practice needs a project and a short action (up to 500 characters).")
+    identity = None
     if source_revision:
         source=log.get_revision(conn, source_revision)
         if not source or source["project"]!=project:
             raise ValueError("The source measurement must belong to this project.")
+        identity = source.get('project_identity')
+    else:
+        identity = log.resolve_project_identity(conn, project)
     row=dict(id=uuid.uuid4().hex, project=project, title=title, expected=expected,
-             source_revision=source_revision, created_at=log._now(), state="active")
-    conn.execute("INSERT INTO practices VALUES (:id,:project,:title,:expected,:source_revision,:created_at,:state)",row)
+             source_revision=source_revision, created_at=log._now(), state="active", project_identity=identity)
+    conn.execute("INSERT INTO practices(id,project,title,expected,source_revision,created_at,state,project_identity) VALUES (:id,:project,:title,:expected,:source_revision,:created_at,:state,:project_identity)",row)
     conn.commit()
     return row
 
@@ -53,6 +62,8 @@ def attach_attempt(conn, practice_id: str, revision_id: str) -> dict:
     revision=log.get_revision(conn,revision_id)
     if not practice or not revision or practice["project"]!=revision["project"]:
         raise ValueError("Choose an active practice and a measured session on the same project.")
+    if practice['project_identity'] != revision.get('project_identity'):
+        raise ValueError('Choose a practice from this repository. Use --source to bind a new practice to its measurement.')
     conn.execute("INSERT OR IGNORE INTO practice_attempts(id,practice_id,revision_id,created_at) VALUES (?,?,?,?)",
                  (uuid.uuid4().hex,practice_id,revision_id,log._now()))
     conn.commit()
@@ -81,10 +92,12 @@ def dismiss(conn, practice_id: str):
     conn.commit()
 
 
-def context(conn, project: str) -> list[dict]:
+def context(conn, project: str, project_identity: str | None = None) -> list[dict]:
     """Private card context; public exports do not include this field."""
     items=[]
     for practice in list_practices(conn,project):
+        if practice.get('project_identity') != project_identity:
+            continue
         attempts=[dict(r) for r in conn.execute("SELECT * FROM practice_attempts WHERE practice_id=? ORDER BY created_at DESC,id DESC LIMIT 3",(practice["id"],))]
         items.append(dict(practice,attempts=attempts))
     return items

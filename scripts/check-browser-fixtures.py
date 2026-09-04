@@ -22,7 +22,7 @@ with sync_playwright() as p:
     page=browser.new_page(viewport={'width':390,'height':844})
     failures=[]
     page.on('pageerror',lambda e:failures.append(str(e)))
-    style=re.search(r'<style>(.*?)</style>',(ROOT/'site/index.html').read_text(),re.S).group(1)+(ROOT/'site/social.css').read_text()
+    style=(ROOT/'site/design.css').read_text()+re.search(r'<style>(.*?)</style>',(ROOT/'site/index.html').read_text(),re.S).group(1)+(ROOT/'site/social.css').read_text()
     page.set_content('<style>'+style+'</style><div style="padding:12px;background:#fff3bb">UI TEST FIXTURE — no live users or results</div><div id="status"></div><main id="app"></main>')
     page.add_script_tag(content=(ROOT/'site/run-contract.js').read_text())
     page.add_script_tag(content=(ROOT/'site/practices.js').read_text())

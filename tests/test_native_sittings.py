@@ -43,3 +43,13 @@ def test_cursor_timezone_is_explicit():
     assert stamp.isoformat()=='2026-09-04T08:00:00+00:00'
     assert cursor_time('<timestamp>Friday, Sep 04, 2026, 10:00 AM (UTC-00:30)</timestamp>').isoformat()=='2026-09-04T10:30:00+00:00'
     assert cursor_time('<timestamp>Friday, Sep 04, 2026, 10:00 AM</timestamp>') is None
+
+
+def test_flex_counts_sittings_and_does_not_invent_a_publication_count(tmp_path):
+    from agentgrinder.flex import _native_stats, format_flex
+    row = _native_stats([str(resumed(tmp_path))], 'codex')
+    assert row['grinds'] == 2
+    assert row['moving_s'] == 180
+    text = format_flex([row])
+    assert 'elapsed session time' in text
+    assert 'ghost flex' not in text

@@ -1,0 +1,27 @@
+:root{
+  --paper:#f7f7f5;--box:#fff;--ink:#0a0a0a;--soft:#6f6f6b;--dim:#73736f;
+  --rule:#e3e3df;--rule-2:#efefec;--blue:#0047ff;--blue-soft:#c4d2ff;--blue-wash:#f2f5ff;
+  /* the old token names, aliased, so no inline style left in this file can bring the green back */
+  --bg:#f7f7f5;--card:#fff;--line:#e3e3df;--muted:#6f6f6b;
+  --accent:#0047ff;--accent-ink:#0047ff;--accent-soft:#f2f5ff;
+}
+/* Shared product surfaces, including the reading pages. */
+:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+button,input,textarea,select{font:inherit}
+button,summary{touch-action:manipulation}
+.reading-page{margin:0;background:var(--paper);color:var(--ink);font:16px/1.65 'IBM Plex Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.reading-page *{box-sizing:border-box}
+.reading-page header{border-bottom:1px solid var(--rule);padding:18px 24px;display:flex;justify-content:space-between;gap:20px}
+.reading-page header a{color:var(--ink);text-decoration:none;font-size:14px;font-weight:500}
+.reading-page main{max-width:740px;margin:auto;padding:44px 24px 80px;overflow-wrap:anywhere}
+.reading-page h1{font-size:28px;line-height:1.15;letter-spacing:-.04em;font-weight:600}
+.reading-page h2{font-size:20px;line-height:1.3;letter-spacing:-.02em;font-weight:500;margin-top:36px}
+.reading-page a{color:var(--blue);text-underline-offset:3px}
+.reading-page .muted{color:var(--soft);font-size:14px}
+.reading-page table{width:100%;border-collapse:collapse;font-size:13px;display:block;overflow-x:auto}
+.reading-page td{border-top:1px solid var(--rule);padding:12px 8px;vertical-align:top;min-width:64px}
+.reading-page code,.reading-page .mono{font:inherit;font-variant-numeric:tabular-nums}
+.reading-page code{background:var(--blue-wash);padding:2px 4px}
+.reading-page details{border:1px solid var(--rule);padding:16px;margin:24px 0;background:var(--box)}
+.reading-page summary{cursor:pointer;font-weight:500}
+@media(max-width:600px){button,.act{min-height:40px}.reading-page main{padding:28px 18px 60px}.reading-page header{padding:18px}}

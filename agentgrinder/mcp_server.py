@@ -22,7 +22,7 @@ from .push import import_url
 PROTO = "2024-11-05"
 
 SAFE_FIELDS = [
-    "harness", "project", "started", "duration_s", "turns_typed",
+    "harness", "started", "duration_s", "turns_typed",
     "tool_calls", "files_touched", "commits", "rhythm",
 ]
 
@@ -130,20 +130,21 @@ def _safe(run: dict) -> dict:
 
 
 def _load_run(harness: str = "claude") -> tuple[dict, str]:
+    from .native_sittings import read_sitting
     if harness == "cursor":
         path = ingest.latest_cursor_session()
         if not path:
             raise FileNotFoundError("no Cursor session")
-        return ingest.parse_cursor_session(path), path
+        return read_sitting(path, 'cursor'), path
     if harness == "codex":
         path = ingest.latest_codex_session()
         if not path:
             raise FileNotFoundError("no Codex session")
-        return ingest.parse_codex_session(path), path
+        return read_sitting(path, 'codex'), path
     path = ingest.latest_session()
     if not path:
         raise FileNotFoundError("no Claude Code session")
-    return ingest.parse_session(path), path
+    return read_sitting(path, 'claude'), path
 
 
 def list_sessions() -> str:
@@ -178,7 +179,7 @@ def preview_run(harness: str = "claude") -> str:
     run, _ = _load_run(harness)
     safe = _safe(run)
     return (
-        "PREVIEW — exactly what publishing would send. Numbers only.\n\n"
+        "PREVIEW — selected session counts. Nothing is sent.\n\n"
         + json.dumps(safe, indent=2)
         + "\n\nTitle/project are NOT included — human types those at publish."
     )
@@ -191,7 +192,7 @@ def a2a_export(harness: str = "claude", athlete_handle: str = "you") -> str:
         run,
         athlete_handle=athlete_handle,
         session_path=path,
-        ingest="native-cursor-jsonl" if harness == "cursor" else "native-claude-jsonl",
+        ingest=f"native-{harness}-jsonl",
     )
     return json.dumps(doc, indent=2)
 
@@ -242,9 +243,11 @@ def a2a_roast() -> str:
         return "no local session found"
     harness, path = picked
     if harness == "cursor":
-        run = parse_cursor_session(path)
+        from .native_sittings import read_sitting
+        run = read_sitting(path, harness)
     elif harness == "codex":
-        run = parse_codex_session(path)
+        from .native_sittings import read_sitting
+        run = read_sitting(path, harness)
     else:
         found = latest_grind()
         run = parse_solo(path, pick=found[1]) if found else parse_session(path)
