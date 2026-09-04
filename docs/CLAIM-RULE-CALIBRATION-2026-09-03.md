@@ -116,6 +116,78 @@ On the tuning half the new rule reads precision 0.86 and recall 0.76. The gap be
 0.63 here is what tuning buys you and a held-out half takes back. **The target set for this work was
 precision above 0.8 on the held-out half. It was not reached. 0.63 is the number.**
 
+### The three harnesses under that one number
+
+*Added 4 September 2026. The counts were always in `docs/claim-calibration.json`. Nobody had summed
+them by harness, so nobody had noticed what the headline is a blend of.*
+
+The corpus was stratified by harness as well as by session shape, and the three harnesses do not
+agree. Reproduce this table with `python3 scripts/claim-calibration-report.py`.
+
+| held-out, by harness | precision | recall | labelled | stands for |
+|---|---|---|---|---|
+| Claude Code | **0.72** (0.52 to 0.92) | **0.68** (0.49 to 0.87) | 114 | 35,033 lines, 62.9% |
+| Codex | **0.86** (0.50 to 1.00) | **0.62** (0.25 to 1.00) | 44 | 1,221 lines, 2.2% |
+| Cursor | not resolved, see below | not resolved | 40 | 19,403 lines, 34.9% |
+| all three, the headline | **0.63** (0.43 to 0.83) | **0.66** (0.46 to 0.83) | 198 | 55,657 lines, 100% |
+
+Two things fall out of that, and the second is the defect.
+
+**The headline is not a general number and it is not a Claude Code number.** It describes one
+machine's line population across three harnesses, blended by that corpus's own share of each. On
+Claude Code alone the rule reads 0.72, which is higher than the published figure, not lower. A
+reader on Claude Code is being told the rule is worse than it measures on their own transcripts.
+
+**A third of the weight behind 0.63 rests on four predicted positives.** Precision is true
+positives over predicted positives. Across the three held-out Cursor cells the rule predicted 4
+positives in total: 1 true positive and 3 false positives, alongside 3 false negatives and 33 true
+negatives, from 40 hand-labelled lines standing for 19,403. Bootstrapped, that precision runs from
+0.00 to 0.86. There is no measurement there. A point estimate would be an absence wearing a
+decimal point, so the table prints the counts and leaves the cell empty. Codex is thin too, at 7
+predicted positives, but it carries 2.2 percent of the weight and cannot move the blend.
+
+### The card never scores two of those three harnesses
+
+*Found 4 September 2026, while writing the guard for the harness-parser slice. It is the more
+serious of the two findings on this page and it supersedes the remedy the section above first
+proposed.*
+
+The claim rule runs in exactly two places in the shipped product, and both read Claude Code
+transcripts only.
+
+- `agentgrinder/ingest.py:74` builds a `ClaimTracker` inside `parse_session`, the Claude Code
+  parser. `parse_cursor_session` and `parse_codex_session` never construct one and never call
+  `assistant_text`. Their return dicts carry no `claims` key and no `claims_verified` key.
+- `agentgrinder/solo.py:457` builds the other tracker, over events collected in `_scan`, and the
+  only glob `solo.py` reads is `~/.claude/projects/*/*.jsonl`.
+
+Checked against real transcripts on the author's machine on 4 September 2026, not read off the
+code: 298 Cursor transcripts at the shipped `CURSOR_GLOB` and 65 Codex rollouts at the shipped
+globs. The newest of each parses cleanly, returns turn and tool counts, and returns no claim count.
+Rendered, a Cursor run prints a dash for verified per turn with a tooltip naming what it needs,
+which is the gate behaving correctly.
+
+**So the published figure is measured over a population 37.1 percent larger than the population it
+is ever applied to.** The number that describes what this card does is the Claude Code row: 0.72
+precision, 0.68 recall. 0.63 is the corpus-wide figure and it is the more conservative of the two.
+
+**What this changes about the fix.** More hand-labelled Cursor lines would sharpen a stratum the
+card does not score, so it is not the remedy. The remedy is to say which population the card scores,
+which is what this section and the methodology page now do. Whether the headline should move to 0.72
+with 0.63 kept as the corpus note is a ruling for the owner of the project, not a change to make
+quietly, because it raises a published score.
+
+**The seam is now held by a test.** `tests/test_claim_rule.py` asserts that the Cursor and Codex
+parsers return no claim count and that the Claude Code parser does. Wire either harness into the
+claim rule and the suite goes red, because at that moment the rule starts reading a population it
+was never calibrated on. Labelling those strata becomes the fix on that day and not before.
+
+**And the floor check is red until then.** `scripts/claim-calibration-report.py` exits non-zero when
+a stratum carrying 10 percent or more of the population weight sits under 10 predicted positives.
+Cursor sits at 4. The script names the stratum, the count and the weight, and it fails rather than
+warning, because a correct sentence in a document has to be re-read by somebody and a check does
+not.
+
 ### Said plainly
 
 The old rule was wrong about two lines in every three it called a claim, and it missed nearly two

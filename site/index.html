@@ -533,9 +533,9 @@ const fmtDur=m=>!m?'-':(m>=60?`${Math.floor(m/60)}h ${m%60}m`:`${m}m`);
 // VERIFIED PER TURN — the headline. (verified claims + artifacts produced) ÷ prompts typed.
 // Prompts are the COST (the denominator), never the headline. A part the row does not carry
 // prints an em-dash whose tooltip names who owns it; a missing part is never defaulted to 0.
-const VPT_TIP='verified per turn = (verified claims + artifacts produced) ÷ typed turns · the claim rule reads precision 0.63 and recall 0.66 on a held-out hand-labelled set, see /methodology · a rate, not a count: a count of claims moves with how much the agent talks';
+const VPT_TIP='verified per turn = (verified claims + artifacts produced) ÷ typed turns · the claim rule reads precision 0.63 and recall 0.66 on a held-out hand-labelled set, blended across three harnesses and one of the three is not measured, see /methodology · a rate, not a count: a count of claims moves with how much the agent talks';
 const VPT_SRC={
-  claims_verified:'claims that had matching evidence inside their own turn. What counts as a claim is measured: precision 0.63, recall 0.66 on a held-out hand-labelled set (/methodology). Whether a claim was matched to the right evidence is not measured yet',
+  claims_verified:'claims that had matching evidence inside their own turn. What counts as a claim is measured: precision 0.63, recall 0.66 on a held-out hand-labelled set (/methodology). That figure blends three harnesses: Claude Code reads 0.72, Cursor is not resolved and carries a third of the weight. Whether a claim was matched to the right evidence is not measured yet',
   artifacts_produced:'produced is measured: files the run wrote that exist on disk. Promised is not measured yet: nothing records what a run said it would deliver, so you cannot supply it today',
   corrections:'not measured yet: it needs every turn labelled as undoing the one before it, and no harness records that, so nothing on your machine can supply it today',
   reach:'did the output cross to a person who is not the author: read from the commits in the window, your remotes and their push refs. A dash whenever the machine cannot tell'};

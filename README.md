@@ -143,7 +143,31 @@ distinct Edit/Write paths that exist on disk when the transcript is parsed.
 labelled against a rubric written before the sample was opened, split by session into a tuning half
 and a held-out half. On the held-out half the rule reads **precision 0.63 and recall 0.66**, against
 0.32 and 0.37 for the vocabulary regex it replaces. We aimed for precision above 0.8 and did not
-reach it. Method, intervals, per-cell counts and what it still gets wrong:
+reach it.
+
+**What that figure describes, and the stratum it hides.** It is one machine's line population across
+three harnesses, blended by that corpus's own share of each, so it is neither a general number nor a
+Claude Code number. Split out: Claude Code reads 0.72 precision and 0.68 recall over 114 labelled
+lines standing for 62.9% of the weight, Codex reads 0.86 and 0.62 over 44 lines standing for 2.2%,
+and **Cursor is not resolved**. The rule predicted 4 positives in total across the held-out Cursor
+lines, 1 true and 3 false, from 40 labelled lines standing for 34.9% of the weight, and a precision
+from 4 predicted positives has a 95% interval of 0.00 to 0.86. So a third of the weight behind 0.63
+is unmeasured, and it is the third dragging the blend below Claude Code's own 0.72.
+
+**And the card only ever scores one of those three.** The claim rule runs in two places,
+`ingest.parse_session` and `solo.py`, and both read Claude Code transcripts only.
+`parse_cursor_session` and `parse_codex_session` return no claim count at all, checked on 4 September
+2026 against the 298 Cursor transcripts and 65 Codex rollouts on the author's machine at the paths
+this tool ships with. A Cursor run's card prints a dash for verified per turn and names what is
+missing, which is correct. It also means the published 0.63 is measured over a population 37.1%
+larger than the one it is applied to, and the figure describing what the card does is the Claude Code
+row, 0.72 and 0.68. The conservative number stays the headline until the project owner rules
+otherwise, because raising your own published score is not a quiet edit. More Cursor labelling is not
+the fix; it would sharpen a stratum nothing scores. A test holds that seam and goes red the day
+either parser starts feeding the claim rule. `python3 scripts/claim-calibration-report.py` reproduces
+every figure here and **exits non-zero**, naming the thin stratum. The check is red on purpose.
+
+Method, intervals, per-cell counts and what it still gets wrong:
 [`docs/CLAIM-RULE-CALIBRATION-2026-09-03.md`](docs/CLAIM-RULE-CALIBRATION-2026-09-03.md) and
 [`docs/claim-calibration.json`](docs/claim-calibration.json). What is **not** measured: whether a
 claim was matched to the *right* evidence. A generic `N passed` in a turn still verifies any claim

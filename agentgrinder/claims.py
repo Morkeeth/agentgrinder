@@ -7,6 +7,14 @@ half and a held-out half. On the half it was never tuned on this rule reads prec
 recall 0.66, against 0.32 and 0.37 for the rule it replaces. Numbers, the design, and the error bars:
 docs/CLAIM-RULE-CALIBRATION-2026-09-03.md, counts in docs/claim-calibration.json.
 
+THAT HEADLINE IS A BLEND, and one of the three strata under it is not measured (added 4 Sep 2026).
+Split by harness on the held-out half: Claude Code 0.72 precision / 0.68 recall over 114 labelled
+lines carrying 62.9% of the population weight; Codex 0.86 / 0.62 over 44 lines carrying 2.2%; Cursor
+NOT RESOLVED, because the rule predicted 4 positives in total there (1 true, 3 false) from 40 lines
+carrying 34.9%, and a precision off 4 predicted positives runs 0.00 to 0.86. So 0.63 sits BELOW
+Claude Code's own 0.72, dragged down by a stratum nobody has labelled enough of. Reproduce it all
+with scripts/claim-calibration-report.py, which exits non-zero while that stratum is thin.
+
   claim     = a line of assistant TEXT whose sentences assert, as accomplished fact, that work in
               this session is finished, correct, or checked (`is_claim_line`). Headings, table rows,
               labels that introduce a list, questions, plans, intentions, conditions, imperatives,
