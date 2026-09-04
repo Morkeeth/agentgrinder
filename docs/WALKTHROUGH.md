@@ -133,10 +133,16 @@ not a thing this project does quietly.
 
 ## What the numbers deliberately do not mean
 
-- **Verified does not mean correct.** A claim is verified when a tool result *in its own human
-  turn* carries a matching token. Whether it was matched to the *right* evidence has no label set,
-  so the verified share carries one measured error and one unmeasured one. A generic `N passed` in
-  a turn still verifies any claim beside it.
+- **Verified does not mean correct, and four in five verifications rest on the weaker rule.** A
+  claim is verified when a tool result *in its own human turn* carries a matching token. There are
+  two ways that can happen, and they are not equally strong: a test name or file path taken from
+  the claim line appearing in a result, or just a generic `N passed` / `OK` / `exit 0` somewhere in
+  the turn. Whether either match was *right* has no label set. But which one fired is countable,
+  and over 1,516 transcripts, 13,126 claims and 5,806 verified: **1,245 by the strong rule (21.4%)
+  and 4,561 by the generic one alone (78.6%)**. Only 13.2% of claims name a test or a file at all,
+  so for most of them there is nothing stronger to match on. That is the size of the open question,
+  not an answer: it does not say those verifications are wrong. Run
+  `python3 scripts/evidence-branch-report.py` on your own machine and you get your own split.
 - **The claim rule scores Claude Code sessions only.** On a Cursor or Codex run the card prints a
   dash for verified per turn, and hovering it says what is missing. Those cards do carry real files
   touched, commits, artifacts and reach, read from your own transcript.

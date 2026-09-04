@@ -173,6 +173,14 @@ Method, intervals, per-cell counts and what it still gets wrong:
 claim was matched to the *right* evidence. A generic `N passed` in a turn still verifies any claim
 beside it, so read the share as one measured half and one unmeasured half.
 
+**How big the unmeasured half is.** Which of the two evidence rules fires is a code path, not a
+judgement, so it is countable without labelling anything. Over 1,516 Claude Code transcripts on one
+machine, 13,126 claims and 5,806 verified: **1,245 (21.4%) were verified by a test name or file path
+taken from the claim line, and 4,561 (78.6%) only by a generic passing token somewhere in the turn.**
+The reason sits upstream of the matcher: only 1,732 claims, 13.2%, name a test or a file at all, so
+for the rest there is nothing stronger to match on. That is the size of the open question, not an
+answer to it: it does not say those verifications are wrong. `python3 scripts/evidence-branch-report.py`.
+
 **Why the headline is a rate, not a count.** Over 308 held-out sittings the claim count correlates
 +0.80 with how many tokens the agent wrote, and counting distinct verified artefacts instead does
 not fix it (+0.56). Verified per turn reads +0.32 and the verified share +0.20, because

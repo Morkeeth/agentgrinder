@@ -97,6 +97,21 @@ talkativeness sits in both halves of a ratio and divides out.</p>
 <p><b>Still unmeasured, so you know.</b> Whether a claim was matched to the <i>right</i> evidence has
 no label set yet. The claim count now carries a measured error; the verified share carries that plus
 one we have not measured.</p>
+<p><b>And here is how big that unmeasured part is.</b> Answering it properly needs labelling. But
+which of the two evidence rules fires is a fact about the code path, not a judgement, so it can be
+counted. Over 1,516 Claude Code transcripts on one machine, 13,126 claims, 5,806 of them verified:</p>
+<table>
+<tr><td><b>what verified the claim</b></td><td><b>claims</b></td><td><b>share of verified</b></td></tr>
+<tr><td>a test name or file path <i>from the claim line</i> appeared in a result</td><td class="mono">1,245</td><td class="mono">21.4%</td></tr>
+<tr><td>only a generic passing token in the turn: "N passed", "OK", "exit 0"</td><td class="mono">4,561</td><td class="mono">78.6%</td></tr>
+</table>
+<p>So roughly four in five verifications rest on the weaker rule, where nothing connects the
+evidence to the claim and one passing suite in a turn verifies everything beside it. The reason is
+mostly upstream of the matcher: only <b>1,732 of 13,126 claims, 13.2%, name a test or a file at
+all</b>, so for the rest there is nothing for the stronger rule to match on.</p>
+<p><b>Read that as the size of the question, not its answer.</b> It does not say four in five
+verifications are wrong. It says four in five rest on a rule whose accuracy nobody has measured.
+Reproduce it with <code>python3 scripts/evidence-branch-report.py</code>.</p>
 
 <h2>What we will not fake</h2>
 <p>We never compare your metrics to a top engineer's <i>session</i> metrics, because those are private,
