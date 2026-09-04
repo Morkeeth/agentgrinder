@@ -1,4 +1,8 @@
-"""Split native transcripts at observed idle gaps before human turns."""
+"""Split Codex at observed idle gaps and Cursor at dated human-turn gaps.
+
+Cursor assistant records often have no clock: a human-turn gap is not evidence
+that its agent was idle. The positional trace does not imply elapsed tool time.
+"""
 import json
 import re
 from datetime import datetime, timezone, timedelta

@@ -13,8 +13,8 @@ url = re.search(r'const SB_URL="([^"]+)"', html).group(1)
 key = re.search(r'const SB_KEY="([^"]+)"', html).group(1)
 
 
-def read(table, params):
-    req = urllib.request.Request(url+'/rest/v1/'+table+'?'+urllib.parse.urlencode(params), headers={'apikey':key})
+def read(table, params, extra_headers=None):
+    req = urllib.request.Request(url+'/rest/v1/'+table+'?'+urllib.parse.urlencode(params), headers={'apikey':key, **(extra_headers or {})})
     try:
         with urllib.request.urlopen(req, timeout=20) as response:
             return response.status, json.load(response)
@@ -24,6 +24,7 @@ def read(table, params):
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--private-run', help='an existing private test run that anonymous callers must not read')
+parser.add_argument('--link-run', help='an existing link-only test run: hidden from collection reads, readable with its ID')
 args = parser.parse_args()
 queries = set()
 for name in ('site/index.html', 'site/social.js'):
@@ -41,4 +42,9 @@ assert status == 200 and body == [], 'Rollback test profiles remain or the check
 if args.private_run:
     status, body = read('runs', {'select':'id','id':'eq.'+args.private_run})
     assert status == 200 and body == [], 'Private run was exposed or the check failed'
+if args.link_run:
+    status, body = read('runs', {'select':'id','visibility':'eq.link'})
+    assert status == 200 and body == [], 'Link-only collection was exposed or the check failed'
+    status, body = read('runs', {'select':'id','id':'eq.'+args.link_run}, {'x-grinder-run-id':args.link_run})
+    assert status == 200 and body == [{'id':args.link_run}], 'Known link was not readable'
 print(f'Hosted checks passed: {len(queries)} actual run query shapes; anonymous access denied on private tables; rollback profiles absent; private run checked={bool(args.private_run)}')

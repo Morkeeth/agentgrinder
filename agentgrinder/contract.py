@@ -23,6 +23,8 @@ def validate_run(run: dict) -> dict:
     if duration is not None and (type(duration) not in (int, float) or not math.isfinite(duration) or duration < 0):
         raise ValueError("duration_s must be a finite non-negative number or unknown.")
     claims, verified = run.get("claims"), run.get("claims_verified")
+    if verified is not None and claims is None:
+        raise ValueError("Verified claims require a counted-claims total.")
     if claims is not None and verified is not None and verified > claims:
         raise ValueError("Verified claims cannot exceed the claims counted.")
     return run

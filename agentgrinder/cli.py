@@ -410,16 +410,16 @@ def main(argv=None) -> int:
                 print(format_feed(public_feed(args.limit)))
             return 0
         if args.a2cmd == "export":
-            if args.harness == "cursor":
-                p = latest_cursor_session()
-                if not p:
-                    print("no Cursor session"); return 1
-                run = parse_cursor_session(p)
-            else:
-                p = latest_session()
-                if not p:
-                    print("no Claude session"); return 1
-                run = parse_session(p)
+            from .ingest import latest_codex_session
+            from .native_sittings import read_sitting
+            p = {'claude': latest_session, 'cursor': latest_cursor_session,
+                 'codex': latest_codex_session}[args.harness]()
+            if not p:
+                print(f"No {args.harness} session"); return 1
+            try:
+                run = read_sitting(p, args.harness)
+            except ValueError as error:
+                print(str(error)); return 1
             run["rig"] = detect_rig()
             print(json.dumps(export_grind(run, athlete_handle=args.handle, session_path=p), indent=2))
             return 0
@@ -617,8 +617,7 @@ def _load_latest_run(session: str | None = None) -> dict | None:
 def _grind(args) -> int:
     """`agentgrinder grind` — one ordinary session, the wide door.
 
-    The verb is `grind` because the brand book names the noun (§4: Grind; "run/route/lap" are
-    retired). `run` still resolves here so nothing that already works stops working.
+    `grind` and `run` are compatible names for the same local reader.
     """
     from .solo import parse_solo, latest_grind, human_sittings
     from .solocard import render_solo_card

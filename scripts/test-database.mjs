@@ -63,7 +63,12 @@ async function denied(sql, params = []) {
   }
   assert(caught, "Expected server denial: " + sql);
 }
+await denied(`select grinder_check_agent_payload('{"claims_verified":1}')`);
+await denied(`select grinder_check_agent_payload('{"claims_verified":0,"claims":null}')`);
+await db.query(`select grinder_check_agent_payload('{"claims_verified":0,"claims":0}')`);
+
 await as(userA);
+await denied("update runs set claims_verified=1,claims=null where id=$1",[runA]);
 const crew = (await db.query("select grinder_create_crew('Test crew') id"))
   .rows[0].id;
 assert.equal(
@@ -264,7 +269,7 @@ await db.query("select grinder_enter_challenge($1,$2,$3)", [
 await denied("select grinder_submit_challenge($1,$2)", [entryA, runA]);
 await db.exec("reset role");
 await db.query(
-  "update runs set visibility='public',measurement_revision=$2,claims_verified=1,started_at=now(),rig_revision=$3 where id=$1",
+  "update runs set visibility='public',measurement_revision=$2,claims=10,claims_verified=1,started_at=now(),rig_revision=$3 where id=$1",
   [runA, "a".repeat(64), rigA],
 );
 await as(userA);
@@ -542,6 +547,24 @@ await anonymous();
 assert.equal((await db.query('select id from runs where id=$1',[ghost])).rows.length,0);
 await as(userB);
 assert.equal((await db.query('select id from runs where id=$1',[ghost])).rows.length,0);
+// Link collections and ACKs cannot reveal private activity IDs.
+await as(userA);
+const secretLink=(await db.query("insert into runs(profile_id,title,visibility) values($1,'Link fixture','link') returning id",[userA])).rows[0].id;
+await anonymous();
+assert.equal((await db.query("select id from runs where visibility='link'")).rows.length,0);
+assert.equal((await db.query('select grinder_can_read_run($1) yes',[secretLink])).rows[0].yes,false);
+await db.query("select set_config('request.headers',$1,false)",[JSON.stringify({'x-grinder-run-id':secretLink})]);
+assert.equal((await db.query('select id from runs where id=$1',[secretLink])).rows.length,1);
+assert.equal((await db.query('select grinder_can_read_run($1) yes',[secretLink])).rows[0].yes,true);
+await db.query("select set_config('request.headers','{}',false)");
+await db.exec('reset role');
+const privateAckRun=(await db.query("insert into runs(profile_id,title,visibility) values($1,'Private ACK fixture','public') returning id",[userC])).rows[0].id;
+const privateAck=(await db.query("insert into acks(run_id,from_profile,to_profile,reason) values($1,$2,$3,'shipped') returning id",[privateAckRun,userA,userC])).rows[0].id;
+await db.query("update runs set visibility='private' where id=$1",[privateAckRun]);
+await anonymous();
+assert.equal((await db.query("select id from acks where id=$1",[privateAck])).rows.length,0);
+await as(userC);
+assert.equal((await db.query("select id from acks where id=$1",[privateAck])).rows.length,1);
 // The per-owner limit survives issuing another token. Replays still work at the limit.
 await as(userA);
 const secondAccess=(await db.query("select grinder_issue_agent_token($1,array['publish'],array['public'],now()+interval '1 day') value",[actor])).rows[0].value;

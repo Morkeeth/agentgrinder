@@ -45,3 +45,20 @@ def test_connection_refuses_to_replace_an_existing_definition(tmp_path):
     target.write_text(original)
     assert main(['connect','claude','--project',str(tmp_path),'--install']) == 1
     assert target.read_text() == original
+
+
+def test_connection_stays_local_to_git_checkout(tmp_path):
+    subprocess.run(['git', 'init', '-q', str(tmp_path)], check=True)
+    assert main(['connect', 'claude', '--project', str(tmp_path), '--install']) == 0
+    ignored = subprocess.run(['git', '-C', str(tmp_path), 'check-ignore', '.mcp.json'], capture_output=True, text=True)
+    assert ignored.returncode == 0
+    assert ignored.stdout.strip() == '.mcp.json'
+
+
+def test_connection_refuses_tracked_machine_paths(tmp_path):
+    subprocess.run(['git', 'init', '-q', str(tmp_path)], check=True)
+    target = tmp_path / '.mcp.json'
+    target.write_text('{}')
+    subprocess.run(['git', '-C', str(tmp_path), 'add', '.mcp.json'], check=True)
+    assert main(['connect', 'claude', '--project', str(tmp_path), '--install']) == 1
+    assert target.read_text() == '{}'

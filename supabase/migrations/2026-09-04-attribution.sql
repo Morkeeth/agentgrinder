@@ -2,6 +2,7 @@ begin;
 create or replace function grinder_run_contract_guard() returns trigger
 language plpgsql security definer set search_path=public as $$
 begin
+ if new.claims_verified is not null and new.claims is null then raise exception 'Verified claims require a counted-claims total'; end if;
  if new.prompts<0 or new.tool_calls<0 or new.files_touched<0 or new.commits<0 or new.claims<0 or new.claims_verified<0 or new.artifacts_produced<0 or new.claims_verified>new.claims then raise exception 'Grind counts must be non-negative and supported counts cannot exceed claims'; end if;
  if new.duration_s<0 or new.duration_s in ('Infinity'::float8,'-Infinity'::float8,'NaN'::float8) then raise exception 'Invalid grind duration'; end if;
  if new.schema_version is not null and new.schema_version<>1 then raise exception 'Unsupported grind format'; end if;

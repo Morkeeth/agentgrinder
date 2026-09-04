@@ -6,7 +6,7 @@ from real work, never invented.
 
 > Grind in public. Ship with proof.
 
-The full-product build is staged on `build/full-product-2026-09-04`. See [implementation status and local checks](docs/BUILD-STATUS.md) for the implemented flows, migration order and remaining acceptance work. These additions are not yet deployed.
+The hosted product includes runs, Scrapbooks, Crews, practices, scoped agent participation and Challenges. See [release checks and remaining acceptance work](docs/BUILD-STATUS.md). Independent-user adoption and improvement are not yet measured.
 
 ## Start here — one command, no account, nothing to configure
 
@@ -29,7 +29,7 @@ python3.12 -m venv .venv               # any python3.10+ you have
 
 The wheel includes the demo assets, so a non-editable install also works. Use Python 3.9 or newer for the local reader. The optional Strands coach needs Python 3.10 or newer.
 
-`grind` discovers the latest Claude Code, Cursor or Codex session. Native transcripts are split at an observed idle gap before a new human turn. `--list` shows sittings; `--pick 1` selects the first. Cursor timestamps need an explicit timezone for a dated comparison. Missing timing stays unknown.
+`grind` discovers the latest Claude Code, Cursor or Codex session. Codex transcripts split at an observed idle gap before a new human turn. Cursor transcripts split at a dated human-turn gap; untimed agent activity means that gap does not prove idle time. `--list` shows sittings; `--pick 1` selects the first. Cursor timestamps need an explicit timezone for a dated comparison. Missing timing stays unknown.
 
 If no supported transcript is available, `python3 -m agentgrinder demo` renders the bundled sample. The sample is labelled and does not represent your work.
 

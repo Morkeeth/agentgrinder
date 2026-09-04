@@ -9,6 +9,7 @@ numbers of a run sit under it in one row; every Strava-shaped number (prompts, m
 effort, cadence) is kept, grouped as COST. A dash carries a tooltip naming the tool that owns it.
 """
 from __future__ import annotations
+from .brand import CARD_THEME
 
 from html import escape
 
@@ -70,18 +71,13 @@ def render_card(a: Activity) -> str:
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{a.athlete} · {a.title} — AGENTGRINDER</title>
 <style>
-  :root {{
-    --bg:#f4f5f7; --card:#ffffff; --ink:#14171f; --muted:#69707d; --line:#e6e8ec;
-    --accent:#fc5200; /* the run-orange */
-  }}
-  @media (prefers-color-scheme:dark){{:root:not([data-theme="light"]){{
-    --bg:#0d0f13; --card:#161a21; --ink:#eef1f5; --muted:#98a1af; --line:#252b35; --accent:#ff6a2b;
-  }}}}
+  {CARD_THEME}
+
   *{{box-sizing:border-box}} body{{margin:0;background:var(--bg);color:var(--ink);
-    font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    font:15px/1.5 "IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     display:flex;justify-content:center;padding:28px 16px}}
   .card{{width:100%;max-width:560px;background:var(--card);border:1px solid var(--line);
-    border-radius:18px;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,.08)}}
+    border-radius:2px;overflow:hidden;box-shadow:none}}
   .top{{display:flex;align-items:center;gap:12px;padding:18px 20px 12px}}
   .avatar{{width:42px;height:42px;border-radius:50%;background:var(--accent);color:#fff;
     display:grid;place-items:center;font-weight:700;font-size:18px}}
@@ -177,9 +173,10 @@ def render_profile(p: dict) -> str:
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{gh.get("name")} — AGENTGRINDER profile</title>
 <style>
-  :root{{--bg:#0d0f13;--card:#161a21;--line:#252b35;--ink:#eef1f5;--muted:#98a1af;--accent:#ff6a2b;}}
+  {CARD_THEME}
+
   *{{box-sizing:border-box}} body{{margin:0;background:var(--bg);color:var(--ink);
-    font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:24px 14px;
+    font:15px/1.5 "IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:24px 14px;
     display:flex;justify-content:center}}
   .wrap{{width:100%;max-width:640px}}
   .hero{{display:flex;gap:16px;align-items:center;margin-bottom:18px}}
@@ -188,14 +185,14 @@ def render_profile(p: dict) -> str:
   .hero h1{{margin:0;font-size:24px}} .hero .bio{{color:var(--muted);font-size:13.5px}}
   .hero .brand{{margin-left:auto;font-weight:800;letter-spacing:.08em;color:var(--muted);font-size:12px}}
   .stats{{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
-    border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:12px}}
+    border:1px solid var(--line);border-radius:2px;overflow:hidden;margin-bottom:12px}}
   .s{{background:var(--card);padding:14px}} .s .v{{font-size:22px;font-weight:720}}
   .s .k{{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}}
   .s.hl .v{{color:var(--accent)}} .s.hl{{cursor:help}}
   .cost{{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em;margin:0 2px 14px}}
   .rm .hl{{color:var(--accent);font-weight:700;cursor:help}} .rm .cost{{color:var(--muted)}}
   .row2{{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}}
-  .panel{{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}}
+  .panel{{background:var(--card);border:1px solid var(--line);border-radius:2px;padding:14px}}
   .panel h3{{margin:0 0 8px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}}
   .panel ul{{margin:0;padding-left:16px;font-size:13.5px}} .panel .chip{{font-size:13px}}
   h2.feed{{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:6px 0 10px}}

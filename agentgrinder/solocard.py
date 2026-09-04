@@ -1,12 +1,6 @@
 """THE GRIND CARD — one ordinary session, made postable.
 
-Vocabulary note, and it is a real doc-vs-code defect this file fixes rather than repeats: the
-brand book (`docs/AGENT-GRINDER-BRANDBOOK.md` §4, named canonical by hack.md) retires
-"run/route/lap" as top-level terms and names the noun **Grind** and the mark **the grind trace**.
-The shipped code says `run`, `nightrun`, "THE SESSION ROUTE". A product printing a word its own
-canonical source retires is the same class of defect as a card printing a number its source
-contradicts, so the solo path -- the front door -- uses the canonical words: the command is
-`agentgrinder grind` (`run` still works), and the drawing is THE GRIND TRACE.
+Runs are the product noun; grind remains the compatible CLI command. The trace is the signature visual across local cards and the network.
 
 THE NUMBER AT THE TOP IS VERIFIED PER TURN, never the prompt count. Prompts are the cost of a
 grind (the denominator); a card whose first big number is "47 prompts" crowns the person who
@@ -18,6 +12,7 @@ what is missing, not a zero. `metrics.headline_of` is the one definition every s
 Every sentence here names what it counted and over which population, or prints an em-dash.
 """
 from __future__ import annotations
+from .brand import CARD_THEME
 
 import os
 from datetime import datetime
@@ -302,49 +297,44 @@ def render_solo_card(run: dict, title: str | None = None, ranks: dict | None = N
 <title>{_esc(run["athlete"])} · {h_title} — AGENT GRINDER</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root{{--bg:#f2f3f5;--card:#fff;--ink:#12151b;--muted:#5d6572;--faint:#8d94a1;--line:#e3e6ea;
-    --grid:#eef0f3;--accent:#fc4c02;--ship:#1a8f4c;}}
-  @media (prefers-color-scheme:dark){{:root:not([data-theme="light"]){{
-    --bg:#0b0d11;--card:#14181f;--ink:#eef1f5;--muted:#98a1af;--faint:#6d7684;--line:#232a34;
-    --grid:#1b212a;--accent:#ff6a2b;--ship:#3ecf7a;}}}}
-  :root[data-theme="dark"]{{--bg:#0b0d11;--card:#14181f;--ink:#eef1f5;--muted:#98a1af;
-    --faint:#6d7684;--line:#232a34;--grid:#1b212a;--accent:#ff6a2b;--ship:#3ecf7a;}}
+  {CARD_THEME}
+
   *{{box-sizing:border-box}}
   body{{margin:0;background:var(--bg);color:var(--ink);padding:26px 14px;display:flex;
-    justify-content:center;font:15px/1.55 "Archivo",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}}
+    justify-content:center;font:15px/1.55 "IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}}
   .card{{width:100%;max-width:1040px;background:var(--card);border:1px solid var(--line);
-    border-radius:14px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,.10)}}
+    border-radius:2px;overflow:hidden;box-shadow:none}}
   .top{{display:flex;align-items:center;gap:12px;padding:18px 22px 8px}}
   .av{{width:38px;height:38px;border-radius:50%;background:var(--accent);color:#fff;font-weight:800;
     display:grid;place-items:center;font-size:17px}}
   .who b{{font-weight:700}}
   .who small{{display:block;color:var(--faint);font-size:11.5px;white-space:nowrap;
-    font-family:"Space Mono",ui-monospace,Menlo,monospace}}
+    font-family:"IBM Plex Sans",system-ui,sans-serif}}
   .brand{{margin-left:auto;font-weight:800;letter-spacing:.13em;color:var(--faint);font-size:11px}}
   h1{{margin:6px 22px 2px;font-size:27px;line-height:1.16;letter-spacing:-.018em;font-weight:800}}
   .pb{{display:inline-block;vertical-align:middle;margin-left:11px;font-size:11px;font-weight:700;
     color:var(--accent);border:1px solid var(--accent);border-radius:999px;padding:3px 10px;
-    font-family:"Space Mono",ui-monospace,Menlo,monospace;letter-spacing:.02em;white-space:nowrap}}
+    font-family:"IBM Plex Sans",system-ui,sans-serif;letter-spacing:.02em;white-space:nowrap}}
   .prog{{padding:8px 22px 0;font-size:12.5px;color:var(--muted)}}
-  .prog b{{color:var(--ink);font-family:"Space Mono",ui-monospace,Menlo,monospace}}
+  .prog b{{color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif}}
   .prog .q{{color:var(--faint)}}
-  .prog .mono{{font-family:"Space Mono",ui-monospace,Menlo,monospace}}
+  .prog .mono{{font-family:"IBM Plex Sans",system-ui,sans-serif}}
   .sub{{padding:0 22px 4px;color:var(--muted);font-size:13px}}
   .sub .q{{color:var(--faint);font-style:italic}}
   .callout{{margin:14px 22px 0;padding:12px 15px;border-left:3px solid var(--accent);
     background:var(--bg);font-size:13.5px;line-height:1.62;color:var(--muted)}}
-  .callout b{{color:var(--ink);font-family:"Space Mono",ui-monospace,Menlo,monospace;font-weight:700}}
+  .callout b{{color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif;font-weight:700}}
   .hl{{display:flex;align-items:baseline;gap:14px;padding:14px 22px 10px;cursor:help}}
-  .hl .n{{font:800 46px/1 "Space Mono",ui-monospace,Menlo,monospace;letter-spacing:-.04em;color:var(--accent)}}
+  .hl .n{{font:800 46px/1 "IBM Plex Sans",system-ui,sans-serif;letter-spacing:-.04em;color:var(--accent)}}
   .hl .lbl{{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em}}
   .hl .f{{display:block;font-size:12px;color:var(--faint);text-transform:none;letter-spacing:0;
-    font-family:"Space Mono",ui-monospace,Menlo,monospace}}
+    font-family:"IBM Plex Sans",system-ui,sans-serif}}
   .fiverow{{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--line);
     border-top:1px solid var(--line);border-bottom:1px solid var(--line)}}
   .five{{background:var(--card);padding:10px 8px 9px;text-align:center;cursor:help}}
-  .five .v{{font:700 15px/1.2 "Space Mono",ui-monospace,Menlo,monospace;letter-spacing:-.01em;white-space:nowrap}}
+  .five .v{{font:700 15px/1.2 "IBM Plex Sans",system-ui,sans-serif;letter-spacing:-.01em;white-space:nowrap}}
   .five .k{{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;
     margin-top:3px;line-height:1.25}}
   .five[data-missing] .v{{color:var(--muted);font-weight:400}}
@@ -354,7 +344,7 @@ def render_solo_card(run: dict, title: str | None = None, ranks: dict | None = N
   .grp{{padding:12px 22px 0;font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.14em}}
   .verdict{{padding:10px 22px 4px;font-size:13.5px;line-height:1.55}}
   .verdict .who{{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.14em;margin-bottom:4px}}
-  .verdict .who b{{color:var(--ink);font-family:"Space Mono",ui-monospace,Menlo,monospace;text-transform:none;letter-spacing:0}}
+  .verdict .who b{{color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif;text-transform:none;letter-spacing:0}}
   .verdict ul{{margin:6px 0 0;padding-left:18px}} .verdict li{{margin:2px 0}}
   .verdict .prog{{margin:8px 0 0;padding:8px 10px;border-left:3px solid var(--accent);background:var(--card);
     color:var(--muted);font-size:12.5px}} .verdict .prog b{{color:var(--ink)}}
@@ -362,24 +352,24 @@ def render_solo_card(run: dict, title: str | None = None, ranks: dict | None = N
   .stats{{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
     border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-top:8px}}
   .stat{{background:var(--card);padding:14px 18px}}
-  .stat .v{{font:700 25px/1.1 "Space Mono",ui-monospace,Menlo,monospace;letter-spacing:-.02em}}
+  .stat .v{{font:700 25px/1.1 "IBM Plex Sans",system-ui,sans-serif;letter-spacing:-.02em}}
   .stat .k{{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:4px}}
   .stat .src{{font-size:10.5px;color:var(--faint);margin-top:5px;
-    font-family:"Space Mono",ui-monospace,Menlo,monospace}}
+    font-family:"IBM Plex Sans",system-ui,sans-serif}}
   .maphead{{display:flex;align-items:baseline;gap:14px;padding:18px 22px 0;flex-wrap:wrap}}
   .maphead h2{{margin:0;font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted)}}
   .maphead .note{{font-size:11.5px;color:var(--faint);
-    font-family:"Space Mono",ui-monospace,Menlo,monospace}}
+    font-family:"IBM Plex Sans",system-ui,sans-serif}}
   .mapwrap{{padding:6px 22px 4px;overflow-x:auto}}
   .mapwrap.phonewrap{{display:none;overflow:visible}}
   svg.routemap{{display:block;width:100%;min-width:620px;height:auto}}
   svg.routemap.phone{{min-width:0}}
   .grid{{stroke:var(--grid);stroke-width:1}}
   .stretch{{fill:var(--accent);opacity:.065}}
-  .slabel{{fill:var(--accent);font:700 10.5px "Space Mono",ui-monospace,Menlo,monospace;letter-spacing:.04em}}
+  .slabel{{fill:var(--accent);font:700 10.5px "IBM Plex Sans",system-ui,sans-serif;letter-spacing:.04em}}
   .trunk{{stroke:var(--ink);stroke-width:1.5}}
   .tick{{stroke:var(--ink);stroke-width:2;opacity:.85}}
-  .tlabel{{fill:var(--ink);font:700 13px "Space Mono",ui-monospace,Menlo,monospace}}
+  .tlabel{{fill:var(--ink);font:700 13px "IBM Plex Sans",system-ui,sans-serif}}
   .hair{{stroke:var(--line);stroke-width:1}}
   .path{{fill:none;stroke:var(--accent);stroke-width:1.05;opacity:.3;stroke-linejoin:round}}
   .hair.faint{{opacity:.6}}
@@ -392,17 +382,17 @@ def render_solo_card(run: dict, title: str | None = None, ranks: dict | None = N
   .cap.late{{fill:var(--card);stroke:var(--ship);stroke-width:1.5;opacity:.8}}
   .flag{{stroke:var(--ship);stroke-width:1.6}}
   .pennant{{fill:var(--ship)}}
-  .rtag{{fill:var(--ink);font:700 11.5px "Space Mono",ui-monospace,Menlo,monospace}}
+  .rtag{{fill:var(--ink);font:700 11.5px "IBM Plex Sans",system-ui,sans-serif}}
   .rtag.faint{{fill:var(--faint);font-weight:400}}
   .rnote{{fill:var(--faint);font-weight:400}}
-  .gl{{fill:var(--faint);font:10px "Space Mono",ui-monospace,Menlo,monospace}}
+  .gl{{fill:var(--faint);font:10px "IBM Plex Sans",system-ui,sans-serif}}
   .profill{{fill:var(--accent);opacity:.13}}
   .profline{{fill:none;stroke:var(--accent);stroke-width:1.6;stroke-linejoin:round}}
   .base{{stroke:var(--line);stroke-width:1}}
-  .plabel{{fill:var(--muted);font:11px "Space Mono",ui-monospace,Menlo,monospace}}
-  .pmax{{fill:var(--faint);font:10px "Space Mono",ui-monospace,Menlo,monospace}}
+  .plabel{{fill:var(--muted);font:11px "IBM Plex Sans",system-ui,sans-serif}}
+  .pmax{{fill:var(--faint);font:10px "IBM Plex Sans",system-ui,sans-serif}}
   .legend{{display:flex;flex-wrap:wrap;gap:15px;padding:2px 22px 16px;font-size:11.5px;
-    color:var(--muted);font-family:"Space Mono",ui-monospace,Menlo,monospace}}
+    color:var(--muted);font-family:"IBM Plex Sans",system-ui,sans-serif}}
   .legend i{{display:inline-block;vertical-align:middle;margin-right:6px;font-style:normal}}
   .se{{width:22px;height:0;border-top:5px solid var(--accent);display:inline-block;vertical-align:middle}}
   .sp{{width:22px;height:0;border-top:1.5px solid var(--accent);opacity:.4;display:inline-block;vertical-align:middle}}
@@ -418,21 +408,21 @@ def render_solo_card(run: dict, title: str | None = None, ranks: dict | None = N
   .dead{{margin:0 22px 16px;padding:11px 14px;border-left:3px solid var(--accent);background:var(--bg);
     font-size:12.5px;color:var(--muted);line-height:1.6}}
   .dead.ok{{border-left-color:var(--ship)}}
-  .dead b{{color:var(--ink);font-family:"Space Mono",ui-monospace,Menlo,monospace}}
-  .dead .mono{{font-family:"Space Mono",ui-monospace,Menlo,monospace}}
-  .dead code{{font-family:"Space Mono",ui-monospace,Menlo,monospace;font-size:11.5px;color:var(--ink)}}
+  .dead b{{color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif}}
+  .dead .mono{{font-family:"IBM Plex Sans",system-ui,sans-serif}}
+  .dead code{{font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:11.5px;color:var(--ink)}}
   .dead .q{{color:var(--faint)}}
   .honest{{background:var(--bg);border-top:1px solid var(--line);padding:15px 22px;
     font-size:12px;color:var(--muted);line-height:1.65}}
-  .honest b{{color:var(--ink);font-family:"Space Mono",ui-monospace,Menlo,monospace;font-weight:700}}
-  .honest .mono{{font-family:"Space Mono",ui-monospace,Menlo,monospace}}
+  .honest b{{color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif;font-weight:700}}
+  .honest .mono{{font-family:"IBM Plex Sans",system-ui,sans-serif}}
   ul.tally{{margin:8px 0;padding-left:0;list-style:none}}
   ul.tally li{{padding:2px 0 2px 14px;border-left:2px solid var(--line);margin-bottom:3px}}
   .repro{{display:block;margin-top:9px;color:var(--faint);font-size:11px;
-    font-family:"Space Mono",ui-monospace,Menlo,monospace;word-break:break-all}}
+    font-family:"IBM Plex Sans",system-ui,sans-serif;word-break:break-all}}
   .foot{{display:flex;align-items:center;gap:8px;padding:13px 22px;border-top:1px solid var(--line);
     color:var(--muted);font-size:12.5px}}
-  .foot .tag{{margin-left:auto;font-family:"Space Mono",ui-monospace,Menlo,monospace;color:var(--faint)}}
+  .foot .tag{{margin-left:auto;font-family:"IBM Plex Sans",system-ui,sans-serif;color:var(--faint)}}
   /* Below 760 the desktop trace is retired outright and the phone layout takes over. It was
      kept, scaled and scrolled, until 31 Aug: measured in a real 390px iframe, that put 14 of
      grind-deep's file-path labels outside the scroller at the card's own opening scroll. */

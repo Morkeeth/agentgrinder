@@ -4,6 +4,7 @@ Every printed sentence on this surface is a claim, so each one names what it cou
 which population. Where a number cannot be traced it prints an em-dash, never a guess.
 """
 from __future__ import annotations
+from .brand import CARD_THEME
 
 from datetime import datetime
 
@@ -122,22 +123,12 @@ def render_fleet_card(run: dict, title: str | None = None) -> str:
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{title} — AGENT GRINDER</title>
 <style>
-  :root{{
-    --bg:#f2f1ed; --card:#fffefb; --ink:#15181c; --muted:#6b7280; --faint:#a8adb6;
-    --line:#e3e2dc; --accent:#fc5200; --ship:#15181c; --grid:#eceae3;
-  }}
-  @media (prefers-color-scheme:dark){{:root:not([data-theme="light"]){{
-    --bg:#0b0d10; --card:#12151a; --ink:#eef1f5; --muted:#8b95a3; --faint:#5a636f;
-    --line:#1e232b; --accent:#ff6a2b; --ship:#eef1f5; --grid:#171b21;
-  }}}}
-  :root[data-theme="dark"]{{
-    --bg:#0b0d10; --card:#12151a; --ink:#eef1f5; --muted:#8b95a3; --faint:#5a636f;
-    --line:#1e232b; --accent:#ff6a2b; --ship:#eef1f5; --grid:#171b21;
-  }}
+  {CARD_THEME}
+
   *{{box-sizing:border-box}}
   html,body{{max-width:100%;overflow-x:hidden}}
   body{{margin:0;background:var(--bg);color:var(--ink);
-    font:15px/1.5 "Archivo",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    font:15px/1.5 "IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
     display:flex;justify-content:center;padding:26px 14px}}
   .card{{width:100%;min-width:0;max-width:1040px;background:var(--card);border:1px solid var(--line);
     border-radius:6px;overflow:hidden}}
@@ -149,29 +140,29 @@ def render_fleet_card(run: dict, title: str | None = None) -> str:
     display:grid;place-items:center;font-weight:800;font-size:17px}}
   .who b{{font-weight:700;letter-spacing:-.01em}}
   .who small{{color:var(--muted);display:block;font-size:12.5px;overflow-wrap:anywhere;
-    font-family:"Space Mono",ui-monospace,SFMono-Regular,Menlo,monospace}}
+    font-family:"IBM Plex Sans",system-ui,sans-serif}}
   .handoff{{overflow-wrap:anywhere}}
   .brand{{margin-left:auto;font-weight:800;letter-spacing:.14em;color:var(--faint);font-size:11px}}
   h1{{margin:0;padding:0 22px 2px;font-size:21px;font-weight:700;letter-spacing:-.015em}}
   .sub{{padding:2px 22px 16px;color:var(--muted);font-size:13px;overflow-wrap:anywhere;
-    font-family:"Space Mono",ui-monospace,Menlo,monospace}}
+    font-family:"IBM Plex Sans",system-ui,sans-serif}}
   .stats{{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
     border-top:1px solid var(--line);border-bottom:1px solid var(--line)}}
   /* a grid item's default min-width is min-content, so one long mono source line under a stat
      pushed the whole card wider than a 390px screen and clipped the wordmark clean off. */
   .stat{{background:var(--card);padding:15px 18px;min-width:0;overflow-wrap:anywhere}}
   .stat .v{{font-size:25px;font-weight:700;letter-spacing:-.02em;
-    font-family:"Space Mono",ui-monospace,Menlo,monospace}}
+    font-family:"IBM Plex Sans",system-ui,sans-serif}}
   .stat .k{{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.09em;margin-top:2px}}
   .stat .src{{font-size:10.5px;color:var(--faint);margin-top:5px;
-    font-family:"Space Mono",ui-monospace,Menlo,monospace}}
+    font-family:"IBM Plex Sans",system-ui,sans-serif}}
   .handoff{{margin:16px 22px 0;padding:12px 15px;border-left:3px solid var(--accent);
     background:var(--bg);font-size:13.5px;line-height:1.6;color:var(--muted)}}
-  .handoff b{{color:var(--ink);font-family:"Space Mono",ui-monospace,Menlo,monospace;font-weight:700}}
+  .handoff b{{color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif;font-weight:700}}
   .maphead{{display:flex;align-items:baseline;gap:14px;padding:18px 22px 0}}
   .maphead h2{{margin:0;font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted)}}
   .maphead .note{{font-size:11.5px;color:var(--faint);
-    font-family:"Space Mono",ui-monospace,Menlo,monospace}}
+    font-family:"IBM Plex Sans",system-ui,sans-serif}}
   .mapwrap{{padding:6px 22px 4px;overflow-x:auto}}
   svg.routemap{{display:block;width:100%;min-width:660px;height:auto}}
   svg.routemap.phone{{min-width:0}}
@@ -179,43 +170,43 @@ def render_fleet_card(run: dict, title: str | None = None) -> str:
   .grid{{stroke:var(--grid);stroke-width:1}}
   .band{{fill:var(--bg);opacity:.62}}
   .wave{{stroke:var(--accent);stroke-width:1;opacity:.16}}
-  .wl{{fill:var(--faint);font:9.5px "Space Mono",ui-monospace,Menlo,monospace;letter-spacing:.02em}}
+  .wl{{fill:var(--faint);font:9.5px "IBM Plex Sans",system-ui,sans-serif;letter-spacing:.02em}}
   .crail{{stroke:var(--line);stroke-width:1;opacity:.75}}
-  .rtag{{fill:var(--ink);font:700 11.5px "Space Mono",ui-monospace,Menlo,monospace}}
+  .rtag{{fill:var(--ink);font:700 11.5px "IBM Plex Sans",system-ui,sans-serif}}
   .rnote{{fill:var(--faint);font-weight:400}}
-  .lcode{{fill:var(--accent);font:700 10px "Space Mono",ui-monospace,Menlo,monospace}}
-  .gl{{fill:var(--faint);font:10px "Space Mono",ui-monospace,Menlo,monospace}}
-  .rlabel{{fill:var(--muted);font:11.5px "Space Mono",ui-monospace,Menlo,monospace}}
+  .lcode{{fill:var(--accent);font:700 10px "IBM Plex Sans",system-ui,sans-serif}}
+  .gl{{fill:var(--faint);font:10px "IBM Plex Sans",system-ui,sans-serif}}
+  .rlabel{{fill:var(--muted);font:11.5px "IBM Plex Sans",system-ui,sans-serif}}
   .rlabel.recon{{fill:var(--faint);font-style:italic}}
-  .rlabel2{{fill:var(--muted);font:11px "Space Mono",ui-monospace,Menlo,monospace}}
+  .rlabel2{{fill:var(--muted);font:11px "IBM Plex Sans",system-ui,sans-serif}}
   .brk{{fill:none;stroke:var(--line);stroke-width:1.2}}
   .trunk{{stroke:var(--ink);stroke-width:1.6}}
   .trunk.gone{{stroke:var(--faint);stroke-width:1.2;stroke-dasharray:2 5}}
   .hline{{stroke:var(--accent);stroke-width:1.1;stroke-dasharray:3 4;opacity:.7}}
-  .hlabel{{fill:var(--accent);font:700 11px "Space Mono",ui-monospace,Menlo,monospace;
+  .hlabel{{fill:var(--accent);font:700 11px "IBM Plex Sans",system-ui,sans-serif;
     letter-spacing:.04em}}
   .tick{{stroke:var(--ink);stroke-width:1.7;opacity:.8}}
-  .tlabel{{fill:var(--ink);font:700 13px "Space Mono",ui-monospace,Menlo,monospace}}
+  .tlabel{{fill:var(--ink);font:700 13px "IBM Plex Sans",system-ui,sans-serif}}
   .fork{{fill:none;stroke:var(--accent);stroke-width:1.1;opacity:.34}}
   .hfork{{fill:none;stroke:var(--ink);stroke-width:1;opacity:.22}}
   .seg.human{{stroke:var(--ink);opacity:.55}}
   .ltag.human{{fill:var(--faint)}}
   .seg{{stroke:var(--accent);stroke-linecap:round;opacity:.92}}
-  .ltag{{fill:var(--muted);font:10px "Space Mono",ui-monospace,Menlo,monospace}}
+  .ltag{{fill:var(--muted);font:10px "IBM Plex Sans",system-ui,sans-serif}}
   .cap.ship{{fill:var(--accent)}}
   .cap.spur{{fill:var(--card);stroke:var(--accent);stroke-width:1.4;opacity:.8}}
   .profill{{fill:var(--accent);opacity:.13}}
   .profline{{fill:none;stroke:var(--accent);stroke-width:1.8;stroke-linejoin:round}}
   .base{{stroke:var(--line);stroke-width:1}}
-  .plabel{{fill:var(--muted);font:11px "Space Mono",ui-monospace,Menlo,monospace}}
-  .pmax{{fill:var(--faint);font:10px "Space Mono",ui-monospace,Menlo,monospace}}
+  .plabel{{fill:var(--muted);font:11px "IBM Plex Sans",system-ui,sans-serif}}
+  .pmax{{fill:var(--faint);font:10px "IBM Plex Sans",system-ui,sans-serif}}
   .rail{{stroke:var(--line);stroke-width:1}}
   .flag{{stroke:var(--ship);stroke-width:1.7;opacity:.85}}
   .legend{{display:flex;flex-wrap:wrap;gap:16px;padding:4px 22px 16px;font-size:11.5px;
-    color:var(--muted);font-family:"Space Mono",ui-monospace,Menlo,monospace}}
+    color:var(--muted);font-family:"IBM Plex Sans",system-ui,sans-serif}}
   .legend i{{display:inline-block;vertical-align:middle;margin-right:6px;font-style:normal}}
   .cav{{font-weight:400;color:var(--faint);text-transform:none;letter-spacing:0;font-size:11px;
-    font-family:"Space Mono",ui-monospace,Menlo,monospace}}
+    font-family:"IBM Plex Sans",system-ui,sans-serif}}
   .sw{{width:22px;height:0;border-top:3px solid var(--accent);display:inline-block;vertical-align:middle}}
   .sh{{width:22px;height:0;border-top:3px solid var(--ink);opacity:.55;display:inline-block;vertical-align:middle}}
   .sf{{width:2px;height:13px;background:var(--ship);display:inline-block;vertical-align:middle}}
@@ -228,18 +219,18 @@ def render_fleet_card(run: dict, title: str | None = None) -> str:
   section h3{{margin:0 0 10px;font-size:10.5px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted)}}
   .chips{{display:flex;flex-wrap:wrap;gap:7px}}
   .chip{{border:1px solid var(--line);border-radius:3px;padding:4px 9px;font-size:12px;
-    font-family:"Space Mono",ui-monospace,Menlo,monospace;color:var(--muted)}}
+    font-family:"IBM Plex Sans",system-ui,sans-serif;color:var(--muted)}}
   .chip b{{color:var(--ink);margin-left:7px}}
   .chip.untracked b{{color:var(--faint)}}
   .chip.quiet{{opacity:.5}}
   table{{width:100%;border-collapse:collapse;font-size:12.5px;
-    font-family:"Space Mono",ui-monospace,Menlo,monospace}}
+    font-family:"IBM Plex Sans",system-ui,sans-serif}}
   td{{padding:5px 8px 5px 0;border-bottom:1px solid var(--line);white-space:nowrap}}
-  td.l{{white-space:normal;color:var(--ink);font-family:"Archivo",-apple-system,sans-serif;width:99%}}
+  td.l{{white-space:normal;color:var(--ink);font-family:"IBM Plex Sans",-apple-system,sans-serif;width:99%}}
   td.c{{width:38px}}
   td.c.w{{color:var(--faint);font-weight:400;
-    font-family:"Space Mono",ui-monospace,Menlo,monospace}}
-  td.l b{{color:var(--accent);font-family:"Space Mono",ui-monospace,Menlo,monospace;
+    font-family:"IBM Plex Sans",system-ui,sans-serif}}
+  td.l b{{color:var(--accent);font-family:"IBM Plex Sans",system-ui,sans-serif;
     font-weight:700;margin-right:2px}}
   td.m{{color:var(--muted);text-align:right}}
   td.d{{color:var(--faint);padding-left:12px}}
@@ -248,15 +239,15 @@ def render_fleet_card(run: dict, title: str | None = None) -> str:
   th.m{{text-align:right}} th.d{{padding-left:12px}}
   .honest{{background:var(--bg);border-top:1px solid var(--line);padding:15px 22px;
     font-size:12px;color:var(--muted);line-height:1.65}}
-  .honest b{{color:var(--ink);font-family:"Space Mono",ui-monospace,Menlo,monospace;font-weight:700}}
-  .honest .mono{{font-family:"Space Mono",ui-monospace,Menlo,monospace}}
+  .honest b{{color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif;font-weight:700}}
+  .honest .mono{{font-family:"IBM Plex Sans",system-ui,sans-serif}}
   ul.tally{{margin:8px 0 8px;padding-left:0;list-style:none}}
   ul.tally li{{padding:2px 0 2px 14px;border-left:2px solid var(--line);margin-bottom:3px}}
   .repro{{display:block;margin-top:9px;color:var(--faint);font-size:11px;
-    font-family:"Space Mono",ui-monospace,Menlo,monospace;word-break:break-all}}
+    font-family:"IBM Plex Sans",system-ui,sans-serif;word-break:break-all}}
   .foot{{display:flex;align-items:center;gap:8px;padding:13px 22px;border-top:1px solid var(--line);
     color:var(--muted);font-size:12.5px}}
-  .foot .tag{{margin-left:auto;font-family:"Space Mono",ui-monospace,Menlo,monospace;color:var(--faint)}}
+  .foot .tag{{margin-left:auto;font-family:"IBM Plex Sans",system-ui,sans-serif;color:var(--faint)}}
   @media (max-width:760px){{
     .gl{{font-size:15px}} .rlabel{{font-size:16px}} .rlabel2{{font-size:15px}}
     .tlabel{{font-size:18px}} .ltag{{font-size:14px}} .plabel{{font-size:15px}}

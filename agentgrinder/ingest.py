@@ -373,7 +373,7 @@ def parse_cursor_session(path: str, athlete: str = "you", records=None) -> dict:
         "parser_version": "cursor-sittings-2026-09-05" if records is not None else "cursor-timezone-2026-09-05",
         "project_identity": project_identity(repo_root or os.path.dirname(os.path.dirname(os.path.dirname(path)))),
         "started": (min(pts).isoformat() if pts else None),
-        "trace_basis": "typed-turn order; spacing is not elapsed time",
+        "trace_basis": "typed-turn order; spacing is not elapsed time; sessions split on human-turn gaps, not measured idle",
         "capabilities": {"timed_trace": False, "claim_evidence": False, "authorship": True},
         "duration_s": dur, "turns_typed": typed, "tool_calls": tool_calls,
         "files_touched": len(files) if files else None,

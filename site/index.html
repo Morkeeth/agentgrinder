@@ -361,7 +361,7 @@ footer{max-width:1320px;margin:0 auto;padding:20px 24px 40px;color:var(--dim);fo
   <main class="main" id="app"></main>
   <aside class="side" id="side"></aside>
 </div>
-<footer>Your agent runs, shared on your terms. &middot; <a href="/privacy">Privacy</a> &middot; <a href="/terms">Terms</a><span id="deletewrap" hidden> &middot; <a href="#" id="delete">Delete my data</a></span></footer>
+<footer>Your agent runs, shared on your terms. &middot; <a href="/privacy">Privacy</a> &middot; <a href="/terms">Terms</a><span id="deletewrap" hidden> &middot; <a href="#" id="delete">Delete my Grinder profile</a></span></footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="/run-contract.js"></script>
@@ -445,7 +445,14 @@ function skeletonCard(){
 }
 const status=(m,e)=>{const s=$('status');s.textContent=m||'';s.className=e?'err':'';};
 if(!window.supabase) status("Couldn't load, refresh.",true);
-const sb=window.supabase&&window.supabase.createClient(SB_URL,SB_KEY);
+// Link-only reads carry the ID the visitor opened; collection reads cannot enumerate them.
+async function grinderFetch(input, options={}){
+  const headers=new Headers(options.headers || (input instanceof Request ? input.headers : undefined));
+  const runId=new URLSearchParams(location.search).get('run');
+  if(runId && /^[a-f0-9-]{36}$/i.test(runId)) headers.set('x-grinder-run-id',runId);
+  return fetch(input,{...options,headers});
+}
+const sb=window.supabase&&window.supabase.createClient(SB_URL,SB_KEY,{global:{fetch:grinderFetch}});
 let ME=null;
 const social=GrinderSocial({client:sb,me:()=>ME,app:()=>$('app'),frame,status,
   renderRuns:async runs=>{noteTraces(runs);const ad=await ackData(runs);setTimeout(()=>{wireKudos();countUp()},0);return runs.map(r=>runCard(r,ad.mine.has(r.id),ad.counts[r.id])).join('')}});
@@ -1554,7 +1561,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     const {data:{session}}=await sb.auth.getSession();
     if(session){await sb.auth.signOut();location.href='/';return;}
     showSignIn(); });
-  $('delete').addEventListener('click',async e=>{e.preventDefault(); if(!ME)return; if(!confirm('Delete your profile and owned work? Shared submitted results can remain without your profile. Transfer shared Crews and hosted Challenges first. Cannot be undone.'))return;
+  $('delete').addEventListener('click',async e=>{e.preventDefault(); if(!ME)return; if(!confirm('Delete your Grinder profile and owned work? Shared submitted results and your sign-in account remain. Transfer shared Crews and hosted Challenges first. Deleted work cannot be restored.'))return;
     const {error}=await sb.from('profiles').delete().eq('id',ME.id); if(error){status(error.message,true);return;} await sb.auth.signOut(); location.href='/'; });
   if(sb){ refreshAuth().then(route); sb.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_OUT'||event==='USER_UPDATED'||(event==='SIGNED_IN'&&session?.user?.id!==ME?.auth_uid))setTimeout(()=>refreshAuth().then(route),0)}); } else route();
 });

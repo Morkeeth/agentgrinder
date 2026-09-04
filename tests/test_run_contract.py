@@ -11,6 +11,7 @@ def test_legacy_runs_remain_readable_without_inventing_missing_counts():
 
 @pytest.mark.parametrize("run", [{"schema_version": 2}, {"claims": True},
                                  {"commits": -1}, {"claims": 1, "claims_verified": 2},
+                                 {"claims_verified": 1}, {"claims": None, "claims_verified": 0},
                                  {"duration_s": float("nan")}])
 def test_bad_imports_are_rejected(run):
     with pytest.raises(ValueError):

@@ -4,6 +4,7 @@ Fixed 1200×630 canvas (OG / X / LinkedIn). Every number on the card must be pas
 nothing is invented here.
 """
 from __future__ import annotations
+from .brand import CARD_THEME
 
 import html
 import os
@@ -45,8 +46,8 @@ def _rhythm_svg(rhythm: list | None, w: int = 420, h: int = 100) -> str:
     return (
         f'<svg viewBox="0 0 {w} {h}" width="{w}" height="{h}" '
         f'xmlns="http://www.w3.org/2000/svg">'
-        f'<polygon points="{poly}" fill="#1c6a46" fill-opacity="0.10"/>'
-        f'<polyline points="{pts}" fill="none" stroke="#1c6a46" stroke-width="2.8" '
+        f'<polygon points="{poly}" fill="var(--accent)" fill-opacity="0.10"/>'
+        f'<polyline points="{pts}" fill="none" stroke="var(--accent)" stroke-width="2.8" '
         f'stroke-linejoin="round"/></svg>'
     )
 
@@ -140,18 +141,18 @@ def render_share_card(
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>@{_esc(handle)} · Agent Grinder</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root{{ --bg:#ece9df; --card:#fbfaf6; --ink:#1c1913; --muted:#726c5e; --line:#d8d4c8;
-    --accent:#1c6a46; --accent-ink:#134e33; --disp:"Archivo",system-ui,sans-serif; --mono:"Space Mono",monospace; }}
+  {CARD_THEME}
+
   *{{box-sizing:border-box;margin:0;padding:0}}
-  html,body{{height:100%;background:#1a1916}}
+  html,body{{height:100%;background:var(--bg)}}
   body{{display:grid;place-items:center;padding:24px;font-family:var(--disp);color:var(--ink)}}
-  .frame{{width:1200px;height:630px;background:var(--bg);border-radius:18px;overflow:hidden;
-    box-shadow:0 24px 80px rgba(0,0,0,.45);display:flex;flex-direction:column}}
+  .frame{{width:1200px;height:630px;background:var(--bg);border-radius:2px;overflow:hidden;
+    box-shadow:none;display:flex;flex-direction:column}}
   .main{{flex:1;display:grid;grid-template-columns:1fr 1.05fr;min-height:0}}
   .left{{padding:44px 40px 28px;display:flex;flex-direction:column;justify-content:space-between;
-    border-right:1px solid var(--line);background:linear-gradient(165deg,#f7f5ef 0%,#f0ede4 100%)}}
+    border-right:1px solid var(--line);background:var(--card)}}
   .brand{{font-weight:800;font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}}
   .handle-row{{display:flex;align-items:flex-start;gap:20px;margin-top:28px}}
   .av{{width:72px;height:72px;border-radius:16px;background:var(--accent);color:#fff;
@@ -163,7 +164,7 @@ def render_share_card(
     letter-spacing:.22em;padding:7px 18px;border-radius:5px;background:rgba(28,106,70,.06)}}
   .vibe{{margin-top:16px;font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-ink)}}
   .vibe-line{{margin-top:4px;font-size:14px;color:var(--muted);line-height:1.45;max-width:400px;font-weight:500;text-transform:none;letter-spacing:0}}
-  .roast{{margin-top:14px;padding:12px 14px;border-left:3px solid #a14b5e;background:rgba(161,75,94,.06);
+  .roast{{margin-top:14px;padding:12px 14px;border-left:3px solid var(--accent);background:var(--accent-soft);
     font-size:13.5px;line-height:1.55;color:var(--muted)}}
   .roast b{{color:var(--ink);font-weight:700}}
   .lead{{margin-top:22px;font-size:20px;font-weight:700;letter-spacing:-.02em}}
@@ -180,16 +181,16 @@ def render_share_card(
   .stat .v{{font-family:var(--mono);font-size:22px;font-weight:700;letter-spacing:-.02em}}
   .stat .k{{font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-top:4px}}
   .curve-wrap{{margin:10px 0 16px;display:flex;justify-content:flex-end}}
-  .stub{{height:118px;background:repeating-linear-gradient(135deg,#e8e5db,#e8e5db 10px,#e2dfd4 10px,#e2dfd4 11px);
-    border-top:2px dashed #c8c4b8;display:flex;align-items:center;justify-content:space-between;
+  .stub{{height:118px;background:var(--bg);
+    border-top:2px dashed var(--line);display:flex;align-items:center;justify-content:space-between;
     padding:0 44px;position:relative}}
   .stub::before,.stub::after{{content:'';position:absolute;top:-9px;width:18px;height:18px;
-    background:#1a1916;border-radius:50%}}
+    background:var(--bg);border-radius:50%}}
   .stub::before{{left:28px}} .stub::after{{right:28px}}
   .stub .cta{{font-size:26px;font-weight:900;letter-spacing:-.03em;text-transform:uppercase}}
   .stub .cta span{{color:var(--accent)}}
   .stub .url{{font-family:var(--mono);font-size:15px;color:var(--muted);font-weight:700}}
-  .hint{{text-align:center;margin-top:16px;font-size:13px;color:#8a8578;font-family:var(--mono)}}
+  .hint{{text-align:center;margin-top:16px;font-size:13px;color:var(--muted);font-family:var(--mono)}}
   @media print{{body{{background:#fff;padding:0}} .hint{{display:none}}}}
 </style></head><body>
 <div class="frame">
@@ -222,7 +223,7 @@ def render_share_card(
     <div class="url">{_esc(claim_url.replace('https://', ''))}</div>
   </div>
 </div>
-<p class="hint">screenshot this card · share anywhere · <a href="{_esc(onboard_url)}" style="color:#1c6a46">claim yours</a></p>
+<p class="hint">screenshot this card · share anywhere · <a href="{_esc(onboard_url)}" style="color:var(--accent)">claim yours</a></p>
 </body></html>"""
 
 

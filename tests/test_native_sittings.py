@@ -53,3 +53,17 @@ def test_flex_counts_sittings_and_does_not_invent_a_publication_count(tmp_path):
     text = format_flex([row])
     assert 'elapsed session time' in text
     assert 'ghost flex' not in text
+
+
+def test_a2a_export_selects_codex_and_latest_sitting(tmp_path, monkeypatch, capsys):
+    import agentgrinder.ingest as ingest
+    path = resumed(tmp_path)
+    monkeypatch.setattr(ingest, 'latest_codex_session', lambda: str(path))
+    monkeypatch.setattr(ingest, 'latest_session', lambda: None)
+    monkeypatch.setattr(ingest, 'detect_rig', lambda: {})
+    assert main(['a2a', 'export', '--harness', 'codex']) == 0
+    doc = json.loads(capsys.readouterr().out)
+    assert doc['harness'] == 'codex'
+    assert doc['duration_s'] == 120
+    assert doc['turns_typed'] == 1
+    assert doc['source']['ingest'] == 'native-codex-jsonl'

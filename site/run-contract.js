@@ -34,6 +34,8 @@
         run.duration_s < 0)
     )
       throw new Error("Invalid grind duration.");
+    if (run.claims_verified != null && run.claims == null)
+      throw new Error("Verified claims require a counted-claims total.");
     if (
       run.claims != null &&
       run.claims_verified != null &&
