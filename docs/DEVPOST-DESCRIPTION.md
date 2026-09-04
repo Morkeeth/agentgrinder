@@ -186,7 +186,7 @@ count. The site is at **https://agentgrinder.vercel.app**.
 - **The card scores one of those three harnesses, and the published figure covers all three.** The
   claim rule runs in two places, `ingest.parse_session` and `solo.py`, and both read Claude Code
   transcripts only. `parse_cursor_session` and `parse_codex_session` return no claim count, checked
-  on 4 September 2026 against the 298 Cursor transcripts and 65 Codex rollouts on this machine at
+  on 4 September 2026 against the 298 Cursor transcripts and 81 Codex rollouts on this machine at
   the paths the tool ships with. A Cursor run's card prints a dash for verified per turn and its
   tooltip names what is missing, which is the gate working. It also means **0.63 is measured over a
   line population 37.1% larger than the population it is ever applied to**, and the figure that

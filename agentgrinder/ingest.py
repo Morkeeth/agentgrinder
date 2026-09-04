@@ -428,8 +428,19 @@ def codex_session_files() -> list[str]:
 
 
 def latest_codex_session() -> str | None:
-    files = codex_session_files()
-    return files[0] if files else None
+    """The newest Codex rollout THAT A PERSON TYPED IN, newest first.
+
+    It used to return `files[0]`, the newest rollout by modification time, whether or not anybody
+    typed in it. Codex writes a rollout for work with no human turn in it at all, so on 4 Sep 2026
+    the newest file on this machine had zero typed turns, `parse_codex_session` raised, and the
+    CLI printed a Python traceback at a person who had done nothing wrong. Skipping to the newest
+    rollout with a human turn is what the Claude Code path has always done through
+    `human_sittings`. `None` still means there is nothing to read, and the CLI says so in words.
+    """
+    for path in codex_session_files():
+        if _codex_count(path):
+            return path
+    return None
 
 
 def _codex_count(path: str) -> tuple[int, int] | None:

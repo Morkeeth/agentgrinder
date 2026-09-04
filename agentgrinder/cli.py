@@ -630,11 +630,18 @@ def _grind(args) -> int:
         path = args.session or latest_codex_session()
         if not path:
             from .ingest import CODEX_GLOBS
-            print("\n  no Codex session found. Searched:")
+            print("\n  no Codex session with a human turn in it. Searched:")
             for g in CODEX_GLOBS:
                 print(f"      {g}")
             print("\n  try:  python3 -m agentgrinder demo\n"); return 1
-        run = parse_codex_session(path, athlete=args.athlete)
+        try:
+            run = parse_codex_session(path, athlete=args.athlete)
+        except ValueError as e:
+            # A named --session with no typed turn used to reach the user as a raw traceback.
+            print(f"\n  {e}"
+                  "\n  A rollout with no human turn has no cost to divide by, so there is no"
+                  "\n  card to draw. Run without --session to take the newest one you typed in.\n")
+            return 1
         out = Path(args.out)
         out.write_text(render_card(build_activity(run)), encoding="utf-8")
         print(f"\n  Codex card -> {out}"

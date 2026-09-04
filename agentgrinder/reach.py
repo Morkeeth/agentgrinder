@@ -332,7 +332,8 @@ def reach_of(repo_root: str | None, since: datetime, until: datetime,
 # on every session and stamps an ISO timestamp on every record, so it has both a repository and a
 # window. Neither harness is the reason any more; the reason is a fact about the session, and the
 # parsers now pick the sentence that is actually true of it.
+# Only Cursor still needs an entry. Codex records a cwd and a timestamp on every session, so its
+# parser always has a fact to name and picks the exact sentence itself.
 HARNESS_LIMIT = {
     "Cursor": R_NO_FILES,      # no cwd recorded, and nothing written inside a work tree
-    "Codex": R_CWD_NOT_REPO,   # a cwd on every session, but often not inside a work tree
 }

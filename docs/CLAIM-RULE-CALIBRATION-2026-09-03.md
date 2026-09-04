@@ -162,7 +162,7 @@ transcripts only.
   only glob `solo.py` reads is `~/.claude/projects/*/*.jsonl`.
 
 Checked against real transcripts on the author's machine on 4 September 2026, not read off the
-code: 298 Cursor transcripts at the shipped `CURSOR_GLOB` and 65 Codex rollouts at the shipped
+code: 298 Cursor transcripts at the shipped `CURSOR_GLOB` and 81 Codex rollouts at the shipped
 globs. The newest of each parses cleanly, returns turn and tool counts, and returns no claim count.
 Rendered, a Cursor run prints a dash for verified per turn with a tooltip naming what it needs,
 which is the gate behaving correctly.

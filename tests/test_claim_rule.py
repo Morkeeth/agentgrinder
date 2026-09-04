@@ -271,6 +271,10 @@ def test_the_two_non_claude_parsers_return_no_claim_count():
                 f"{fn.__name__} returned a claim count for {os.path.basename(path)}")
             checked += 1
             break
-    # No transcripts on this machine is not a pass. The source-level assertion above still holds,
-    # and this records how much of the check was live.
-    assert checked >= 0
+    # `assert checked >= 0` sat here first, which is a line that cannot fail: a check nobody has
+    # seen go red, under a docstring promising it never quietly passes. A machine with no Cursor
+    # and no Codex transcripts skips instead, out loud.
+    if checked < 2:
+        import pytest
+        pytest.skip(f"only {checked} of the two harnesses have a transcript on this machine; "
+                    "the source-level assertion in the test above still holds")

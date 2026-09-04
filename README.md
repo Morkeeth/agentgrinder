@@ -102,7 +102,7 @@ fewest human decisions into the most verified, delivered work — distance = ver
 | Verified-claims share | run number | of the agent's claims, the fraction with tool evidence in the same trace | **yes**, and calibrated (`claims.py`, rule below): the claim side reads precision 0.63, recall 0.66 on a held-out hand-labelled set | the evidence side has no label set yet, so the share carries one measured error and one unmeasured one |
 | Correction rate | run number | typed turns that correct the agent ÷ typed turns | **not measured yet** — prints `—` | every turn labelled as undoing the one before it. No harness records that, so nothing on your machine can supply it today |
 | Produced ÷ promised | run number | deliverables that exist at their path ÷ deliverables the run named | produced **v0**; promised **not measured yet**, prints `—` | a record of what the run said it would deliver. Nothing records it, so you cannot supply it today |
-| Reach | run number | did the output cross to a person who is not the author | **yes on Claude Code** (`reach.py`): true, false, or `—` when the machine cannot tell | on Cursor and Codex: the repository and the session window their transcripts do not carry |
+| Reach | run number | did the output cross to a person who is not the author | **yes on all three harnesses** (`reach.py`): true, false, or `—` when the machine cannot tell | when it prints `—`, the hover names the fact that is missing for that session: no commit in the window, a working directory that is gone, a session run outside a git work tree, or nothing written inside one |
 | Moving time · pace · effort · segments · commits · cadence | cost group | unchanged from the v1 card | yes | — |
 
 A `—` is never blank: hover it and the tooltip says, in plain words, which fact is missing and
@@ -157,7 +157,7 @@ is unmeasured, and it is the third dragging the blend below Claude Code's own 0.
 **And the card only ever scores one of those three.** The claim rule runs in two places,
 `ingest.parse_session` and `solo.py`, and both read Claude Code transcripts only.
 `parse_cursor_session` and `parse_codex_session` return no claim count at all, checked on 4 September
-2026 against the 298 Cursor transcripts and 65 Codex rollouts on the author's machine at the paths
+2026 against the 298 Cursor transcripts and 81 Codex rollouts on the author's machine at the paths
 this tool ships with. A Cursor run's card prints a dash for verified per turn and names what is
 missing, which is correct. It also means the published 0.63 is measured over a population 37.1%
 larger than the one it is applied to, and the figure describing what the card does is the Claude Code
