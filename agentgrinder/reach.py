@@ -54,6 +54,13 @@ NO_GH = "AGENTGRINDER_NO_GH"
 R_NO_REPO = "not measured yet: this harness does not name the repository a session worked in, so a crossing cannot be traced"
 R_NO_WINDOW = "not measured yet: this harness stamps no times on a transcript, so the session window a commit would have to land in cannot be drawn"
 R_NO_COMMITS = "not measured yet: no commit landed inside this window, so nothing could have crossed"
+# Added 4 Sep 2026. Cursor and Codex used to share one blanket sentence blaming the harness. Both
+# halves of it were false at the object: Cursor's transcript carries absolute file paths, and
+# Codex records a cwd on every session. The real causes are these, and each names a fact about
+# THIS session rather than a limitation of the tool that produced it.
+R_CWD_GONE = "not measured yet: the directory this session ran in is no longer on this machine, so its commits cannot be looked up"
+R_CWD_NOT_REPO = "not measured yet: this session ran outside any git work tree, so there are no commits to trace"
+R_NO_FILES = "not measured yet: this session wrote no file inside a git work tree, and this harness records no working directory, so the repository cannot be identified"
 R_NO_REMOTE = "{n} commits, and this repository has no remote configured: the work never left this machine"
 R_LOCAL_ONLY = "{n} commits, and none of them is on any remote: the work never left this machine"
 R_FOREIGN = "a commit from this window is on a remote the author does not own"
@@ -318,7 +325,15 @@ def reach_of(repo_root: str | None, since: datetime, until: datetime,
 
 # What each harness that is NOT Claude Code can supply today. Both are None, and each says why
 # in its own words: a dash that names the missing fact is a pointer, a bare dash is a shrug.
+# WHAT EACH HARNESS CANNOT SUPPLY, and the sentence its dash prints. Rewritten 4 Sep 2026: the
+# previous two entries were measured claims that had stopped being true. Cursor's transcript does
+# carry absolute file paths (2,279 of them across the 298 transcripts on the author's machine), so
+# a repository can be found from the files a session wrote. Codex records a cwd in `session_meta`
+# on every session and stamps an ISO timestamp on every record, so it has both a repository and a
+# window. Neither harness is the reason any more; the reason is a fact about the session, and the
+# parsers now pick the sentence that is actually true of it.
+# Only Cursor still needs an entry. Codex records a cwd and a timestamp on every session, so its
+# parser always has a fact to name and picks the exact sentence itself.
 HARNESS_LIMIT = {
-    "Cursor": R_NO_REPO,       # no cwd and no file paths in the transcript
-    "Codex": R_NO_WINDOW,      # a cwd, but no timestamps to bound a window with
+    "Cursor": R_NO_FILES,      # no cwd recorded, and nothing written inside a work tree
 }

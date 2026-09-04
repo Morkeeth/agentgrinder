@@ -42,7 +42,50 @@ The held-out half was scored once, after the rule was frozen.</p>
 </table>
 <p class="mono" style="font-size:13px">198 held-out lines · 95% intervals 0.43&ndash;0.83 (precision) and
 0.46&ndash;0.83 (recall) · measured 2026-09-03 · rule digest e49d8713c3c2df38</p>
-<p>Read that plainly: the old rule was wrong about roughly two of every three lines it called a
+<p><b>What that headline actually describes.</b> It is not a general figure and it is not a Claude Code
+figure. It is the line population of one machine's corpus across three harnesses, blended by that
+corpus's own share of each. Claude Code is 62.9% of the held-out population weight, Cursor is 34.9%,
+Codex is 2.2%. Split by harness, the three do not agree, and the headline sits <i>below</i> the one
+harness the card actually scores.</p>
+<table>
+<tr><td><b>held-out, by harness</b></td><td><b>precision</b></td><td><b>recall</b></td><td><b>labelled</b></td><td><b>stands for</b></td></tr>
+<tr><td>Claude Code</td><td class="mono">0.72</td><td class="mono">0.68</td><td class="mono">114</td><td class="mono">35,033 lines, 62.9%</td></tr>
+<tr><td>Codex</td><td class="mono">0.86</td><td class="mono">0.62</td><td class="mono">44</td><td class="mono">1,221 lines, 2.2%</td></tr>
+<tr><td>Cursor</td><td class="mono" colspan="2">not resolved, see below</td><td class="mono">40</td><td class="mono">19,403 lines, 34.9%</td></tr>
+<tr><td><b>all three, the headline</b></td><td class="mono">0.63</td><td class="mono">0.66</td><td class="mono">198</td><td class="mono">55,657 lines, 100%</td></tr>
+</table>
+<p class="mono" style="font-size:13px">95% intervals: Claude Code 0.52 to 0.92 (precision) and 0.49 to
+0.87 (recall) · Codex 0.50 to 1.00 and 0.25 to 1.00 · reproduce every figure on this page with
+<code>python3 scripts/claim-calibration-report.py</code></p>
+<p><b>Why the Cursor cell is empty.</b> Precision is true positives over predicted positives. On the
+held-out Cursor lines the rule predicted 4 positives in total: 1 true positive, 3 false positives,
+alongside 3 false negatives and 33 true negatives, over 40 hand-labelled lines standing for 19,403. A
+precision computed from 4 predicted positives has a 95% interval running from 0.00 to 0.86, which is
+nearly the whole scale. We could print a point estimate there. It would be a number with no
+measurement under it, which is the exact thing this page exists to refuse, so the cell stays empty and
+the counts are printed instead.</p>
+<p><b>And the thing that matters more than any cell in that table: the card never scores two of those
+three harnesses.</b> The claim rule runs in exactly two places, and both read Claude Code transcripts
+only. Parse a real Cursor session and the result carries no claim count at all; the same is true of
+Codex. Checked on 4 September 2026 against the 298 Cursor transcripts and 81 Codex rollouts on the
+author's own machine, at the paths the tool ships with. On those runs the card prints a dash for
+verified per turn, and hovering it names what is missing, which is the correct behaviour. But it means
+the published 0.63 is measured over a line population that is 37.1% larger than the population the
+number is ever applied to.</p>
+<p>So the honest reading is this. <b>The figure that describes what this card actually does is the
+Claude Code row, 0.72 precision and 0.68 recall.</b> 0.63 is the corpus-wide figure, it is the one
+published first, and it is the more conservative of the two. We are leaving it as the headline rather
+than replacing it with the higher number, and printing both with their populations named, because
+raising your own published score on your own authority is not a thing this project gets to do
+quietly.</p>
+<p>More Cursor labelling is <i>not</i> the fix for that. It would sharpen a stratum the card does not
+score. Labelling becomes the fix only if those harnesses are wired into the claim rule, and a test
+holds that seam: it asserts that the Cursor and Codex parsers return no claim count, and it goes red
+the day one of them does, so the rule cannot start reading a population it was never calibrated on
+while the published figures sit still. Until then
+<code>scripts/claim-calibration-report.py</code> exits non-zero and names the stratum. The check is
+red on purpose.</p>
+<p>Read the headline plainly: the old rule was wrong about roughly two of every three lines it called a
 claim. The new one is wrong about one in three, and misses one in three. We aimed for precision
 above 0.8 and did not reach it. Counts and per-cell numbers:
 <code>docs/claim-calibration.json</code>; the full write-up, including what the rule still gets wrong,

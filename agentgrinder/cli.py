@@ -298,7 +298,7 @@ def main(argv=None) -> int:
         from .meme import format_vibe, vibe_or_default
         run = _load_latest_run(getattr(args, "session", None))
         if not run:
-            print("no session found"); return 1
+            print(no_session_message()); return 1
         label, line = vibe_or_default(run)
         if args.as_json:
             print(json.dumps({"vibe": label, "line": line}, indent=2))
@@ -309,7 +309,7 @@ def main(argv=None) -> int:
         from .meme import format_roast, roast_shape
         run = _load_latest_run(getattr(args, "session", None))
         if run is None:
-            print("no session found"); return 1
+            print(no_session_message()); return 1
         if args.as_json:
             print(json.dumps({"roast": roast_shape(run)}, indent=2))
         else:
@@ -430,6 +430,10 @@ def main(argv=None) -> int:
         h = load()
         print(f"\n  {len(h):,} grinds on this machine "
               f"(every sitting in ~/.claude/projects with a human turn, 30-minute idle rule)\n")
+        if not h:
+            # Five empty section headings under an honest "0 grinds" reads like a broken command.
+            print("  Nothing to rank yet. Run a session, then:  python3 -m agentgrinder grind\n")
+            return 0
         for key, label in MEASURES:
             col = {"stretch": "stretch_s", "moving": "moving_s", "tools": "tools",
                    "edits": "edits", "prompts": "typed"}[key]
@@ -487,6 +491,19 @@ def main(argv=None) -> int:
         print(f"\n  type:user records {run['started'][:19]} -> {run['ended'][:19]}"
               f"   ({len(run['lanes'])} lane transcripts + {len(run['sessions'])} sessions)")
         print(f"  gate: {a['gate']}\n")
+        if tot == 0:
+            # A CHECK THAT SAYS OK ABOUT NOTHING. Until 4 Sep 2026 an empty machine got the full
+            # table of zeros and then "parts sum to the total: 0 + 0 + 0 + 0 + 0 = 0  OK". The sum
+            # is real and the OK is meaningless: an identity over an empty population passes
+            # whatever the classifier does, so a reader is shown a green check that cannot go red.
+            # This tool's whole subject is a number that is correct about the wrong object, and it
+            # was printing one. Found by running the CLI with an empty HOME, which is the only way
+            # anyone was ever going to see it.
+            print("  no type:user records in this window, so there is nothing to check."
+                  "\n  The category table and its sum are printed only when there is a population"
+                  "\n  to sum: an identity over zero passes whatever the classifier does, so"
+                  "\n  a pass printed here would be a check that cannot go red.\n")
+            return 0
         w = max(len(c) for c in CATEGORIES)
         for c in CATEGORIES:
             n = a["by_category"][c]
@@ -596,8 +613,14 @@ def _grind(args) -> int:
         run = parse_cursor_session(path, athlete=args.athlete)
         out = Path(args.out)
         out.write_text(render_card(build_activity(run)), encoding="utf-8")
-        print(f"\n  Cursor transcripts carry no file paths and no commits, so the grind trace"
-              f"\n  cannot be drawn for them. The v1 card is rendered instead -> {out}\n")
+        # This sentence used to read "Cursor transcripts carry no file paths and no commits".
+        # Both halves were false: `Write` and `StrReplace` carry an absolute `path`, and `Shell`
+        # carries the command. What is genuinely missing is a time on each of those events, and
+        # every mark on the grind trace is a timestamp. Cursor stamps typed turns only.
+        drawn = "files, commits and reach are read from the transcript"
+        print(f"\n  Cursor card -> {out}"
+              f"\n  {drawn}. The grind trace is not drawn: Cursor stamps a time on typed"
+              f"\n  turns only, and every mark on the trace is one timestamp.\n")
         if getattr(args, "coach", None) is not None:
             # asked for explicitly and cannot be delivered: say which fields are missing, and do
             # not push. Publishing a run the person asked to have coached, uncoached, is the
@@ -624,14 +647,24 @@ def _grind(args) -> int:
         path = args.session or latest_codex_session()
         if not path:
             from .ingest import CODEX_GLOBS
-            print("\n  no Codex session found. Searched:")
+            print("\n  no Codex session with a human turn in it. Searched:")
             for g in CODEX_GLOBS:
                 print(f"      {g}")
             print("\n  try:  python3 -m agentgrinder demo\n"); return 1
-        run = parse_codex_session(path, athlete=args.athlete)
+        try:
+            run = parse_codex_session(path, athlete=args.athlete)
+        except ValueError as e:
+            # A named --session with no typed turn used to reach the user as a raw traceback.
+            print(f"\n  {e}"
+                  "\n  A rollout with no human turn has no cost to divide by, so there is no"
+                  "\n  card to draw. Run without --session to take the newest one you typed in.\n")
+            return 1
         out = Path(args.out)
         out.write_text(render_card(build_activity(run)), encoding="utf-8")
-        print(f"\n  Codex rollouts carry no file-route trace yet — v1 card with real prompt/tool counts -> {out}\n")
+        print(f"\n  Codex card -> {out}"
+              f"\n  files, commits and reach are read from the transcript: patch_apply_end names"
+              f"\n  every path it wrote, and session_meta names the working directory. The grind"
+              f"\n  trace is not drawn yet.\n")
         if getattr(args, "coach", None) is not None:
             print(coach_degraded_banner("Codex", run)); return 1
         if args.push:

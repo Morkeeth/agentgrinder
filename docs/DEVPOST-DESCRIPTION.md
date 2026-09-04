@@ -16,14 +16,34 @@ next to it. Track: **Professional Agents**.
 Your coding agent tells you it fixed the test, shipped the file, and got the suite green, and you
 have no way to check without rereading the whole transcript. The measurement is worse than absent,
 it is confidently wrong: a raw session log labels far more turns as coming from the human than a
-human ever typed. Over a 40 minute window on my own machine this afternoon,
+human ever typed. Over a 40 minute window on my own machine on 3 September 2026,
 `python3 -m agentgrinder authorship` counted **334 records marked `type: "user"` and 12 of them,
 3.6%, were typed by a person**. The other 322 were tool results, injected skill bodies, harness
-envelopes and prompts one agent wrote to another. Every dashboard built on that field is inflating
+envelopes and prompts one agent wrote to another. Rerun on a 31 minute window on 4 September it
+counted 95 records and 4 typed by a person, 4.2%, and again later that day over a wider window,
+244 records and 4 typed, 1.6%. The share moves with the window. The gap does not. Every dashboard built on that field is inflating
 the number it puts in front of you. METR's 2025 randomized trial on experienced open source
 developers found the same gap in the other direction: they believed the agent made them 20% faster
 and the stopwatch said 19% slower. So the one number that matters, how much verified work a
 session actually delivered per human decision, is the number nobody has.
+
+## Why this publishes the measurement and never the transcript
+
+A funded competitor already tried the other way and retreated from it. Amp shipped public,
+internet-wide, discoverable thread sharing and withdrew it on 2 June 2026, and the reason they gave
+is the whole design constraint of this project in one sentence:
+
+`It's getting too hard to review a thread to ensure it doesn't contain any snippets of sensitive
+files.`
+
+That is Sourcegraph, about their own product, at
+https://ampcode.com/news/end-of-public-threads. They also note that agents read more files into
+context with every model release, so the problem gets worse on its own.
+
+Agent Grinder publishes counts and never had the transcript to leak. `grind` reads your sessions
+locally and the card carries numbers, not text. Nothing is uploaded without a human click, and what
+uploads is a row of integers. That is not a smaller version of thread sharing. It is the version
+that survives a security review, and a competitor's withdrawal notice is the evidence.
 
 ## What Agent Grinder does
 
@@ -119,8 +139,15 @@ python3 -m agentgrinder demo                                 # the card, no inst
 pip install -e ".[coach,dev]"
 python3 -m agentgrinder coach samples/sample_session.jsonl   # the agent, keyless, offline
 python3 scripts/show-refusal.py                              # watch the verdict tool refuse
-python3 -m pytest -q                                         # 61 passed
+python3 scripts/claim-calibration-report.py                  # every published figure, recomputed
+python3 -m pytest -q                                         # 170 passed
 ```
+
+The calibration report is worth thirty seconds of a judge's time, because it **exits non-zero on
+purpose**. It recomputes the precision and recall this submission prints, from counts committed
+beside them, and then fails on the one stratum that is too thinly labelled to support the headline.
+A project that ships a red check pointed at its own headline number is making a different kind of
+claim than one that ships a green one.
 
 The bundled sample makes the coach deterministic: 3 typed turns, 2 claims of which 1 has evidence
 in its own turn, 2 files written of which 1 exists on disk, 0 commits, verified per turn 0.67, and
@@ -135,27 +162,78 @@ count. The site is at **https://agentgrinder.vercel.app**.
 
 ## Honest limits
 
-- **The claim rule is v0 and it over-counts.** A claim is a line of agent text matching
-  `passes|passed|fixed|done|deployed|works|green|verified|ship(s|ped)`, and it is verified when a
-  tool result in the same human turn carries a token from the claim line or an uncontradicted
-  success token. The words `done` and `ship` match ordinary prose, and one "N passed" in a turn
-  verifies every claim beside it. Read the verified share as a ceiling. The module docstring in
-  `agentgrinder/claims.py` says the same thing, and the claim count sits on the card next to the
-  headline instead of inside it for exactly this reason. Replacing that rule with a real witness
-  is the next slice, and the coach is the seam it plugs into: the agent already calls the rule
-  per claim rather than in bulk.
-- **The network is one person wide.** The hosted database holds 2 profiles and 3 runs, and all of
-  them are the author's. One of those runs carries a coach verdict; the two older ones were
-  published before the coach existed and correctly print a dash for verified per turn rather than
-  a number invented after the fact. Nobody who is not the author has published a coached run. The
-  tool works; the network has not been proven.
+This project's whole claim is that a number without a source is a guess. Its own headline number
+was one until 3 September, and the first two bullets below are the receipt for it no longer being
+one. Read the length of this section as the product working rather than as a disclaimer.
+
+- **The claim rule publishes its own error rate, and it missed its target.** A rule decides what
+  counts as a claim, so that rule has an error rate. 396 lines of assistant text from real sessions
+  were hand-labelled against a rubric written before the sample was opened, split by session into a
+  tuning half and a held-out half. The rule was iterated on the tuning half only and the held-out
+  half was scored once. On that held-out half it reads **precision 0.63, 95% interval 0.43 to 0.83,
+  and recall 0.66, interval 0.46 to 0.83**, against 0.32 and 0.37 for the vocabulary regex it
+  replaces. **The target was precision above 0.8. It was not reached, and 0.63 is the number the
+  site prints.** Method, rubric, per-cell counts and the twelve remaining false positives:
+  `docs/CLAIM-RULE-CALIBRATION-2026-09-03.md` and `docs/claim-calibration.json`. A test recomputes
+  the published figures from the committed counts and digests the rule's own text, so the rule
+  cannot be edited without the suite going red.
+- **A third of that figure rests on four predicted positives.** The 0.63 blends three harnesses by
+  their share of one machine's corpus, and split out they disagree. Claude Code reads 0.72 precision
+  and 0.68 recall over 114 labelled lines carrying 62.9% of the weight. Codex reads 0.86 and 0.62
+  over 44 lines carrying 2.2%. **Cursor is not resolved**: the rule predicted 4 positives in total
+  there, 1 true and 3 false, from 40 labelled lines standing for 19,403, and a precision off 4
+  predicted positives has a 95% interval of 0.00 to 0.86. So the headline is neither a general
+  number nor a Claude Code number, and it sits below Claude Code's own 0.72 because that thin
+  stratum drags it down. `python3 scripts/claim-calibration-report.py` reproduces every figure and
+  **exits non-zero** while any stratum carrying 10% or more of the weight sits under 10 predicted
+  positives. The check is red today, on purpose.
+- **The card scores one of those three harnesses, and the published figure covers all three.** The
+  claim rule runs in two places, `ingest.parse_session` and `solo.py`, and both read Claude Code
+  transcripts only. `parse_cursor_session` and `parse_codex_session` return no claim count, checked
+  on 4 September 2026 against the 298 Cursor transcripts and 81 Codex rollouts on this machine at
+  the paths the tool ships with. A Cursor run's card prints a dash for verified per turn and its
+  tooltip names what is missing, which is the gate working. It also means **0.63 is measured over a
+  line population 37.1% larger than the population it is ever applied to**, and the figure that
+  describes what this card does is the Claude Code row, 0.72 and 0.68. The lower, corpus-wide number
+  stays the headline: raising your own published score on your own authority is not a thing this
+  project does quietly, and the more conservative figure is the safer one to ship. A test asserts
+  that the two non-Claude parsers return no claim count, so the day either is wired into the rule the
+  suite goes red and the calibration has to be redone before the number can be republished.
+- **Whether a claim was matched to the RIGHT evidence is not measured at all.** A generic `N passed`
+  in a turn still verifies any claim beside it. The claim side now carries a measured error, the
+  evidence side carries an unmeasured one, and the card's tooltip says so on screen.
+- **The network is one person wide.** Queried with the site's own publishable key on 4 September
+  2026, the hosted database returns 2 profiles and 2 publicly readable runs, and both runs are the
+  author's. One carries a coach verdict, 7 claims of which 3 had evidence in their own turn and 37
+  tool calls; the older one predates the coach and correctly prints a dash for verified per turn
+  rather than a number invented after the fact. Row-level security means an anonymous key sees only
+  public rows, so that count is a floor on the table and an exact count of what a stranger can read.
+  Nobody who is not the author has published a run. The tool works; the network has not been proven.
 - **Bedrock is opt-in and it has a privacy cost.** The default is keyless and offline. Choosing
   `--model bedrock` sends claim lines and tool-result snippets to AWS, and the command says so
   before it runs. Nothing else in the tool ever leaves the machine, and no session is ever
   uploaded without a human click.
-- **Correction rate, produced over promised, and reach print a dash.** They are real numbers owned
-  by tools that are not wired in yet. A dash is never blank here: hovering it names the tool that
-  owns the number.
+- **Reach is now computed, and it still prints a dash on every published run.** `agentgrinder/reach.py`
+  answers one question from the machine: did a commit made inside the session window reach a remote
+  owned by someone who is not the author. True when it did, False when the window closed with
+  commits that are on no remote at all, and None with a named sentence for every ambiguous case, so
+  a dash always says why. It refuses True on a push to an organisation the author belongs to,
+  because that is not another person, and it refuses True on a weak identity, because an email local
+  part is not a GitHub login. Both published runs predate the column being populated, so both read
+  null today. The rule is measured and wired; nothing has been published through it yet.
+- **All three harnesses now read their own file writes, commits and repository.** Until 4 September
+  the Cursor and Codex cards printed a dash for files touched, commits, artifacts and reach, with a
+  tooltip blaming the harness. The tooltip was wrong: Cursor's `Write` and `StrReplace` blocks carry
+  an absolute path on every one of the 2,279 edit blocks in the 298 transcripts on this machine, and
+  Codex names every path it wrote in `patch_apply_end` and its working directory in `session_meta`.
+  Both parsers read them now, a failed patch is not counted as a write, and reach answers from git
+  on all three. What a Cursor and Codex card still does **not** carry is the grind trace and the
+  verified-per-turn headline: the trace needs a timestamp on each edit and Cursor stamps typed turns
+  only, and the headline needs the claim rule, which is deliberately left unwired so the published
+  precision keeps describing the population it was measured on.
+- **Correction rate and produced over promised print a dash.** They are real numbers owned by tools
+  that are not wired in yet. A dash is never blank here: hovering it names the tool that owns the
+  number and says what it would need.
 - **This is a local-first tool with an optional hosted layer.** It reads transcripts you already
   have. If you have never run a coding agent there is nothing to read, and it says so and exits 1
   rather than rendering something invented.
@@ -203,23 +281,33 @@ app. No runtime dependencies for the local card path.
 
 ## The numbers, and the command behind each
 
-Every figure in the text above, run on 3 September 2026 at commit `0fed2c7`. The three repository
+Every figure in the text above, re-measured on 4 September 2026 at commit `cd9a1a3`. Each row is
+anchored to that commit, so it stays true after the branch moves; re-run the table at whatever
+commit is actually submitted, because two of these rows change with every merge. The repository
 counts move as the repository does; the coach numbers on the bundled sample do not, because the
 keyless path is deterministic.
 
 | Number | Command | Result |
 |---|---|---|
-| 334 `type: "user"` records, 12 typed by a person, 3.6% | `python3 -m agentgrinder authorship` | `12 3.6% human` of `334 100.0% total`, parts sum to the total |
+| 244 `type: "user"` records, 4 typed by a person, 1.6% | `python3 -m agentgrinder authorship` | `4 1.6% human` of `244 100.0% total`, parts sum to the total |
+| 334 records and 12 typed, 3.6%, over a 40 minute window on 3 September | same command, previous day | the reading the text quotes first |
+| 95 records and 4 typed, 4.2%, over a 31 minute window earlier on 4 September | same command, same day | three readings, 1.6% to 4.2%: the share moves with the window, the order of magnitude does not |
 | 8 tool calls on the sample, 3 typed turns, 1 of 2 claims verified, 1 of 2 files on disk, 0.67 verified per turn | `python3 -m agentgrinder coach samples/sample_session.jsonl` | exit 0, `tools dispatched 8 (by the Strands event loop; hook logged 8)` |
 | The refusal reasons | the five tools called in order, then `write_verdict(..., claims_verified=2, artifacts_produced=2, ...)` | `accepted: False`, two reasons, `tools_said` block |
-| 61 tests | `python3 -m pytest -q` | `61 passed in 4.09s` |
-| 127 tracked files | `git ls-files \| wc -l` | 127 |
-| 23 commits, first on 31 August 2026 | `git rev-list --count HEAD` | 23, first commit `2026-08-31 23:43:39 +0200` |
-| 7 coach columns live on the hosted database | `information_schema.columns` on `public.runs` | `claims`, `claims_verified`, `artifacts_produced`, `coach_verdict`, `coach_plan`, `coach_tool_calls`, `progress_verdict`, all nullable |
-| Live site and hosted card reachable | `curl -o /dev/null -w "%{http_code}"` on `/` and on `/?run=28d5d0b7...` | 200 and 200; a headless render shows the verdict block, 3.67 verified per turn, 37 tool calls |
-| 2 profiles, 3 runs, 1 of them coached, 0 by anyone but the author | `select count(*)` on `public.profiles` and `public.runs` | 2, 3, and 1 row with `coach_tool_calls` not null |
-| 7,262 participants in the field | `curl -sL https://agentsforhumans.devpost.com/` | `Participants (7262)` |
+| precision 0.63 (0.43 to 0.83), recall 0.66 (0.46 to 0.83) on the held-out half | `python3 scripts/claim-calibration-report.py` | the table, recomputed from `docs/claim-calibration.json` |
+| Claude Code 0.72 / 0.68, Codex 0.86 / 0.62, Cursor not resolved | same command | per-harness rows, with 114, 44 and 40 labelled lines |
+| The calibration check fails on the thin stratum | `python3 scripts/claim-calibration-report.py; echo $?` | `FAIL: cursor is under the floor at 4 predicted positives while carrying 34.9 percent of the weight`, exit `1` |
+| 170 tests | `python3 -m pytest -q` | `170 passed in 14.82s` |
+| 145 tracked files | `git ls-files \| wc -l` | 145 |
+| 73 commits, first on 31 August 2026 | `git rev-list --count HEAD` | 73, first commit `2026-08-31 23:43:39 +0200` |
+| 7 coach columns and `reach` live on the hosted database | `select *` on `public.runs` with the site's publishable key | `claims`, `claims_verified`, `artifacts_produced`, `coach_verdict`, `coach_plan`, `coach_tool_calls`, `progress_verdict`, plus `reach`, all nullable |
+| Live site and hosted card reachable | `curl -o /dev/null -w "%{http_code}"` on `/` and on `/?run=28d5d0b7...` | 200 and 200 |
+| The published figure is on the live site, not only in the tree | `curl -s https://agentgrinder.vercel.app/methodology \| grep -c 0.63` | 1, and the root page matches `precision 0.63` twice in the card tooltips |
+| 2 profiles, 2 publicly readable runs, 1 of them coached, 0 by anyone but the author | `GET /rest/v1/runs` and `/profiles` with `Prefer: count=exact`, publishable key | `content-range: 0-1/2` on both; one row has `coach_tool_calls` 37 |
+| 7,509 participants in the field | `curl -sL https://agentsforhumans.devpost.com/` | `Participants (7509)` |
 
-The METR figure (20% believed faster, 19% measured slower) is from METR's 2025 randomized
-controlled trial on experienced open source developers. It is a published external result, not a
-measurement made here.
+Two figures above are quoted from outside this repository, and neither was measured here. The METR
+figure (20% believed faster, 19% measured slower) is from METR's 2025 randomized controlled trial on
+experienced open source developers. The Amp sentence is quoted from Sourcegraph's own withdrawal
+notice at https://ampcode.com/news/end-of-public-threads, dated 2 June 2026, fetched and read on
+4 September 2026.

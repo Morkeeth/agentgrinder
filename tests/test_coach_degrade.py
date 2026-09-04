@@ -69,12 +69,28 @@ def test_a_degraded_coach_request_does_not_push(tmp_path):
     assert "#import=" not in proc.stdout
 
 
-def test_no_cursor_or_codex_field_is_invented_to_feed_the_coach():
-    """The parsers still return None for what the transcript does not contain."""
-    from agentgrinder import ingest
-    src = open(os.path.join(REPO, "agentgrinder", "ingest.py"), encoding="utf-8").read()
-    for fn in ("parse_cursor_session", "parse_codex_session"):
-        body = src[src.index(f"def {fn}("):]
-        body = body[:body.index("\n\n\n")] if "\n\n\n" in body else body
-        assert '"files_touched": None' in body, fn
-        assert '"commits": None' in body, fn
+def test_no_cursor_or_codex_field_is_invented_to_feed_the_coach(tmp_path):
+    """A field the transcript does not contain reads None, never a fabricated 0.
+
+    This used to grep ingest.py for the literal `"files_touched": None`. That pinned one
+    IMPLEMENTATION of the rule rather than the rule, and it went red on 4 Sep 2026 when those
+    parsers learned to read the file writes that were in the transcript all along. The rule it was
+    protecting is the one that matters and it is asserted here on behaviour instead: a session that
+    wrote nothing reports nothing, and an empty count never becomes a zero.
+    """
+    from agentgrinder.ingest import parse_cursor_session, parse_codex_session
+    cur = tmp_path / "c.jsonl"
+    cur.write_text('{"role":"user","message":{"content":"<timestamp>Wednesday, Sep 03, 2026, '
+                   '10:00 AM</timestamp><user_query>go</user_query>"}}\n', encoding="utf-8")
+    cod = tmp_path / "rollout-x.jsonl"
+    cod.write_text('{"type":"session_meta","payload":{"cwd":"/no/such/dir"}}\n'
+                   '{"type":"user_message","content":"go"}\n', encoding="utf-8")
+    for run, harness in ((parse_cursor_session(str(cur)), "Cursor"),
+                         (parse_codex_session(str(cod)), "Codex")):
+        assert run["harness"] == harness
+        for field in ("files_touched", "commits", "artifacts_produced",
+                      "artifacts_promised", "corrections", "reach"):
+            assert run[field] is None, f"{harness} invented {field} = {run[field]!r}"
+        assert run["reach_reason"], f"{harness} prints a dash with no sentence behind it"
+        # and the claim rule stays out of these parsers: see tests/test_claim_rule.py
+        assert "claims" not in run and "claims_verified" not in run

@@ -218,6 +218,41 @@ def _cursor_tool_blocks(msg: dict) -> int:
     c = msg.get("content")
     return sum(1 for b in c if isinstance(b, dict) and b.get("type") not in (None, "text")) if isinstance(c, list) else 0
 
+
+# CURSOR'S EDIT AND SHELL TOOLS. Cursor's names are its own, and the input key is `path` where
+# Claude Code uses `file_path`, so the Claude constants above do not transfer. Measured over the
+# 298 transcripts on the author's machine, 4 Sep 2026: `Write` and `StrReplace` are the only tools
+# that write a file, they carry `path` on every one of 2,279 blocks, and every one of those paths
+# is absolute. `Shell` carries the command string under `command`.
+#
+# ONE HARNESS, ONE DECLARATION. A tool name is added here, not inferred from a pattern, because a
+# reader that guesses which tools write files will silently start counting the wrong thing on the
+# next harness release.
+_CURSOR_EDIT_TOOLS = {"Write", "StrReplace"}
+_CURSOR_SHELL_TOOLS = {"Shell"}
+
+
+def _cursor_tool_uses(msg: dict):
+    """Yield (tool_name, input_dict) for each tool_use block in a Cursor assistant message."""
+    content = msg.get("content")
+    if isinstance(content, list):
+        for b in content:
+            if isinstance(b, dict) and b.get("type") == "tool_use":
+                yield b.get("name", ""), (b.get("input") or {})
+
+
+def _region_of(path: str, root: str | None) -> str:
+    """The first meaningful path segment, relative to the repository root when there is one.
+
+    Privacy: the region NAME stays local. Only the integer indices from `_route_indices` are ever
+    pushed, which is the same contract the Claude Code path has kept since the card shipped.
+    """
+    rel = path
+    if root and path.startswith(root):
+        rel = path[len(root):]
+    parts = [p for p in rel.split("/") if p and not p.startswith(".")]
+    return parts[0] if parts else "root"
+
 # THE AUTHOR'S OWN USERNAME WAS BAKED INTO A PUBLIC TOOL. Until 3 Sep 2026 this was
 # `.replace("Users-morkeeth-", "")`: a hardcoded string that cleaned exactly one person's project
 # labels and left everyone else's raw. Measured that day — a stranger's Cursor project rendered on
@@ -244,7 +279,11 @@ def latest_cursor_session() -> str | None:
 def parse_cursor_session(path: str, athlete: str = "you") -> dict:
     typed = 0
     tool_calls = 0
+    commits = 0
     stamps = []
+    files: set[str] = set()
+    written: set[str] = set()
+    edits: list[str] = []      # ordered, for the route
     first_prompt = None
     ts_re = _re.compile(r"<timestamp>(.*?)</timestamp>")
     uq_re = _re.compile(r"<user_query>(.*?)</user_query>", _re.S)
@@ -270,6 +309,22 @@ def parse_cursor_session(path: str, athlete: str = "you") -> dict:
                     first_prompt = (q.group(1).strip() if q else text.strip())
             elif role == "assistant":
                 tool_calls += _cursor_tool_blocks(msg)
+                # THE TRACE. Until 4 Sep 2026 this branch counted tool blocks and threw the rest
+                # away, so every Cursor card printed a dash for files touched, commits and
+                # artifacts, and reach printed "this harness does not name the repository". All
+                # three sentences were false at the object: the paths are in the transcript.
+                for name, inp in _cursor_tool_uses(msg):
+                    if not isinstance(inp, dict):
+                        continue
+                    if name in _CURSOR_EDIT_TOOLS:
+                        fp = inp.get("path")
+                        if isinstance(fp, str) and fp:
+                            files.add(fp)
+                            written.add(fp)
+                            edits.append(fp)
+                    elif name in _CURSOR_SHELL_TOOLS:
+                        if "git commit" in (inp.get("command") or ""):
+                            commits += 1
 
     if not typed:
         raise ValueError(f"no typed <user_query> turns in {path}")
@@ -294,13 +349,50 @@ def parse_cursor_session(path: str, athlete: str = "you") -> dict:
 
     proj = project_label(os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(path)))))
     title = (first_prompt[:60] + "…") if first_prompt and len(first_prompt) > 60 else (first_prompt or f"{proj} session")
+
+    # THE REPOSITORY, from the files the session actually wrote. Cursor never states a cwd, so the
+    # root is the git work tree enclosing the most-edited path. A session that wrote nothing, or
+    # wrote only outside a work tree, yields None and reach says so in its own sentence.
+    repo_root = None
+    if edits:
+        ranked = sorted(set(edits), key=lambda p: (-edits.count(p), p))
+        for candidate in ranked[:5]:
+            found = gitwork.repo_of(candidate)
+            if found:
+                repo_root = found[1]
+                break
+
+    # Artifacts produced: a path this session wrote that exists on disk when the transcript is
+    # parsed. Same definition as the Claude Code path, deliberately, so the two cards mean the
+    # same thing by the same word.
+    artifacts_produced = sum(1 for fp in written if os.path.exists(fp)) if written else None
+
+    # REACH. It needs a repository AND a window. Cursor stamps times on typed turns only, so a
+    # single-turn session has no window and reach stays None with the sentence that says why.
+    if repo_root and len(pts) >= 2:
+        reach_value, reach_reason = reachmod.reach_of(repo_root, min(pts), max(pts))
+    elif repo_root:
+        reach_value, reach_reason = None, reachmod.R_NO_WINDOW
+    elif edits:
+        # files were written, none of them inside a work tree that still exists
+        reach_value, reach_reason = None, reachmod.R_CWD_NOT_REPO
+    else:
+        reach_value, reach_reason = None, reachmod.HARNESS_LIMIT["Cursor"]
+
+    route = [_region_of(fp, repo_root) for fp in edits]
     return {
         "athlete": athlete, "title": title, "harness": "Cursor", "project": proj,
         "started": (min(pts).isoformat() if pts else None),
         "duration_s": dur, "turns_typed": typed, "tool_calls": tool_calls,
-        "files_touched": None, "commits": None, "rhythm": rhythm,
-        # this harness cannot supply reach, and the dash says which fact is missing
-        "reach": None, "reach_reason": reachmod.HARNESS_LIMIT["Cursor"],
+        "files_touched": len(files) if files else None,
+        "commits": commits if edits or commits else None,
+        "rhythm": rhythm,
+        "artifacts_produced": artifacts_produced,
+        "artifacts_promised": None,   # no harness records what a run said it would deliver
+        "corrections": None,          # the inverse class, not built
+        "reach": reach_value, "reach_reason": reach_reason,
+        "route": _route_indices(route),      # integers only, safe to publish
+        "route_legend": _dedupe(route),      # region names, LOCAL only, never pushed
     }
 
 
@@ -336,8 +428,19 @@ def codex_session_files() -> list[str]:
 
 
 def latest_codex_session() -> str | None:
-    files = codex_session_files()
-    return files[0] if files else None
+    """The newest Codex rollout THAT A PERSON TYPED IN, newest first.
+
+    It used to return `files[0]`, the newest rollout by modification time, whether or not anybody
+    typed in it. Codex writes a rollout for work with no human turn in it at all, so on 4 Sep 2026
+    the newest file on this machine had zero typed turns, `parse_codex_session` raised, and the
+    CLI printed a Python traceback at a person who had done nothing wrong. Skipping to the newest
+    rollout with a human turn is what the Claude Code path has always done through
+    `human_sittings`. `None` still means there is nothing to read, and the CLI says so in words.
+    """
+    for path in codex_session_files():
+        if _codex_count(path):
+            return path
+    return None
 
 
 def _codex_count(path: str) -> tuple[int, int] | None:
@@ -355,20 +458,91 @@ def _codex_count(path: str) -> tuple[int, int] | None:
     return (typed, max(tools, 0)) if typed else None
 
 
+# CODEX WRITES FILES THROUGH ONE EVENT, AND IT NAMES THEM. `patch_apply_end` carries
+# `changes`, a dict keyed by absolute path, and a `success` boolean. Measured over the 81 rollouts
+# on the author's machine, 4 Sep 2026: 69 changed paths, all absolute, 67 of them still on disk.
+# Shell work arrives as `custom_tool_call` with `name` "exec" and the command in `input`.
+# Every record carries a top-level ISO timestamp, so a session window can be drawn.
+#
+# A FAILED PATCH IS NOT A WRITE. Only `success` true is counted, because a card that counts an
+# attempt as an artifact is the ceiling problem again in a different column.
+def _codex_command(blob) -> str:
+    """The shell command inside a Codex `exec` call, as one string.
+
+    `input` is a JSON string. Codex passes the command either as a list under `cmd` or `command`,
+    or as a plain string. A list has to be JOINED before it is searched: the raw JSON of
+    `["git","commit"]` does not contain the substring `git commit`, so matching the blob directly
+    misses every commit made through the list form and reports a confident zero.
+    """
+    if not isinstance(blob, str):
+        return ""
+    try:
+        parsed = json.loads(blob)
+    except (ValueError, json.JSONDecodeError):
+        return blob
+    if isinstance(parsed, dict):
+        cmd = parsed.get("cmd", parsed.get("command"))
+        if isinstance(cmd, list):
+            return " ".join(str(part) for part in cmd)
+        if isinstance(cmd, str):
+            return cmd
+    return blob
+
+
+def _codex_scan(path: str):
+    """One pass for the trace: (written paths in order, commits, timestamps, cwd).
+
+    Separate from `_codex_count` on purpose. That function exists because Codex writes megabyte
+    lines and a substring scan is far cheaper than json.loads on every one; it stays exactly as
+    it was, so the turn and tool counts this card has always printed do not move.
+    """
+    edits: list[str] = []
+    commits = 0
+    stamps: list[datetime] = []
+    cwd = None
+    try:
+        with open(path, encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    o = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                ts = o.get("timestamp")
+                if isinstance(ts, str):
+                    try:
+                        stamps.append(datetime.fromisoformat(ts.replace("Z", "+00:00")))
+                    except ValueError:
+                        pass
+                p = o.get("payload")
+                if not isinstance(p, dict):
+                    continue
+                if o.get("type") == "session_meta" and cwd is None:
+                    cwd = p.get("cwd")
+                elif p.get("type") == "patch_apply_end" and p.get("success") is True:
+                    changes = p.get("changes")
+                    if isinstance(changes, dict):
+                        for changed in changes:
+                            if isinstance(changed, str) and changed:
+                                edits.append(changed)
+                elif p.get("type") == "custom_tool_call" and p.get("name") == "exec":
+                    if "git commit" in _codex_command(p.get("input")):
+                        commits += 1
+    except OSError:
+        pass
+    return edits, commits, stamps, cwd
+
+
 def parse_codex_session(path: str, athlete: str = "you") -> dict:
     hit = _codex_count(path)
     if not hit:
         raise ValueError(f"no human user_message turns in {path}")
     typed, tool_calls = hit
-    cwd = None
-    try:
-        with open(path, encoding="utf-8") as fh:
-            head = fh.readline()
-        o = json.loads(head)
-        if o.get("type") == "session_meta":
-            cwd = (o.get("payload") or {}).get("cwd")
-    except (OSError, ValueError, json.JSONDecodeError):
-        pass
+    edits, commits, stamps, cwd = _codex_scan(path)
+    written = set(edits)
+    files = set(edits)
 
     buckets = min(24, max(1, typed))
     rhythm = [0] * buckets
@@ -377,20 +551,45 @@ def parse_codex_session(path: str, athlete: str = "you") -> dict:
 
     proj = os.path.basename(cwd) if cwd else os.path.basename(path).replace(".jsonl", "")[:32]
     title = f"{proj} session"
+
+    repo_root = None
+    found = gitwork.repo_of(cwd) if cwd and os.path.isdir(cwd) else None
+    if found:
+        repo_root = found[1]
+
+    artifacts_produced = sum(1 for fp in written if os.path.exists(fp)) if written else None
+
+    # Each branch names the fact that is actually missing. Codex always records a cwd and always
+    # stamps times, so "this harness cannot" is never the honest sentence here.
+    if repo_root and len(stamps) >= 2:
+        reach_value, reach_reason = reachmod.reach_of(repo_root, min(stamps), max(stamps))
+    elif len(stamps) < 2:
+        reach_value, reach_reason = None, reachmod.R_NO_WINDOW
+    elif cwd and not os.path.isdir(cwd):
+        reach_value, reach_reason = None, reachmod.R_CWD_GONE
+    else:
+        reach_value, reach_reason = None, reachmod.R_CWD_NOT_REPO
+
+    route = [_region_of(fp, repo_root) for fp in edits]
     return {
         "athlete": athlete,
         "title": title,
         "harness": "Codex",
         "project": proj,
-        "started": None,
-        "duration_s": None,
+        "started": (min(stamps).isoformat() if stamps else None),
+        "duration_s": (int((max(stamps) - min(stamps)).total_seconds()) if len(stamps) >= 2 else None),
         "turns_typed": typed,
         "tool_calls": tool_calls,
-        "files_touched": None,
-        "commits": None,
+        "files_touched": len(files) if files else None,
+        "commits": commits if edits or commits else None,
         "rhythm": rhythm,
-        "reach": None,
-        "reach_reason": reachmod.HARNESS_LIMIT["Codex"],
+        "artifacts_produced": artifacts_produced,
+        "artifacts_promised": None,
+        "corrections": None,
+        "reach": reach_value,
+        "reach_reason": reach_reason,
+        "route": _route_indices(route),
+        "route_legend": _dedupe(route),
     }
 
 
