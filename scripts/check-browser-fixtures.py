@@ -126,5 +126,22 @@ with sync_playwright() as p:
     assert imported.evaluate('window.openedRun')=='published-fixture'
     assert not imported.evaluate('window.wrongOnboard')
     imported.close()
+    profile=browser.new_page()
+    profile.set_content('<div id="me"></div><button id="auth"></button><div id="deletewrap"></div><div id="mobile-product-nav"></div><p id="status"></p>')
+    refresh=html[html.index('async function refreshAuth(){'):html.index('// The publish payload')]
+    profile.add_script_tag(content=r"""
+      const $=id=>document.getElementById(id),esc=s=>String(s),status=(text)=>$('status').textContent=text;
+      let ME=null;window.createdProfiles=0;window.existingProfile={id:'profile-fixture',auth_uid:'auth-fixture',github_handle:'chosen-handle',name:'Chosen name'};
+      const sb={auth:{async getSession(){return {data:{session:{user:{id:'auth-fixture',user_metadata:{user_name:'provider-handle'}}}}}}},
+        from(){const q={select(){return q},eq(){return q},async maybeSingle(){return {data:window.existingProfile,error:null}},insert(row){window.createdProfiles++;window.existingProfile={id:'profile-fixture',...row};return q},async single(){return {data:window.existingProfile,error:null}}};return q}};
+    """+refresh)
+    profile.evaluate('refreshAuth()')
+    assert profile.evaluate('createdProfiles')==0
+    assert profile.get_by_role('link',name='@chosen-handle').count()==1
+    profile.evaluate('existingProfile=null;refreshAuth()')
+    assert profile.evaluate('createdProfiles')==1
+    assert profile.get_by_role('link',name='@provider-handle').count()==1
+    profile.close()
+
     print(json.dumps({'fixture':'practice discovery, failed search, before/after, explicit shared attempt','mobile_and_desktop':True,'javascript_errors':failures,'writes':calls}))
     browser.close()

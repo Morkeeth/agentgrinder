@@ -38,7 +38,7 @@ def public_feed(limit: int = 20) -> list[dict]:
         "runs",
         {
             "select": "id,title,project,harness,prompts,duration_s,tool_calls,commits,"
-            "rhythm,created_at,visibility,profiles(github_handle,name)",
+            "rhythm,created_at,visibility,profiles!runs_profile_id_fkey(github_handle,name)",
             "visibility": "in.(public,anonymous)",
             "order": "created_at.desc",
             "limit": str(limit),

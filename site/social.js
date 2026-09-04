@@ -79,7 +79,7 @@ window.GrinderSocial = function ({
       const runs = await result(
         db
           .from("runs")
-          .select("*,profiles(github_handle,name,rig)")
+          .select("*,profiles!runs_profile_id_fkey(github_handle,name,rig)")
           .in(
             "profile_id",
             follows.map((f) => f.followed_id),
@@ -516,7 +516,7 @@ window.GrinderSocial = function ({
       const runs = await result(
         db
           .from("runs")
-          .select("*,profiles(github_handle,name,rig)")
+          .select("*,profiles!runs_profile_id_fkey(github_handle,name,rig)")
           .eq("crew_id", id)
           .order("created_at", { ascending: false })
           .limit(50),
@@ -844,7 +844,7 @@ window.GrinderSocial = function ({
       const runs = await result(
         db
           .from("runs")
-          .select("*,profiles(github_handle,name,rig)")
+          .select("*,profiles!runs_profile_id_fkey(github_handle,name,rig)")
           .eq("source_actor_id", id)
           .order("created_at", { ascending: false })
           .limit(50),
@@ -913,7 +913,7 @@ window.GrinderSocial = function ({
         const runs = await result(
           db
             .from("runs")
-            .select("*,profiles(github_handle,name,rig)")
+            .select("*,profiles!runs_profile_id_fkey(github_handle,name,rig)")
             .eq("id", person.featured_run_id)
             .eq("profile_id", person.id)
             .eq("visibility", "public"),
