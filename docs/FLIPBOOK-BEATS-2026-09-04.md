@@ -83,9 +83,10 @@ own authority is not something this project does quietly. **This is the line of 
 
 **On screen:** two evidence rules, one carrying almost everything.
 **Number:** **21.4% by the strong rule, 78.6% by the generic one alone**, and only **13.2%** of
-claims name a test or a file at all. The counts under those shares as of 4 Sep 2026 19:0x were
-13,126 claims and 5,806 verified; re-run three hours later on the same 1,516 transcripts they were
-13,309 and 5,960, **and the shares were identical to the decimal**.
+claims name a test or a file at all. The counts under those shares, three runs on the same 1,516
+transcripts across one evening: 13,126 claims / 5,806 verified, then 13,309 / 5,960, then 13,324 /
+5,975. The counts moved every time. **The share read 78.6% every time**, and the third run was made
+independently by a different lane.
 **Source:** `python3 scripts/evidence-branch-report.py`. Bind the command, not the counts.
 **RENDER THE SHARES, PIN THE COUNTS TO A MOMENT.** The corpus grows while anyone works on it. A
 count that never drifts on a live corpus is a count nobody is re-running, so the reel should show
