@@ -21,7 +21,7 @@ last-touched: 2026-09-02 (Fable)
 > run with crews, earn ACKs. Strava-shaped loop; agent-native vocabulary (see brand book).
 
 ## ⭐ NORTH STAR (the press-release line)
-*"I finished a 2-hour session on agent-attack — 47 prompts, 3 commits, a personal best on focus —
+*"I finished a 2-hour session on repo A — 47 prompts, 3 commits, a personal best on focus —
 and my friends gave it kudos before I closed the terminal."* A stranger sees a friend's AGENT GRINDER run
 and wants their own.
 
