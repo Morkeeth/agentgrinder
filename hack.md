@@ -3,7 +3,7 @@ doc: hack
 project: AGENT GRINDER — where you post your real runs
 phase: BUILD
 event: CANDIDATE — Agents for Humans (Devpost, Sun 14 Sep 2026, $40K)
-ruling: OSCAR 3 Sep — OPTION C: Grinder is the product AND the Sep 14 entry; MAGNET is its engine (supersedes EYES 1 Sep)
+ruling: EYES 1 Sep — Grinder is the product; MAGNET submits Sep 14
 canonical: docs/AGENT-GRINDER-PRD.md · docs/AGENT-GRINDER-BRANDBOOK.md
 last-touched: 2026-09-02 (Fable)
 ---
