@@ -29,7 +29,9 @@ The final privacy patch was applied separately. The live check observed a link c
 
 The temporary fixture `c3187b9c-d289-496f-a235-8439a09c6f8a` was removed after testing. The hosted SQL query returned `temporary_fixture_remaining = 0`; this cleanup did not remove a real work session.
 
-Production deployment: `dpl_3fce7KcCw6tD5whzKTnngjJtthgZ`. Final installed wheel SHA-256: `fa1aff80575071b0d4932707dada612a9dbfea1cf18c76f9c741586536cacb7a`. Its demo, capture list and MCP connection setup ran outside the checkout in a clean virtual environment.
+Tested implementation: `601ea5c` (published on `main`). Live HTML bytes match the tested source.
+
+Production deployment: `dpl_9SS6wr5oQWURieyCD5JFeDRGYRp7`. Final installed wheel SHA-256: `fa1aff80575071b0d4932707dada612a9dbfea1cf18c76f9c741586536cacb7a`. Its demo, capture list and MCP connection setup ran outside the checkout in a clean virtual environment.
 
 ## Independent review and decisions
 
