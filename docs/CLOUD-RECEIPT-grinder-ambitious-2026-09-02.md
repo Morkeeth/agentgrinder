@@ -39,6 +39,6 @@ Night run: ambitious-plan / whole-night scope for Agent Grinder Sep 14 readiness
 3. **No real stranger cold-read** — only simulated empty VM; no non-Oscar human said "would post this."
 4. **PNG screenshots UNSCANNED** — 31 images in seed-clean audit not OCR'd or human-eyeball'd; should not publish to Devpost until Oscar checks.
 5. **OAuth publish path not tested** — `agentgrinder login` / `grind --push` need Oscar Supabase credentials; not run on cloud agent.
-6. **`_NIGHT-SCOPE.md` / `_HACK-CONTRACT.md` not found** at `~/CODE/zup/docs/cloud-prompts/` on this VM — used inline prompt contract instead.
+6. **`_NIGHT-SCOPE.md` / `_HACK-CONTRACT.md` not found** at `~/CODE/repo E/docs/cloud-prompts/` on this VM — used inline prompt contract instead.
 7. **StraVIBE beats us on install friction** — npm one-liner + auto-sync vs pip + optional Claude install; honesty axis unproven against real users tonight.
 8. **GitHub clone verified post-push** — `git clone https://github.com/Morkeeth/agentgrinder.git` + pitch-demo → exit 0 at commit `e680bac`.

@@ -204,7 +204,7 @@ def render_solo_card(run: dict, title: str | None = None, ranks: dict | None = N
 
     # ---- WHAT SHIPPED: three states, each one a question git can be asked about a file.
     # The first version of this block asked only "is it in a commit inside the window", which on
-    # a real cv-forge grind called four files dead ends that were all committed 41 minutes after
+    # a real repo C grind called four files dead ends that were all committed 41 minutes after
     # the window closed. A window boundary is an arbitrary line through a working day; the state
     # a reader cares about is whether anything has committed the file SINCE they changed it.
     dead = run["deadends"]

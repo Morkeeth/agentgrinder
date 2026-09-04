@@ -31,7 +31,7 @@ a positive rule fails closed.
 
 The in-repo case is the one real judgement call. A relative path inside the repo you are grinding
 on is the content of the card — a card that cannot say `docs/PRD.md` has nothing to show. It is
-still capable of leaking (see cv-forge above), which is why `safe_label` refuses a repo-relative
+still capable of leaking (see repo C above), which is why `safe_label` refuses a repo-relative
 path that itself contains a home marker or a memory basename, and why the CARD-LEVEL control below
 runs over the finished HTML regardless of which branch produced each label.
 

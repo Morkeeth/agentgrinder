@@ -49,7 +49,7 @@ def test_a_snapshot_paints_before_the_fetch_and_matches_the_row_that_was_publish
         assert field in snap, field
     assert "3 of 7 claims had evidence in their own turn." in snap
     # no private repo name, no absolute path, no prompt text rode along with it
-    assert "/Users/" not in snap and "design-daily" not in snap and "fleet-ops" not in snap
+    assert "/Users/" not in snap and "repo G" not in snap and "fleet-ops" not in snap
 
 
 def test_how_it_works_names_the_five_tools_and_the_three_modes_logged_out():

@@ -39,7 +39,7 @@ def test_activity_headline_and_five_row():
     typed, share, corr, prod, reach = a.five
     assert typed.value == "47" and typed.cost is True          # prompts are the cost
     assert share.value == "6/9 · 67%"
-    # 3 Sep: a dash used to name a private project of the author's ("Transcripto", "ZUP",
+    # 3 Sep: a dash used to name a private project of the author's ("Transcripto", "repo E",
     # "Helicon"), which reads to a stranger as "this will never work for you". A dash now names
     # THE MISSING FACT and says whether the reader can supply it today.
     assert corr.value == "—" and corr.source.startswith("not measured yet")
@@ -47,7 +47,7 @@ def test_activity_headline_and_five_row():
     assert prod.value == "4 ÷ —" and "Promised is not measured yet" in prod.source
     assert reach.value == "—" and "cross to a person who is not the author" in reach.source
     for cell in a.five:
-        for private in ("Transcripto", "ZUP", "Helicon"):
+        for private in ("Transcripto", "repo E", "Helicon"):
             assert private not in cell.source, cell.label
     # the Strava-shaped numbers survive, under cost
     assert a.distance == "47 prompts"
@@ -66,7 +66,7 @@ def test_no_surface_points_a_stranger_at_a_project_only_the_author_can_run():
     it. The rule is per SENTENCE, not per surface."""
     from agentgrinder.metrics import HEADLINE_TIP, SOURCES
     for text in [HEADLINE_TIP, *SOURCES.values()]:
-        for private in ("Transcripto", "ZUP", "Helicon"):
+        for private in ("Transcripto", "repo E", "Helicon"):
             assert private not in text, text
 
 
@@ -83,7 +83,7 @@ def test_card_headlines_verified_per_turn_not_prompts():
     # project a stranger cannot install
     assert "not measured yet: it needs every turn labelled as undoing the one before it" in html
     assert "Promised is not measured yet" in html
-    for private in ("Transcripto", "ZUP", "Helicon"):
+    for private in ("Transcripto", "repo E", "Helicon"):
         assert private not in html
 
 
@@ -251,7 +251,7 @@ def test_web_app_never_headlines_prompts():
     assert "not measured yet: it needs every turn labelled as undoing the one before it" in src
     assert "Promised is not measured yet" in src
     five = src[src.index("const VPT_TIP="):src.index("const pace=")]   # the headline tip too
-    for private in ("Transcripto", "ZUP", "Helicon"):
+    for private in ("Transcripto", "repo E", "Helicon"):
         assert private not in five, private
     # the reach cell prints the sentence THIS run's probe wrote, when it carried one
     assert "r.reach_reason||VPT_SRC.reach" in five

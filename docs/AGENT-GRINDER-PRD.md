@@ -27,7 +27,7 @@ carried until then does not reproduce against the current splitter). The solo an
 |---|---|---|
 | **Distance (headline)** | **verified per turn** = (verified claims + artifacts produced) ÷ typed turns — what the prompts *bought* | `agentgrinder/metrics.py` · claims v0 in `claims.py` (Helicon witness later) · produced = Edit/Write paths that exist |
 | — (cost, the denominator) | human prompts — typed turns, shown as cost, never as the achievement (METR: self-report is worthless) | `agentgrinder/authorship.py` · `promptSource` typed OR queued, dropping isMeta / isSidechain / tool_result |
-| — (the five numbers, one row) | typed turns (cost) · verified-claims share · correction rate · produced ÷ promised · reach; `—` with a tooltip naming Transcripto / Helicon / ZUP / gh when not computable here | internal metric spec `METRICS-AGENTIC-ENGINEERING-2026-09-02` (not in this repo); receipt `docs/VERIFIED-PER-TURN-2026-09-02.md` |
+| — (the five numbers, one row) | typed turns (cost) · verified-claims share · correction rate · produced ÷ promised · reach; `—` with a tooltip naming Transcripto / Helicon / repo E / gh when not computable here | internal metric spec `METRICS-AGENTIC-ENGINEERING-2026-09-02` (not in this repo); receipt `docs/VERIFIED-PER-TURN-2026-09-02.md` |
 | Moving time | session duration | first→last timestamp |
 | Pace | time per human prompt (cost group) | derived |
 | Elevation | tool calls (effort) | assistant tool_use |
@@ -41,7 +41,7 @@ carried until then does not reproduce against the current splitter). The solo an
 
 ## Feature stack (Strava mapping) — build order
 1. **Record (v1, SHIPPED):** `agentgrinder grind` ingests the latest sitting → draft Run; title auto-suggest
-   ("agent-attack · Sunday night"); privacy private / link-only / public / crew-only; publish = upload + URL.
+   ("repo A · Sunday night"); privacy private / link-only / public / crew-only; publish = upload + URL.
    *Without this loop there is no network, only a screenshot generator.*
 2. **Run detail page (v1):** a permalink — headline stats, grind curve + optional 15-min splits,
    secondary (tools/files/commits), your note, kudos + comments, "compare to your avg" (same project,
@@ -57,7 +57,7 @@ carried until then does not reproduce against the current splitter). The solo an
 6. **Personal Records (v1.5):** longest session, most prompts in a run, best sustained pace, most
    commits, Focus PB (rule already built). Shown on run detail: "★ PR — most prompts this month."
 7. **Segments (v2):** context segments, not GPS — compare your cadence on a project over time, day 1
-   vs day 2 of an event, or a manual phase tag (research/build/debug). "Beat your last agent-attack run."
+   vs day 2 of an event, or a manual phase tag (research/build/debug). "Beat your last repo A run."
 8. **Discover (v2):** browse *events*, not people; "12 grinders on Agents for Humans this week";
    trending opt-in public projects. Avoid "top builders."
 9. **Wrapped / achievements (v2 — launch marketing):** Year in the Grind; badges (first run, hackathon

@@ -36,14 +36,14 @@ Adversarial pass (self): the sharp risk is **privacy/ick** — people may not wa
 Survives because: (a) solo card has standalone value, (b) share is opt-in and the card shows
 *achievement metrics* (prompts, commits, focus), not the prompt *content*. NO NET-NEW collision:
 AISTRAVA does not duplicate MAGNET (private eval ledger) — it's the consumer/social face; and it does
-not duplicate ZUP (private ops board). Confirmed distinct.
+not duplicate repo E (private ops board). Confirmed distinct.
 
 ## Collision check
 | Idea | Already built? | Verdict |
 |------|----------------|---------|
 | Grade typed turns | Transcripto (live) | REUSE as on-ramp, don't rebuild |
 | Private adoption/eval ledger | MAGNET | DISTINCT — AISTRAVA is public/social face |
-| Ops board across lanes | ZUP | DISTINCT — that's private "what's up", not shareable runs |
+| Ops board across lanes | repo E | DISTINCT — that's private "what's up", not shareable runs |
 | Open transcript corpus | Wave Radio | ADJACENT — same Lenny thesis, different medium |
 
 ## VENUE RULING (needs Oscar)

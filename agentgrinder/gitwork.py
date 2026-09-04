@@ -145,7 +145,7 @@ def touched_since(root: str, paths: list[str], after: datetime) -> dict[str, str
 
     This exists because of a false sentence caught by control, not by a test. The card's first
     version called a file a dead end when no commit INSIDE THE GRIND'S WINDOW contained it. On
-    a real cv-forge session (23 Jul, 16:02–17:02) that printed four dead ends -- and every one of
+    a real repo C session (23 Jul, 16:02–17:02) that printed four dead ends -- and every one of
     the four was committed at 17:43, 41 minutes after the window closed, in `8379081`. The
     sentence was true about the window and false about the world: a person reads "no commit" as
     "this did not ship", and it shipped in the very next commit.

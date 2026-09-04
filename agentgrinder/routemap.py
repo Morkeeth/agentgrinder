@@ -338,14 +338,14 @@ def render_route_svg(run: dict):
             note = f'{b["lanes"]} lane{"" if b["lanes"] == 1 else "s"} · landed in no repository'
         else:
             # "no lane HERE" and nothing more. The first draft said "your own commits", which the
-            # row's own timestamps contradict: oscar-labs' single commit landed at 01:54, two
+            # row's own timestamps contradict: repo D' single commit landed at 01:54, two
             # hours after the last human turn. A lane is placed at its DOMINANT repository, so a
             # lane can commit somewhere it is not drawn -- which makes the author of a laneless
             # commit exactly the thing this card refuses to guess.
             note = (f'{n} commit{"" if n == 1 else "s"}'
                     + (f' · {b["lanes"]} lane{"" if b["lanes"] == 1 else "s"}'
                        if b["lanes"] else " · no lane drawn here"))
-        # a long label starting near the right edge ran off the drawing entirely (oscar-labs,
+        # a long label starting near the right edge ran off the drawing entirely (repo D,
         # arriving at 01:54, lost half its note). Flip the anchor rather than clip the text.
         wide = (len(b["repo"]) + len(note) + 3) * 6.55
         if b["label_x"] + wide > W - PAD_R:

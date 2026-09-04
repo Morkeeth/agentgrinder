@@ -16,12 +16,12 @@ from agentgrinder.fleet import redact
 
 RUN = {
     "repos": [{"name": "aistrava", "branch": "night/private-branch-name"},
-              {"name": "tooltruth-webmcp", "branch": "main"}],
+              {"name": "repo B", "branch": "main"}],
     "lanes": [{"repo": "aistrava", "code": "L6", "lane_name": "Agent Grinder", "repos": ["aistrava"]},
               {"repo": "recon", "code": None, "lane_name": "Recon sweep", "repos": []},
-              {"repo": "tooltruth-webmcp", "code": "L3", "lane_name": "Readycounter", "repos": []}],
+              {"repo": "repo B", "code": "L3", "lane_name": "lane B", "repos": []}],
     "sessions": [{"repo": "aistrava", "label": "morkeeth session"}],
-    "repos_untracked": ["cv-forge"],
+    "repos_untracked": ["repo C"],
 }
 
 ok = fail = 0
@@ -34,12 +34,12 @@ out = redact(RUN)
 blob = repr(out)
 
 t("no real repo name survives anywhere in the output",
-  not any(n in blob for n in ("aistrava", "tooltruth-webmcp", "cv-forge")))
+  not any(n in blob for n in ("aistrava", "repo B", "repo C")))
 t("THE ONE THAT MATTERS: 'recon' is not exempt", "recon" not in blob)
 t("a destination that is not a repo still gets a label",
   all(l.get("repo") for l in out["lanes"]))
 t("no lane brief name survives",
-  not any(n in blob for n in ("Agent Grinder", "Readycounter", "Recon sweep")))
+  not any(n in blob for n in ("Agent Grinder", "lane B", "Recon sweep")))
 t("branch names are dropped, they carry project and ticket names",
   not any("branch" in r for r in out["repos"]))
 t("counts and shape are untouched",

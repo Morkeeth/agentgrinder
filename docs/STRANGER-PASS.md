@@ -34,8 +34,8 @@ WARNING: The script agentgrinder is installed in '/home/ubuntu/.local/bin' which
 ## Step 2 · `python3 -m agentgrinder demo --no-open`
 
 ```
-  morkeeth · agent-attack — the gemma differential probe
-  Claude Code · agent-attack · Sun 30 Aug 2026 · 06:00
+  morkeeth · your-api — the retry-path refactor
+  Claude Code · your-api · Sun 30 Aug 2026 · 06:00
       47 prompts |    2h 20m | 2:59 /prompt
   effort 213 tool calls · 12 files · 3 commits · 20.1/h
 
@@ -70,8 +70,8 @@ No grinds found — run agentgrinder grind after a Claude or Cursor session.
 
 4/6 grind card — latest session
 
-  morkeeth · agent-attack — the gemma differential probe
-  Claude Code · agent-attack · Sun 30 Aug 2026 · 06:00
+  morkeeth · your-api — the retry-path refactor
+  Claude Code · your-api · Sun 30 Aug 2026 · 06:00
       47 prompts |    2h 20m | 2:59 /prompt
   effort 213 tool calls · 12 files · 3 commits · 20.1/h
 

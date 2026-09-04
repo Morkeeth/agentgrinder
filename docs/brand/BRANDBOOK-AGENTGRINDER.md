@@ -200,7 +200,7 @@ Save as `tokens/agentgrinder.css`:
 |-------|--------------|
 | **Transcripto** | “Numbers from Transcripto” footnote on ingest path |
 | **MAGNET** | Private eval — not on public card v1 |
-| **ZUP** | Private ops — no co-brand |
+| **repo E** | Private ops — no co-brand |
 | **Strava** | Metaphor only — never use their orange hex `#FC4C02` verbatim; we use `--ag-spark` |
 
 ---

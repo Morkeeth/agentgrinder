@@ -14,7 +14,7 @@
 # packaging artefact
 !agentgrinder.egg-info/**
 
-# non-public fleet shots (real repo names incl. cv-forge) — ship --public variant only
+# non-public fleet shots (real repo names incl. repo C) — ship --public variant only
 !docs/shots/nightrun-card-dark.png
 !docs/shots/nightrun-card-light.png
 !docs/shots/nightrun-card-phone-dark.png

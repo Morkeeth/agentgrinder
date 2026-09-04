@@ -59,7 +59,7 @@ We must beat StraVIBE on *"would you post this"* for a builder who cares about r
 | **Agent Grinder** | Product moonshot — stranger would-post, distribution |
 | **Hybrid** | Post-Sep 14 — not this week |
 
-**NO NET-NEW collision:** Agent Grinder is distinct from MAGNET (private eval), ZUP (ops board), Transcripto (authorship library — we reuse, not rebuild).
+**NO NET-NEW collision:** Agent Grinder is distinct from MAGNET (private eval), repo E (ops board), Transcripto (authorship library — we reuse, not rebuild).
 
 ---
 

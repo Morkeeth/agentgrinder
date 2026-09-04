@@ -3,7 +3,7 @@ doc: hack
 project: AGENT GRINDER — where you post your real runs
 phase: BUILD
 event: CANDIDATE — Agents for Humans (Devpost, Sun 14 Sep 2026, $40K)
-ruling: EYES 1 Sep — Grinder is the product; MAGNET submits Sep 14
+ruling: OSCAR 3 Sep — OPTION C: Grinder is the product AND the Sep 14 entry; MAGNET is its engine (supersedes EYES 1 Sep)
 canonical: docs/AGENT-GRINDER-PRD.md · docs/AGENT-GRINDER-BRANDBOOK.md
 last-touched: 2026-09-02 (Fable)
 ---
@@ -21,7 +21,7 @@ last-touched: 2026-09-02 (Fable)
 > run with crews, earn ACKs. Strava-shaped loop; agent-native vocabulary (see brand book).
 
 ## ⭐ NORTH STAR (the press-release line)
-*"I finished a 2-hour session on agent-attack — 47 prompts, 3 commits, a personal best on focus —
+*"I finished a 2-hour session on repo A — 47 prompts, 3 commits, a personal best on focus —
 and my friends gave it kudos before I closed the terminal."* A stranger sees a friend's AGENT GRINDER run
 and wants their own.
 

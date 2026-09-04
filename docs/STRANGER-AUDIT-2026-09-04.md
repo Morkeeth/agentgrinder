@@ -224,7 +224,7 @@ redacted output. Both are tracked and both are on `origin/main` today.
 | file, on `origin/main` | size | private project names |
 |---|---|---|
 | `nightrun-public.html` | 102,457 b | **0**, with 350 `repo N` labels in their place |
-| `nightrun.html` | 104,247 b | **164**, across six repositories, counted per name and not reproduced here |
+| `nightrun.html` | 104,247 b | **115**, across five names, counted per name and not reproduced here |
 
 Neither file is served by the website; `vercel.json` publishes `site/` and both of these sit at the
 repository root. So the exposure is the public GitHub repository, not the live URL. It is still a
@@ -302,11 +302,48 @@ whether it is a leak or a disclosure, and replacing the leaks with the `repo N` 
 already produces. That is a sized job, it is not this addendum, and it should not be confused with
 the untracking above.
 
-### And one that is mine
+### And two that are mine
 
 The first version of this audit documented the leak by reproducing it: the table in B4 listed all
-six project names and their counts, so the audit file itself became a thirty-first place they
-appear. Now corrected to counts without names. Writing down a leak is not a licence to copy it.
+the project names and their counts, so the audit file itself became one more place they appear. Now
+corrected to counts without names. Writing down a leak is not a licence to copy it.
+
+And the count was wrong. It was relayed to me as 164 occurrences of six project names, I verified
+the arithmetic and not the semantics, and published it. One of the six is the ordinary English word
+"cleared", which appears 50 times in that file as "the bar is actually cleared". The real figure is
+**115 occurrences of five names**, and one of those five is this repository's own former codename.
+Checking that a number adds up is not the same as checking that it counts what it says it counts,
+which is the thing this whole project is about.
+
+## Addendum 4: the name pass is done, and here is the number
+
+**At `HEAD`, a stranger who clones this repository and reads the files sees zero occurrences of any
+of Oscar's other projects.** Measured over every tracked text file, twelve names, word-boundary
+matched: 51 replacements across 21 files, then 7 more where a redaction label had landed in
+user-facing copy and needed a plausible example instead.
+
+**In the history, 334 occurrences of those twelve names are still reachable** by anyone who clones
+and runs `git log --all -p`. That count includes the removal commit itself, because deleting text
+in git makes it appear one more time in the log. That is the residue option one always had, and it
+is now measured rather than described.
+
+So the two numbers a friend cares about are **0 at HEAD** and **334 in the log**, and only a
+history rewrite moves the second, which as Addendum 3 established would rewrite every commit in the
+repository.
+
+What was deliberately left alone, and why, because a redaction that strips a required disclosure is
+the same error facing the other way:
+
+- **The vendored dependency and the two public sibling repositories.** Disclosed in the README on
+  purpose. The rules require disclosing pre-existing code.
+- **This repository's own former codename.** It is documented as its own former name in its own
+  brand book. It maps nothing else.
+- **`recon`.** Not a name. It is the sentinel the code uses for "landed in no repository", and
+  `fleet.py` says so.
+
+One more thing this pass caught, and it is a correction to the finding rather than to the fix. The
+leak was reported as six names; one of the six is the ordinary English word "cleared". See the
+correction under Addendum 3.
 
 ## The order to fix in
 

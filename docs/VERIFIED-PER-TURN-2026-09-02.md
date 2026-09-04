@@ -13,7 +13,7 @@ Branch `fable/verified-per-turn-2026-09-02`. Not pushed, not deployed.
 |---|---|---|
 | Headline | **47 prompts** (Distance) · 2h 20m · 2:59 /prompt | **0.21 verified per turn** — (6 verified + 4 artifacts) ÷ 47 typed turns |
 | Five-number row | — (did not exist) | typed turns **47** `cost` · verified claims **6/9 · 67%** · correction rate **—** · produced ÷ promised **4 ÷ —** · reach **—** |
-| Tooltips on `—` | — | Transcripto export-run (typed turns, correction rate) · Helicon witness (verified share) · ZUP artifact-detect (promised) · git remotes + gh + launch log (reach) |
+| Tooltips on `—` | — | Transcripto export-run (typed turns, correction rate) · Helicon witness (verified share) · repo E artifact-detect (promised) · git remotes + gh + launch log (reach) |
 | Cost group | (was the headline) | "COST — what the run spent": 47 prompts · 2h 20m · 2:59 /prompt, then effort 213 tool calls · 12 files · 3 commits · 20.1/h |
 | Route SVG | present | unchanged |
 
@@ -39,7 +39,7 @@ touched; they name a real project and should be replaced by whoever owns the sam
 | `claims`, `claims_verified` | **v0 rule, `agentgrinder/claims.py`**: a claim is an assistant text LINE matching `passes|passed|fixed|done|deployed|works|green|verified|ship(s|ped)`; verified when a tool result in the SAME HUMAN TURN (either side of the claim) carries a `test_*` name or file path from the claim line, or `N passed` / a line starting `OK` / `exit 0` not contradicted by `N failed` / `FAILED` / `Traceback` | local stand-in for `helicon witness` |
 | `artifacts_produced` | distinct Edit/Write `file_path`s that exist on disk at parse time | v0; "at parse time" ≠ "at close" |
 | `corrections` | — | `None`: Transcripto's classifier |
-| `artifacts_promised` | — | `None`: ZUP |
+| `artifacts_promised` | — | `None`: repo E |
 | `reach` | — | `None`: git remotes + gh + launch log |
 
 **Deviation, stated:** the brief said a claim is verified if *followed* by a tool_use with matching
@@ -71,7 +71,7 @@ under `__main__` — `python3 tests/test_redact_no_whitelist.py` still prints `o
   not methodology.html (which carries no numbers). See "3 Sep addendum" below.
 - ~~`render_profile` still shows a "Prompts" total; untouched, reads the same `Activity` fields.~~
   **Flipped 3 Sep.**
-- Correction rate, promised, reach print `—`: no classifier, no ZUP read, no reach probe was built.
+- Correction rate, promised, reach print `—`: no classifier, no repo E read, no reach probe was built.
 - No lift experiment (the spec's "done when a lift number exists") — every card is still a claim.
 
 ## 3 Sep addendum — the other three surfaces (Fable, same branch)

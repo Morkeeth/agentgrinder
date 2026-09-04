@@ -43,8 +43,8 @@ def _canonical_repo(root: str) -> tuple[str, str]:
     A linked worktree has its own `.git` FILE and its own directory name, but it shares refs with
     the repository it came from, so `git log --all` in both returns THE SAME COMMITS. Treating the
     two as separate destinations counted 32 of tonight's 99 commits twice, and printed the pairs
-    side by side on the card: tooltruth-webmcp 21 / nightrun-l3 21, design-daily 7 / day10 7,
-    agent-attack 4 / nightrun-l2-workingnote 4. One repository, counted once.
+    side by side on the card: repo B 21 / lane c 21, repo G 7 / lane e 7,
+    repo A 4 / lane d 4. One repository, counted once.
     """
     if root in _CANON_CACHE:
         return _CANON_CACHE[root]
@@ -538,7 +538,7 @@ def redact(run: dict) -> dict:
     """Return a copy safe to show a stranger: the SHAPE and every count survive, the NAMES do not.
 
     The honest blocker to posting a night run is not the design, it is that the card names private
-    repositories and lane briefs ("Ata Witness Ship-Prep", "tooltruth-webmcp"). Redaction renames
+    repositories and lane briefs ("lane A", "repo B"). Redaction renames
     destinations to stable, ordered pseudonyms and drops lane briefs to their code, so the route,
     the pace, the handoff and every number are unchanged and nothing identifies the work.
 
@@ -552,7 +552,7 @@ def redact(run: dict) -> dict:
         if l.get("repo") and l["repo"] not in names:
             names.append(l["repo"])
     # repos_untracked was never fed into the alias map, so alias.get(x, x) returned the
-    # real name and cv-forge shipped unredacted on the card. Any name that does not enter
+    # real name and repo C shipped unredacted on the card. Any name that does not enter
     # the map passes through silently -- the same failure shape as the recon whitelist.
     names += [x for x in run.get("repos_untracked", []) if x not in names]
     alias = {n: f"repo {i + 1}" for i, n in enumerate(sorted(set(names)))}

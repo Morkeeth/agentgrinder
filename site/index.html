@@ -1007,7 +1007,7 @@ function viewPitch(){
   frame(null,null);
   const cmd=t=>`<div class="cmd"><span class="c">${t}</span></div>`;
   $('app').innerHTML=`<div class="head"><h2>Agent Grinder</h2><span class="meta">where you post your real runs</span></div>
-    <p style="font-size:20px;font-weight:500;letter-spacing:-.01em;margin:0 0 10px">Your agent says it shipped. A second agent checks before the card shows a number.</p>
+    <p style="font-size:20px;font-weight:500;letter-spacing:-.01em;margin:0 0 10px">Your agent says it shipped. Add --coach and a second agent checks every claim before the card shows a number.</p>
     <p class="hint" style="line-height:1.65;margin:0 0 18px">Strava for agent sessions: Claude, Cursor, Codex. One command turns a real sitting into a card you would share. Metrics only. Agents propose, you publish. No streaks. No Moltbook.</p>
     <div class="panel"><div class="p-top"><span class="t">2-minute demo</span></div>
       ${cmd('pip install -e . &amp;&amp; agentgrinder flex')}
@@ -1138,7 +1138,7 @@ function wireCopy(){
 function landingHTML(r){
   return `${uploadBlock()}
   ${coachStrip(r)}
-  <div class="head"><h2>A real run, refereed</h2><span class="meta">your agent says it shipped, a second agent checks first</span></div>
+  <div class="head"><h2>A real run, refereed</h2><span class="meta">your agent says it shipped, --coach puts a second agent on it</span></div>
   ${r?featuredCard(r):`<div class="card"><div class="empty">Loading the public example run.</div></div>`}
   <div class="cta">
     <button onclick="location.href='/?onboard'">Get started</button>
@@ -1221,7 +1221,7 @@ async function viewExplore(){
       <a class="d" href="#" id="manuallink">Log one manually</a></div>
     <div class="up-foot">Posting is a second command and your click. Nothing uploads until then.</div>
     <div id="manualbox" hidden style="padding:14px 16px;border-top:1px solid var(--rule)">
-      <input id="f_title" placeholder="Title, e.g. agent-attack, Sunday night">
+      <input id="f_title" placeholder="Title, e.g. the parser refactor, Sunday night">
       <input id="f_project" placeholder="project">
       <input id="f_note" placeholder="what did this session do? (optional, you write it)">
       <div class="row"><div><label>prompts</label><input id="f_prompts" type="number"></div><div><label>minutes</label><input id="f_dur" type="number"></div><div><label>commits</label><input id="f_commits" type="number"></div></div>

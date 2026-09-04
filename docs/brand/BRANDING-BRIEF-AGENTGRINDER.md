@@ -23,7 +23,7 @@ Coding agents log everything. Operators see almost none of it. Sessions vanish w
 | **Secondary — the crew** | Hackathon teams, indie fleets, agent-science circles | Compare cadence on the same event; kudos as lightweight accountability |
 | **Tertiary — the curious friend** | Non-operator who sees a card on X/LinkedIn | “What is this?” → installs, runs `agentgrinder run`, posts their own |
 
-**Not for:** enterprise eval buyers (that’s MAGNET). Not for private ops routing (that’s ZUP).
+**Not for:** enterprise eval buyers (that’s MAGNET). Not for private ops routing (that’s repo E).
 
 ---
 
