@@ -23,7 +23,7 @@ The product is deployed at https://agentgrinder.vercel.app. The full scope remai
 
 The complete migration passed the real PostgreSQL rollback preflight, including two distinct auth/profile identities, private/public import, another profile's ACK, return notification and deletion. The transaction rolled back. The ordered product migrations then applied permanently.
 
-Using the signed-in website, a labelled temporary run was imported privately, opened by its owner and changed to link visibility. Anonymous reads of its private state returned no rows. A query-join defect found during this journey was fixed: run reads now select `profiles!runs_profile_id_fkey`. Profile loading reads the existing profile before creating one, preserving edited names.
+Using the signed-in website, a labelled temporary run was imported privately, opened by its owner and changed to link visibility. Anonymous reads of its private state returned no rows. A query-join defect found during this journey was fixed: run reads now select `profiles!runs_profile_id_fkey`. Profile loading reads the existing profile before creating one, preserving edited names. Auth refreshes render in sequence to prevent duplicate controls when initial loading and sign-in arrive together.
 
 The final privacy patch was applied separately. The live check observed a link collection returning no rows and the exact known link returning its run. Link reads require the run ID from the opened URL; ACK reads use the run's audience. Supabase CORS allows the request header. `scripts/check-hosted.py` checks five query shapes taken from the shipped source and anonymous denial on private tables.
 
@@ -46,7 +46,7 @@ No configured Fable reviewer was available. The reviewers did not test the final
 
 ## What remains to prove
 
-- Two independent people complete a real run → share → ACK → return journey. Email delivery and a fresh OAuth return still need acceptance testing. No invitation or email was sent.
+- Two independent people complete a real run → share → ACK → return journey. Email delivery still needs acceptance testing. GitHub sign-out → sign-in returned to the exact public run in the hosted browser. No invitation or email was sent.
 - A real external agent performs an allowed hosted write, then encounters out-of-scope and revoked-credential denials. Database tests already cover those rules; that is a different test.
 - A person tries a practice across real comparable sessions and finds it useful. Native claim/evidence calibration is not established. Rig selection declares configuration; it does not install a provider's tools.
 - Two real Crews complete a Challenge and a team experiment. Eight OCTACON places are capacity, not observed entrants. No retention, paid demand or improvement rate is claimed.

@@ -143,5 +143,21 @@ with sync_playwright() as p:
     assert profile.get_by_role('link',name='@provider-handle').count()==1
     profile.close()
 
+    # Auth's initial session and SIGNED_IN must not interleave page rendering.
+    race=browser.new_page()
+    race.set_content('<main id="app"></main><button id="auth"></button><button id="delete"></button>')
+    bootstrap=html[html.index("document.addEventListener('DOMContentLoaded'"):html.index('</script>',html.index("document.addEventListener('DOMContentLoaded'"))]
+    race.add_script_tag(content=r"""
+      const $=id=>document.getElementById(id),skeletonCard=()=>'',status=()=>{};
+      let ME=null;window.activeRenders=0;window.maxRenders=0;window.completedRenders=0;
+      const sb={auth:{onAuthStateChange(callback){callback('SIGNED_IN',{user:{id:'race-user'}})}}};
+      async function refreshAuth(){await new Promise(resolve=>setTimeout(resolve,20));ME={auth_uid:'race-user'}}
+      async function route(){activeRenders++;maxRenders=Math.max(maxRenders,activeRenders);await new Promise(resolve=>setTimeout(resolve,40));activeRenders--;completedRenders++}
+    """+bootstrap)
+    race.evaluate("document.dispatchEvent(new Event('DOMContentLoaded'))")
+    race.wait_for_function('completedRenders===2')
+    assert race.evaluate('maxRenders')==1
+    race.close()
+
     print(json.dumps({'fixture':'practice discovery, failed search, before/after, explicit shared attempt','mobile_and_desktop':True,'javascript_errors':failures,'writes':calls}))
     browser.close()

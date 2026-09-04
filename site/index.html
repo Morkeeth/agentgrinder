@@ -1563,7 +1563,14 @@ document.addEventListener('DOMContentLoaded',()=>{
     showSignIn(); });
   $('delete').addEventListener('click',async e=>{e.preventDefault(); if(!ME)return; if(!confirm('Delete your Grinder profile and owned work? Shared submitted results and your sign-in account remain. Transfer shared Crews and hosted Challenges first. Deleted work cannot be restored.'))return;
     const {error}=await sb.from('profiles').delete().eq('id',ME.id); if(error){status(error.message,true);return;} await sb.auth.signOut(); location.href='/'; });
-  if(sb){ refreshAuth().then(route); sb.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_OUT'||event==='USER_UPDATED'||(event==='SIGNED_IN'&&session?.user?.id!==ME?.auth_uid))setTimeout(()=>refreshAuth().then(route),0)}); } else route();
+  if(sb){
+    // Initial session loading and SIGNED_IN can arrive together. Finish one render
+    // before another auth refresh can append controls to the same page.
+    let authRefresh=Promise.resolve();
+    const refreshAndRoute=()=>{authRefresh=authRefresh.catch(()=>{}).then(async()=>{await refreshAuth();await route()});return authRefresh;};
+    refreshAndRoute();
+    sb.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_OUT'||event==='USER_UPDATED'||(event==='SIGNED_IN'&&session?.user?.id!==ME?.auth_uid))setTimeout(refreshAndRoute,0)});
+  } else route();
 });
 </script>
 </body></html>
