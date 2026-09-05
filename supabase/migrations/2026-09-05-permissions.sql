@@ -49,4 +49,5 @@ grant execute on function grinder_feature_run(uuid) to authenticated;
 grant execute on function grinder_link_access(uuid),grinder_profile_id(),grinder_is_member(uuid),grinder_owns_crew(uuid),grinder_can_read_run(uuid),grinder_can_read_practice(uuid) to anon,authenticated;
 grant select,delete on grinder_comparisons to authenticated;
 grant execute on function grinder_save_comparison(uuid,uuid,text,boolean,uuid),grinder_practice_from_comparison(uuid,text,text) to authenticated;
+grant execute on function grinder_forum_create(uuid,text,text,uuid),grinder_forum_subscribe(uuid,boolean),grinder_forum_seen(uuid,uuid),grinder_forum_accept(uuid,uuid) to authenticated;
 commit;

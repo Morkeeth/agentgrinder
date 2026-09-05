@@ -1486,13 +1486,16 @@ async function viewEvent(){
 }
 
 
-const forum=GrinderForum({client:sb,app:()=>document.getElementById('app'),frame,status});
+const forum=GrinderForum({client:sb,me:()=>ME,app:()=>document.getElementById('app'),frame,status});
 
 async function route(){ authErrorFromUrl();
   restoreImport();
   if(importRun()) return;
-  if(ME){try{const pending=sessionStorage.getItem('ag_social_return');if(pending&&/^\?(mine|forum|progress|comparison|join|crew|crews|following|inbox|agents|agent|rigs|rigversion|practices|practice|experiments|experiment|challenges|challenge|run|u)(=|$)/.test(pending)){history.replaceState(null,'','/'+pending);sessionStorage.removeItem('ag_social_return');}}catch(_){}}
+  if(ME){try{const pending=sessionStorage.getItem('ag_social_return');if(pending&&/^\?(mine|question|ask|forum_updates|forum|progress|comparison|join|crew|crews|following|inbox|agents|agent|rigs|rigversion|practices|practice|experiments|experiment|challenges|challenge|run|u)(=|$)/.test(pending)){history.replaceState(null,'','/'+pending);sessionStorage.removeItem('ag_social_return');}}catch(_){}}
   const q=new URLSearchParams(location.search);
+  if(q.has('question'))return forum.question(q.get('question'));
+  if(q.has('ask'))return forum.ask();
+  if(q.has('forum_updates'))return forum.updates();
   if(q.has('forum'))return forum.index();
   if(q.has('mine'))return progress.history();
   if(q.has('progress'))return progress.index();

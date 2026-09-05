@@ -66,3 +66,11 @@ button,summary{touch-action:manipulation}
 .run-key-facts span{display:block;color:var(--soft);font-size:12px}.run-key-facts strong{font-size:25px;font-weight:500;line-height:1.6}.run-evidence{margin:10px 0 20px}.run-evidence summary{cursor:pointer;color:var(--soft);font-size:13px}.card .title a{color:inherit;text-decoration:none}
 
 .forum-trace{max-width:420px;margin:20px 0}.forum-trace svg{height:90px}.forum-item h3{font-size:23px;line-height:1.3}.forum-item .reply-body{white-space:pre-wrap;overflow-wrap:anywhere}
+#question-body .card,#question-body .panel{padding:24px;margin-bottom:20px}
+#question-body .reply-body{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.65}
+#question-body .card button{margin-left:12px;margin-top:12px}
+#question-body .card h2{font-size:28px;line-height:1.2;margin:18px 0}
+#question-body .card h3{margin-top:16px}
+@media(max-width:600px){#question-body .card,#question-body .panel{padding:18px}#question-body .card button{display:block;margin-left:0}#question-body .card h2{font-size:25px}}
+
+.shell.solo .main{width:100%;box-sizing:border-box}#forum-search{padding:24px}

@@ -13,4 +13,5 @@
 2026-09-05-count-integrity.sql
 2026-09-05-link-privacy.sql
 2026-09-05-progress.sql
+2026-09-05-forum.sql
 2026-09-05-permissions.sql

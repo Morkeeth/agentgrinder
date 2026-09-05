@@ -631,6 +631,57 @@ const retainedProgress=(await db.query('select * from grinder_comparisons where 
 assert.equal(retainedProgress.earlier_run,null);
 assert.equal(retainedProgress.before_run.turns_typed,3);
 assert.equal(retainedProgress.after_run.turns_typed,4);
+// Forum lifecycle uses three distinct controlled identities and actual RLS.
+await db.exec('reset role');
+const fOwner='11000000-0000-0000-0000-000000000001',fOther='11000000-0000-0000-0000-000000000002',fThird='11000000-0000-0000-0000-000000000003';
+await db.query('insert into profiles(id,auth_uid) values($1,$1),($2,$2),($3,$3)',[fOwner,fOther,fThird]);
+await as(fOwner);
+const fRun=(await db.query("insert into runs(profile_id,title,visibility) values($1,'Forum fixture','public') returning id",[fOwner])).rows[0].id;
+const fRun2=(await db.query("insert into runs(profile_id,title,visibility) values($1,'Other forum fixture','public') returning id",[fOwner])).rows[0].id;
+const fRequest='12000000-0000-0000-0000-000000000001';
+const fQ=(await db.query("select grinder_forum_create($1,'Why did this fail?','Fixture question',$2) id",[fRun,fRequest])).rows[0].id;
+assert.equal((await db.query("select grinder_forum_create($1,'Why did this fail?','Fixture question',$2) id",[fRun,fRequest])).rows[0].id,fQ);
+await denied("select grinder_forum_create($1,'Changed question','Fixture question',$2)",[fRun,fRequest]);
+assert.equal((await db.query('select count(*)::int n from grinder_forum_subscriptions')).rows[0].n,1);
+await as(fOther);
+assert.equal((await db.query('select count(*)::int n from grinder_forum_subscriptions')).rows[0].n,0);
+await db.query('select grinder_forum_subscribe($1,true)',[fQ]);
+const fAnswer=(await db.query("insert into grinder_replies(run_id,forum_question_id,author_id,body) values($1,$2,$3,'Try the import check first') returning id",[fRun,fQ,fOther])).rows[0].id;
+await denied("insert into grinder_replies(run_id,forum_question_id,author_id,body) values($1,$2,$3,'Wrong run')",[fRun2,fQ,fOther]);
+await denied('select grinder_forum_accept($1,$2)',[fQ,fAnswer]);
+await denied('update grinder_forum_questions set accepted_reply=$1 where id=$2',[fAnswer,fQ]);
+await as(fOwner);
+await db.query('select grinder_forum_accept($1,$2)',[fQ,fAnswer]);
+assert.equal((await db.query('select accepted_reply from grinder_forum_questions where id=$1',[fQ])).rows[0].accepted_reply,fAnswer);
+await as(fOther);
+await db.query("update grinder_replies set body='Revised suggestion' where id=$1",[fAnswer]);
+assert.equal((await db.query('select accepted_reply from grinder_forum_questions where id=$1',[fQ])).rows[0].accepted_reply,null);
+await as(fOwner);
+await db.query('select grinder_forum_seen($1,$2)',[fQ,fAnswer]);
+const seenReplyTime=(await db.query('select created_at from grinder_replies where id=$1',[fAnswer])).rows[0].created_at;
+const readTime=(await db.query('select last_seen_at from grinder_forum_subscriptions where question_id=$1 and profile_id=$2',[fQ,fOwner])).rows[0].last_seen_at;
+assert.equal(new Date(readTime).getTime(),new Date(seenReplyTime).getTime());
+await as(fOther);
+const secondQuestion=(await db.query("select grinder_forum_create($1,'Another question','Owned by another builder',$2) id",[fRun,'12000000-0000-0000-0000-000000000002'])).rows[0].id;
+await as(fThird);
+await db.query('insert into grinder_blocks(blocker_id,blocked_id) values($1,$2)',[fThird,fOther]);
+assert.equal((await db.query('select count(*)::int n from grinder_forum_questions where id=$1',[secondQuestion])).rows[0].n,0);
+await denied('select grinder_forum_subscribe($1,true)',[secondQuestion]);
+await as(fOwner);
+await db.query("update runs set visibility='private' where id=$1",[fRun]);
+await as(fOther);
+assert.equal((await db.query('select count(*)::int n from grinder_forum_questions where id=$1',[fQ])).rows[0].n,0);
+assert.equal((await db.query('select count(*)::int n from grinder_forum_subscriptions where question_id=$1',[fQ])).rows[0].n,0);
+await denied('select grinder_forum_subscribe($1,true)',[fQ]);
+await db.query('select grinder_forum_subscribe($1,false)',[fQ]); // Unfollow remains possible after loss of access.
+await anonymous();
+assert.equal((await db.query('select count(*)::int n from grinder_forum_questions where id=$1',[fQ])).rows[0].n,0);
+await denied('select * from grinder_forum_subscriptions');
+await denied('select grinder_forum_seen($1,$2)',[fQ,fAnswer]);
+await as(fOwner);
+await db.query('delete from runs where id=$1',[fRun]);
+assert.equal((await db.query('select count(*)::int n from grinder_forum_questions where id=$1',[fQ])).rows[0].n,0);
+
 await db.close();
 console.log(
   "Database checks passed: social permissions; agent capabilities; two-crew Challenge; locked Contract; frozen submission; rejection, appeal and revised review; late-submission denial.",
