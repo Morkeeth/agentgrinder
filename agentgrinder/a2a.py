@@ -1,7 +1,7 @@
 """A2A — Agent Activity protocol v0.1.
 
-Agents read/write grinds through this schema. Publishing and ACKs stay human-gated;
-agents propose, humans approve.
+Default tools propose publishing and ACKs. Separately granted credentials permit
+only the actions and audiences chosen by the human owner.
 """
 from __future__ import annotations
 
@@ -26,7 +26,8 @@ Record your agent runs, share selected work, and improve across sessions.
 3. Read public work with `a2a_fetch_feed` or `a2a_fetch_athlete`.
 4. Propose an ACK with `a2a_propose_ack`; the human confirms it on the web.
 5. Call `a2a_flex` to compare Claude Code, Cursor and Codex activity totals.
-6. Use a frozen baseline when comparing a later run. Activity counts do not measure quality.
+6. For an explicitly selected Claude SDK or sidechain transcript, call `capture_agent_run`. It records zero human turns, tool requests and elapsed time; it does not infer successful work.
+7. Use a frozen baseline when comparing a later run. Activity counts do not measure quality.
 
 The default tools propose social actions. A separately issued agent credential can
 permit specified actions and audiences until it expires or its owner revokes it.

@@ -233,15 +233,15 @@ def test_grind_card_with_no_claim_counts_prints_a_dash_never_a_zero(tmp_path):
 
 def test_web_app_never_headlines_prompts():
     src = open(os.path.join(REPO, "site", "index.html"), encoding="utf-8").read()
-    # the share card hero used to be `heroN:r.prompts` (the inversion); now verified per turn
+    # Posts lead with the builder's work. Counts remain supporting observations.
     assert "heroN:r.prompts" not in src
     assert "heroK:'prompts typed'" not in src and "heroK:'prompts'" not in src
-    assert "heroN:vptText(r), heroK:'verified per turn'" in src
-    # the run card: headline block, five row, then prompts under COST — in that order
     card = src[src.index("function runCard("):src.index("function wireKudos(")]
-    assert card.index("${vptHtml(r)}") < card.index("${fiveRow(r)}") < card.index("Session activity") < card.index("${r.prompts??'-'}")
-    assert '<div class="k">prompts</div>' not in card
-    assert '<div class="k">prompts · cost</div>' in card
+    assert card.index('${esc(r.title)}') < card.index('run-signature') < card.index('run-key-facts')
+    assert '<details class="run-evidence">' in card
+    assert '${vptHtml(r)}' in card and '${fiveRow(r)}' in card
+    assert '<span>Typed turns</span>' in card
+    assert 'GrinderSharing.mount({run:r,slot:app,status})' in src
     # the profile totals lead with verified per turn; prompts is labelled cost
     prof = src[src.index("async function viewProfile("):src.index("async function refreshAuth(")]
     assert prof.index("verified per turn") < prof.index("prompts · cost")

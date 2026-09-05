@@ -27,6 +27,9 @@ SAFE_FIELDS = [
 ]
 
 TOOLS = [
+    {"name":"capture_agent_run",
+     "description":"Capture an explicitly selected local Claude SDK or sidechain transcript. Requires known automated provenance; returns metrics only with zero human turns. Does not publish or return transcript text.",
+     "inputSchema":{"type":"object","properties":{"transcript":{"type":"string","description":"Local transcript path explicitly selected for capture"}},"required":["transcript"],"additionalProperties":False}},
     {
         "name": "a2a_onboard",
         "description": "Agent Grinder A2A onboarding — your role, rules, and tool list. Read this first.",
@@ -314,7 +317,10 @@ def _handle(req: dict):
         args = pr.get("arguments", {}) or {}
         failed = False
         try:
-            if name == "agent_questions":
+            if name == "capture_agent_run":
+                from .automated_capture import capture
+                text=json.dumps(capture(args["transcript"]))
+            elif name == "agent_questions":
                 from .agent_api import AgentClient
                 text=json.dumps(AgentClient().questions())
             elif name == "agent_action":

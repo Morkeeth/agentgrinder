@@ -82,7 +82,7 @@ window.GrinderPractices = function ({ client: db, me, app, frame, status }) {
       $("practice-body").innerHTML =
         '<p>Find a change for the task in front of you. Read the attempts, including changes that did not help.</p><form id="practice-filter" class="reply-form"><label>Find by task, practice or harness<input name="query" type="search" placeholder="Tests, debugging, Cursor…"></label><button>Find practices</button></form><div id="practice-list"></div>' +
         (me()
-          ? `<details class="panel"><summary>Share a practice</summary><form id="practice-create" class="reply-form"><label>Name<input name="title" required maxlength="160"></label><label>Task context<textarea name="context" required maxlength="2000"></textarea></label><label>What to try<textarea name="instruction" required maxlength="4000"></textarea></label><label>Expected change<input name="expected" required maxlength="2000"></label><label>Harness<input name="harness" maxlength="100"></label><label>Audience<select name="audience"><option value="private">Only me</option><option value="public">Public</option>${crews.map((x) => (x.crew ? `<option value="${x.crew.id}">Crew: ${esc(x.crew.name)}</option>` : "")).join("")}</select></label><p>Sharing exposes the text you enter. Leave out private project details.</p><button>Save practice version</button></form></details>`
+          ? `<details class="panel"><summary>Share a practice</summary><form id="practice-create" class="reply-form"><label>Name<input name="title" required maxlength="160"></label><label>Task context<textarea name="context" required maxlength="2000"></textarea></label><label>What to try<textarea name="instruction" required maxlength="4000"></textarea></label><label>Expected change<input name="expected" required maxlength="2000"></label><label>Harness<input name="harness" maxlength="100"></label><label>Audience<select name="audience" aria-label="Audience"><option value="private">Only me</option><option value="public">Public</option>${crews.map((x) => (x.crew ? `<option value="${x.crew.id}">Crew: ${esc(x.crew.name)}</option>` : "")).join("")}</select></label><p>Sharing exposes the text you enter. Leave out private project details.</p><button>Save practice version</button></form></details>`
           : "<p>Sign in to create a practice or start an attempt.</p>");
       function show(query = "") {
         const selected = rows.filter((r) =>
@@ -101,11 +101,24 @@ window.GrinderPractices = function ({ client: db, me, app, frame, status }) {
       }
       show();
       bind("practice-filter", async (f) => show(f.elements.query.value));
+      let sourceRun = null;
+      const fromReply = new URLSearchParams(location.search).get('from_reply');
+      if (me() && /^[0-9a-f-]{36}$/i.test(fromReply || '')) {
+        const source = await data(db.from('grinder_replies').select('id,run_id,body').eq('id',fromReply));
+        if (source[0]) {
+          const create=$('practice-create');create.closest('details').open=true;
+          create.elements.instruction.value=source[0].body;
+          create.elements.audience.value='private';sourceRun=source[0].run_id;
+          const origin=document.createElement('p');origin.innerHTML='<a href="/?run='+sourceRun+'#reply-'+source[0].id+'">Source conversation</a> · Turn this suggestion into one action. Your draft starts private.';
+          create.prepend(origin);
+        } else status('The source reply is private, deleted or unavailable. You can still write a practice.');
+      }
       bind("practice-create", async (f) => {
         const v = f.elements,
           a = v.audience.value;
         const row = {
           owner_id: me().id,
+          source_run: sourceRun,
           title: v.title.value,
           task_context: v.context.value,
           instruction: v.instruction.value,

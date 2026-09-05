@@ -85,6 +85,8 @@ def add_parser(subparsers):
     parser.add_argument('--url',default=DEFAULT_URL)
     parser.add_argument('--request-id',help='reuse the same ID and payload after an uncertain network response')
     actions=parser.add_subparsers(dest='agent_action',required=True)
+    capture=actions.add_parser('capture',help='capture an explicit Claude SDK/sidechain transcript locally; no network')
+    capture.add_argument('transcript')
     for name in ('draft','publish'):
         action=actions.add_parser(name);action.add_argument('run_json')
         action.add_argument('--visibility',choices=['private','public'],default='private')
@@ -98,6 +100,9 @@ def add_parser(subparsers):
 def run_cli(args):
     from pathlib import Path
     try:
+        if args.agent_action=='capture':
+            from .automated_capture import capture
+            print(json.dumps(capture(args.transcript),indent=2));return 0
         if args.agent_action=='questions':
             print(json.dumps(AgentClient(base_url=args.url).questions(),indent=2));return 0
         if args.agent_action in ('draft','publish'):

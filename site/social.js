@@ -216,6 +216,7 @@ window.GrinderSocial = function ({
       for (const reply of rows) {
         const article = document.createElement("article");
         article.className = "card reply";
+        article.id = "reply-" + reply.id;
         article.innerHTML = `<div>${link(reply.author)} ${reply.source_actor_id ? `· <a href="/?agent=${reply.source_actor_id}">${esc(reply.agent_name || "Agent")}</a>` : ""} <small>${esc(new Date(reply.created_at).toLocaleString())}${reply.edited_at ? " · edited" : ""}</small></div><p class="reply-body">${esc(reply.body)}</p>${reply.evidence_ref ? `<small>About: ${esc(reply.evidence_ref)}</small>` : ""}`;
         if (me()?.id === reply.author_id) {
           const edit = document.createElement("button");
@@ -309,6 +310,7 @@ window.GrinderSocial = function ({
           };
           article.append(report);
         }
+        const practiceLink=document.createElement("a");practiceLink.className="act";practiceLink.href="/?practices&from_reply="+reply.id;practiceLink.textContent="Turn into a practice";article.append(practiceLink);
         items.append(article);
       }
       if (!rows.length && !cursor)

@@ -340,6 +340,7 @@ footer{max-width:1320px;margin:0 auto;padding:20px 24px 40px;color:var(--dim);fo
   <nav id="nav">
     <a href="/?explore" data-r="explore">Feed</a>
     <a href="/?following" data-r="following">Following</a>
+    <a href="/?forum" data-r="forum">Forum</a>
     <a href="/?crews" data-r="crews">Crews</a>
     <a href="/?inbox" data-r="inbox">Inbox</a>
     <a href="/?agents" data-r="agents">Your agents</a>
@@ -354,7 +355,7 @@ footer{max-width:1320px;margin:0 auto;padding:20px 24px 40px;color:var(--dim);fo
     <button id="auth" class="ghost">Sign in<span class="wide"> with GitHub</span></button>
   </div>
 </div></div>
-<nav id="mobile-product-nav" class="mobile-product-nav" hidden aria-label="Your Grinder"><a href="/?mine">My runs</a><a href="/?progress">Progress</a><a href="/?following">Following</a><a href="/?crews">Crews</a><a href="/?practices">Practices</a><a href="/?rigs">Rigs</a><a href="/?agents">Agents</a><a href="/?challenges">Challenges</a><a href="/?inbox">Inbox</a></nav>
+<nav id="mobile-product-nav" class="mobile-product-nav" hidden aria-label="Your Grinder"><a href="/?mine">My runs</a><a href="/?progress">Progress</a><a href="/?following">Following</a><a href="/?forum">Forum</a><a href="/?crews">Crews</a><a href="/?practices">Practices</a><a href="/?rigs">Rigs</a><a href="/?agents">Agents</a><a href="/?challenges">Challenges</a><a href="/?inbox">Inbox</a></nav>
 <div id="status"></div>
 <div class="shell solo" id="shell">
   <aside class="rail" id="rail"></aside>
@@ -369,6 +370,8 @@ footer{max-width:1320px;margin:0 auto;padding:20px 24px 40px;color:var(--dim);fo
 <script src="/challenges.js"></script>
 <script src="/practices.js"></script>
 <script src="/progress.js"></script>
+<script src="/sharing.js"></script>
+<script src="/forum.js"></script>
 <script>
 const SB_URL="https://kqxasvolwtrczusjhlli.supabase.co";
 const SB_KEY="sb_publishable_EkNFC4I6eB71igOrhLblCg_nDocZ483";
@@ -414,7 +417,7 @@ function railHtml(active,runs){
   const a=(href,label,on,count)=>`<a href="${href}"${on?' class="on"':''}>${esc(label)}${count!=null?`<span>${count}</span>`:''}</a>`;
   const ps=projectStats(runs);
   let o='<p class="lbl">Your floor</p>'+a('/?explore','Feed',active==='feed',(runs&&runs.length)||null);
-  if(ME) o+=a('/?mine','My runs',active==='me')+a('/?progress','Progress',active==='progress')+a('/?following','Following',active==='following')+a('/?crews','Crews',active==='crews')+a('/?inbox','Inbox',active==='inbox');
+  if(ME) o+=a('/?mine','My runs',active==='me')+a('/?progress','Progress',active==='progress')+a('/?following','Following',active==='following')+a('/?forum','Forum',active==='forum')+a('/?crews','Crews',active==='crews')+a('/?inbox','Inbox',active==='inbox');
   o+=a('/?onboard','Get started',active==='onboard');
   if(ps.length) o+='<p class="lbl">Projects</p>'+ps.map(x=>`<span class="r">${esc(x.name)}<span>${x.n}</span></span>`).join('');
   o+='<p class="lbl">Read</p>'+a('/methodology','Methodology')+a('/privacy','Privacy')+a('/terms','Terms');
@@ -735,23 +738,16 @@ function runCard(r,acked,count,opts={}){ const att=runAttribution(r),h=att.handl
   return `<div class="card" id="card-${r.id}">
     <div class="runtop">${avatar(h,{rhythm:r.rhythm,ghost:att.ghost})}
       <div class="who">${whoLink}${anonTag}<small>${att.ghost?'metrics only ·':`@${esc(h)} ·`} <a href="/?run=${r.id}">${new Date(r.created_at).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</a></small></div>${refereed}</div>
-    <div class="title">${esc(r.title)}${r.is_ship?' · ship':''}${vibeChip}</div>
+    <div class="title"><a href="/?run=${r.id}">${esc(r.title)}</a>${r.is_ship?' · ship':''}${vibeChip}</div>
     ${r.source_actor_id?`<div class="sub">Agent contribution: <a href="/?agent=${encodeURIComponent(r.source_actor_id)}">${esc(r.agent_name||'agent')}</a> · authorised by the owner</div>`:''}
     <div class="sub">${esc(r.harness||'agent')}${r.project?' · '+esc(r.project):''}${(r.route&&r.route.length)?' · '+(new Set(r.route)).size+' regions':''}${r.files_touched?' · '+r.files_touched+' files':''}</div>
     ${r.note?`<div class="note">${esc(r.note)}</div>`:''}
-    ${vptHtml(r)}
-    ${fiveRow(r)}
-    ${coachBlock(r)}
-    <div class="grp">Session activity</div>
-    <div class="stats num">
-      <div class="stat"><div class="k">prompts · cost</div><div class="v"${cnt(r.prompts)}>${r.prompts??'-'}</div></div>
-      <div class="stat"><div class="k">time</div><div class="v">${fmtDur(dm)}</div></div>
-      <div class="stat"><div class="k">pace</div><div class="v">${pace(dm,r.prompts)}<i> /prompt</i></div></div>
-      <div class="stat"><div class="k">commits</div><div class="v"${cnt(r.commits)}>${r.commits??'—'}</div></div></div>
-    ${routeMap(r.route)}
-    ${curve(r.rhythm)}
+    <div class="run-signature">${GrinderContract.trace(r)}<span class="meta">${esc(r.trace_basis==='elapsed-agent-tool-calls'?'Agent tool requests · elapsed time':r.trace_basis==='elapsed'?'Session rhythm · elapsed time':r.trace_basis==='position'?'Session rhythm · event order':'Session rhythm · time basis unknown')}</span></div>
+    <div class="run-key-facts"><div><span>Typed turns</span><strong>${r.prompts??'Unknown'}</strong></div><div><span>Artifacts</span><strong>${r.artifacts_produced??'Unknown'}</strong></div><div><span>Commits</span><strong>${r.commits??'Unknown'}</strong></div></div>
+    ${r.rig_revision?`<p class="meta">Rig revision · ${esc(String(r.rig_revision).slice(0,12))}</p>`:''}
+    <details class="run-evidence"><summary>Measurements and coach report</summary>${vptHtml(r)}${fiveRow(r)}${coachBlock(r)}${routeMap(r.route)}<p class="meta">Session time: ${r.duration_s==null?'Unknown':fmtDur(dm)} · ${r.tool_calls??'Unknown'} tool calls</p></details>
     <div class="foot"><span class="meta">${r.tool_calls??'—'} tool calls${selfAck?' · your grind':''}</span>
-      <span class="acts">${ackBtn}<a class="act" href="/?share=1&run=${r.id}">Share</a></span></div>
+      <span class="acts">${ackBtn}<a class="act" href="/?run=${r.id}#grind-thread">Discuss</a><a class="act" href="/?share=1&run=${r.id}">Share</a></span></div>
     ${picker}</div>`; }
 
 
@@ -1419,18 +1415,7 @@ async function viewShareRun(id){
   const {data:r,error:runError}=await sb.from('runs').select('*, profiles!runs_profile_id_fkey(github_handle,name,rig)').eq('id',id).single();
   if(runError&&runError.code!=='PGRST116'){app.innerHTML='<div class="empty">This run could not load. Please refresh to try again.</div>';return;}
   if(!r){ app.innerHTML='<div class="empty">Run not found or private.</div>'; return; }
-  noteTraces([r]);
-  const att=runAttribution(r);
-  const bits=[r.title,r.harness,r.project].filter(Boolean);
-  app.innerHTML=shareCardHtml({
-    handle:att.handle, ghost:att.ghost, stamp:att.ghost?'Ghost grind':'Claimed',
-    lead:att.ghost?'Someone posted a grind':'@'+(r.profiles||{}).github_handle+' posted a grind',
-    sub:bits.join(' · ')||r.title||'Real session',
-    heroN:vptText(r), heroK:'verified per turn', heroTip:VPT_TIP+' · '+vptFormula(r), rhythm:r.rhythm, headline:r.note||null,
-    stats:shareStatsGrind(r), roast:q.get('roast')?roastShapeLines(r):null,
-  });
-  fitShareCard(); window.addEventListener('resize',fitShareCard);
-  const copy=$('share-copy'); if(copy){if(!['public','link'].includes(r.visibility)){copy.textContent='Private run';copy.disabled=true;status('This link is private. Choose a public or link-only audience on the run page before sharing.')}else copy.addEventListener('click',()=>{navigator.clipboard.writeText(location.origin+'/?run='+id).then(()=>status('Link copied.')).catch(()=>status('Copy the run page address to share.'));});}
+  GrinderSharing.mount({run:r,slot:app,status});
 }
 async function viewShareRig(handle){
   const app=$('app'); frame(null,null);
@@ -1501,11 +1486,14 @@ async function viewEvent(){
 }
 
 
+const forum=GrinderForum({client:sb,app:()=>document.getElementById('app'),frame,status});
+
 async function route(){ authErrorFromUrl();
   restoreImport();
   if(importRun()) return;
-  if(ME){try{const pending=sessionStorage.getItem('ag_social_return');if(pending&&/^\?(mine|progress|comparison|join|crew|crews|following|inbox|agents|agent|rigs|rigversion|practices|practice|experiments|experiment|challenges|challenge|run|u)(=|$)/.test(pending)){history.replaceState(null,'','/'+pending);sessionStorage.removeItem('ag_social_return');}}catch(_){}}
+  if(ME){try{const pending=sessionStorage.getItem('ag_social_return');if(pending&&/^\?(mine|forum|progress|comparison|join|crew|crews|following|inbox|agents|agent|rigs|rigversion|practices|practice|experiments|experiment|challenges|challenge|run|u)(=|$)/.test(pending)){history.replaceState(null,'','/'+pending);sessionStorage.removeItem('ag_social_return');}}catch(_){}}
   const q=new URLSearchParams(location.search);
+  if(q.has('forum'))return forum.index();
   if(q.has('mine'))return progress.history();
   if(q.has('progress'))return progress.index();
   if(q.has('comparison'))return progress.detail(q.get('comparison'));
