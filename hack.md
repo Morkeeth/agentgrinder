@@ -58,22 +58,29 @@ On-ramp reuses Transcripto's authorship signal (typed turns only), never raw `ty
 | 4 | Friends + kudos; hackathon "event" pages (group runs) | two athletes, one kudos |
 | 5 | Stranger pass + launch trio | STRANGER-PASS.md green; posts drafted |
 
-## NOW (updated 2 Sep 2026 — stranger pass)
+## NOW (updated 5 Sep 2026 — returning-user run object)
 
-**Slice 5 (stranger pass):** `docs/STRANGER-PASS.md` PASS — cold `demo` + `pitch-demo.sh` exit 0 with sample fallback when no `~/.claude`. Fix: `scripts/pitch-demo.sh` detects empty machine, uses `samples/sample_run.json` for vibe/roast/grind/share.
+**Slice:** A returning user opens a **real run**, sees **grind-trace attribution**, and sees a **next practice** they can act on — on the run object itself, not only inside the Progress form.
 
-**Next slice:** Oscar rules Strands Agents SDK eligibility (`docs/MOONSHOT-MEMO-2026-09-02.md` OPEN Q #1) — blocking for Devpost submit. Then ≥1 non-Oscar stranger cold-read.
+**Done when (must be RUN):**
+1. `python3 scripts/returning-journey.py` exit 0 — offline three-beat journey + naive baseline arm.
+2. Opening a run HTML/card names the grind-trace time basis, or prints that it is unknown (never invents one).
+3. A coach plan on that run is framed as the next practice, with a local accept path that survives reopen.
+4. Live probe of `https://agentgrinder.vercel.app/?run=28d5d0b7-eda2-4d94-a83c-580d2e3b75b2` records which of the three beats the hosted featured run still fails.
 
-**Shipped this wave:** `docs/MOONSHOT-MEMO-2026-09-02.md` · `docs/STRANGER-PASS.md` · `docs/DEVPOST-READY.md` · `docs/FILM-SCOUT-COMMANDS.md` · `docs/OSCAR-CLICK-LIST-2026-09-02.md` · pitch-demo cold-path fix.
+**Carried in (not this slice):** `/?mine` → Progress → frozen comparison → practice (`83ad116`). Oscar-only: film, OAuth, Devpost.
 
-**Live:** [github.com/Morkeeth/agentgrinder](https://github.com/Morkeeth/agentgrinder) · [agentgrinder.vercel.app](https://agentgrinder.vercel.app) · pitch: `/?pitch` · event: `/?event=agents-for-humans`
+**Blocking OPEN Q unchanged:** Strands Agents SDK eligibility for Devpost (`docs/MOONSHOT-MEMO-2026-09-02.md` #1).
 
-Receipt: `docs/CLOUD-RECEIPT-grinder-ambitious-2026-09-02.md`
+Receipt: `docs/CLOUD-RECEIPT-grinder-2026-09-05.md`
 
 ## LOG
 
 | When | What |
 |------|------|
+| 2026-09-05 | Probed live featured run: rhythm present, `trace_basis` null, `measurement_revision` null, coach_plan present; public practices = 0 |
+| 2026-09-05 | NOW set to run-object attribution + next practice (Progress form already on main) |
+| 2026-09-05 | BUILD: grindTrace + Next practice + journeyReadiness; `returning-journey.py` 3–0 vs naive; pytest 242 passed |
 | 2026-09-02 | LOOP 0: fetched Devpost rules, StraVIBE, Moltbook; wrote moonshot memo |
 | 2026-09-02 | LOOP 1 refute: main `pitch-demo.sh` failed at vibe (no sessions) — not stranger-ready |
 | 2026-09-02 | BUILD slice 1: fixed pitch-demo sample fallback; STRANGER-PASS PASS |

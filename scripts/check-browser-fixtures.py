@@ -18,7 +18,7 @@ const client={from(name){let filters=[],verb='read',payload;const q={select(){re
 window.fixture=GrinderPractices({client,me:()=>({id:owner}),app:()=>document.getElementById('app'),frame:()=>{},status:(text)=>document.getElementById('status').textContent=text});
 '''
 with sync_playwright() as p:
-    browser=p.chromium.launch(executable_path=os.environ.get('BRAVE_BINARY','/Applications/Brave Browser.app/Contents/MacOS/Brave Browser'),headless=True)
+    browser=p.chromium.launch(executable_path=os.environ.get('BRAVE_BINARY') or os.environ.get('CHROME_BINARY') or ('/usr/local/bin/google-chrome' if Path('/usr/local/bin/google-chrome').exists() else '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser'),headless=True)
     page=browser.new_page(viewport={'width':390,'height':844})
     failures=[]
     page.on('pageerror',lambda e:failures.append(str(e)))

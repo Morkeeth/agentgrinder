@@ -23,7 +23,7 @@ const config={client,me:()=>({id:owner,github_handle:'fixture-builder'}),app:()=
 window.progress=GrinderProgress(config);window.practices=GrinderPractices(config);
 '''
 with sync_playwright() as p:
-    browser=p.chromium.launch(executable_path=os.environ.get('BRAVE_BINARY','/Applications/Brave Browser.app/Contents/MacOS/Brave Browser'),headless=True)
+    browser=p.chromium.launch(executable_path=os.environ.get('BRAVE_BINARY') or os.environ.get('CHROME_BINARY') or ('/usr/local/bin/google-chrome' if Path('/usr/local/bin/google-chrome').exists() else '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser'),headless=True)
     page=browser.new_page(viewport={'width':390,'height':844})
     page.route('**/*',lambda route:route.fulfill(status=200,content_type='text/html',body='<meta charset="utf-8"><style>'+style+'</style><p>UI TEST FIXTURE — no real users or results</p><div id="status"></div><div class="shell solo"><main id="app" class="main"></main></div>'))
     page.goto('https://grinder-fixture.test/?mine')
@@ -33,6 +33,8 @@ with sync_playwright() as p:
     page.evaluate('progress.history()')
     page.get_by_role('heading',name='Earlier fixture run').wait_for()
     assert page.locator('.history-run').count()==3
+    assert page.locator('.trace-basis').count()>=1
+    assert 'elapsed' in page.locator('.history-run').first.inner_text()
     page.get_by_label('Harness',exact=True).select_option('Codex')
     page.get_by_role('button',name='Find runs',exact=True).click()
     assert page.locator('.history-run').count()==2

@@ -59,7 +59,9 @@ def test_site_reads_writes_and_renders_the_coach_fields_null_safe():
                 "coach_tool_calls", "progress_verdict"):
         assert f"{col}:run.{col}??null" in html, col          # the insert carries it
     assert "function coachBlock(r)" in html and "${coachBlock(r)}" in html
-    assert "if(!v&&!pv) return '';" in html                    # null-safe: no verdict, no block
+    assert "if(!v&&!pv&&!plan) return '';" in html          # null-safe: no verdict/plan, no block
+    assert "Next practice" in html and "function grindTrace" in html
+    assert "function journeyReadiness" in html
 
 
 def test_migration_is_additive_and_nullable():

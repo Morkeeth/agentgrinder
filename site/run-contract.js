@@ -10,6 +10,19 @@
     "claims_verified",
     "artifacts_produced",
   ];
+  function esc(value) {
+    return String(value ?? "").replace(
+      /[&<>"']/g,
+      (c) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        })[c],
+    );
+  }
   function validate(run) {
     if (!run || typeof run !== "object" || Array.isArray(run))
       throw new Error("A grind must be a JSON object.");
@@ -60,6 +73,13 @@
       ? "This part of Grinder is not available on this deployment yet."
       : text;
   }
+  function traceBasis(snapshot) {
+    const named =
+      snapshot &&
+      typeof snapshot.trace_basis === "string" &&
+      snapshot.trace_basis.trim();
+    return named || "Trace time basis unknown";
+  }
   function trace(snapshot) {
     const values = snapshot?.rhythm;
     if (
@@ -76,13 +96,19 @@
             `${4 + (i * 232) / Math.max(1, values.length - 1)},${64 - (v * 54) / max}`,
         )
         .join(" ");
+    const basis = traceBasis(snapshot);
     return (
-      '<svg viewBox="0 0 240 72" role="img" aria-label="Recorded session rhythm" style="display:block;width:100%;color:var(--ink)"><polyline points="' +
+      '<svg viewBox="0 0 240 72" role="img" aria-label="Recorded session rhythm: ' +
+      esc(basis) +
+      '" style="display:block;width:100%;color:var(--ink)"><polyline points="' +
       points +
-      '" stroke="currentColor" fill="none" stroke-width="2"/></svg>'
+      '" stroke="currentColor" fill="none" stroke-width="2"/></svg>' +
+      '<small class="trace-basis">' +
+      esc(basis) +
+      "</small>"
     );
   }
-  const api = { validate, message, trace };
+  const api = { validate, message, trace, traceBasis };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.GrinderContract = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

@@ -62,8 +62,11 @@ python3 -m pytest -q
 npm ci
 npm run test:database                 # Node 20+
 python3 scripts/check-browser-fixtures.py
+python3 scripts/check-progress-fixtures.py
+python3 scripts/returning-journey.py
 python3 scripts/check-hosted.py
 python3 -m agentgrinder demo --no-open
+python3 -m agentgrinder card samples/returning_run.json --no-open
 python3 -m agentgrinder connect cursor --project /your/project
 ```
 
@@ -80,3 +83,9 @@ Validation: 239 Python tests passed, 1 skipped; ordered database migrations and 
 The Progress migration is applied to production. Hosted checks pass, including anonymous denial on grinder_comparisons. Deployment `dpl_Zo1qwHiJmKv5cssd6YCF5BZsa6Tq` is ready and aliased to the product URL. All four changed hosted assets match tested source bytes; 12 outbound site files passed privacy scanning. The signed-in hosted walkthrough remains open after a browser-control timeout.
 
 A real-source probe also found that automated Claude CLI sessions with no human turns are rejected by the current capture contract. No guard was bypassed and no automated prompt was counted as human input. An explicit agent-only capture mode remains to build.
+
+## NIGHT-2026-09-05b — run-object attribution + next practice
+
+Progress forms existed; the run object itself still drew an unexplained rhythm and buried the coach plan. This slice puts grind-trace attribution and a Next practice block on the run/featured card, adds journey-readiness gaps for missing `trace_basis` / `measurement_revision`, and ships an offline three-beat journey with a naive baseline arm (`scripts/returning-journey.py`).
+
+Validation: `python3 scripts/returning-journey.py` exit 0 (attributed 3/3, naive 0/3); `pytest -q` 242 passed, 1 skipped; progress fixtures assert `.trace-basis`; hosted checks pass. Live featured run `28d5d0b7-…` still has null `trace_basis` and null `measurement_revision` — reported, not invented. Receipt: `docs/CLOUD-RECEIPT-grinder-2026-09-05.md`.

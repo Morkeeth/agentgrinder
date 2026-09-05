@@ -208,7 +208,7 @@ window.GrinderChallenges = function ({ client: db, me, app, frame, status }) {
     if (event.kind !== "octacon") return "";
     const cells = entries.map((entry) => {
       const last = submissions.find((s) => s.entry_id === entry.id);
-      return `<article class="octacon-place"><strong>${esc(entry.crew_name)}</strong>${last ? GrinderContract.trace(last.snapshot) : "<p>Awaiting a grind</p>"}<small>${last ? "Submitted rhythm · " + esc(last.snapshot.trace_basis || "timing not specified") : "Rig locked"}</small></article>`;
+      return `<article class="octacon-place"><strong>${esc(entry.crew_name)}</strong>${last ? GrinderContract.trace(last.snapshot) : "<p>Awaiting a grind</p>"}<small>${last ? "Submitted rhythm" : "Rig locked"}</small></article>`;
     });
     while (cells.length < 8)
       cells.push(

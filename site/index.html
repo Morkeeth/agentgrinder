@@ -697,6 +697,45 @@ function curve(r){ r=(r&&r.length)?r:[1]; const w=800,h=60,p=6,n=r.length,mx=Mat
   const pts=r.map((v,i)=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
   return `<div class="tw"><svg class="curve" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><line class="base" x1="0" y1="${h-p}" x2="${w}" y2="${h-p}"/><polyline class="tl" points="${pts}"/></svg></div>`; }
 
+// THE GRIND TRACE on a run object. A rhythm without a named time basis is drawn, and the gap is
+// named — never filled with a guess about how the buckets were made.
+function grindTrace(r){
+  const rhythm=(r&&Array.isArray(r.rhythm)&&r.rhythm.length)?r.rhythm:null;
+  if(!rhythm) return '<div class="meta grind-trace-basis">Grind trace unavailable</div>';
+  const basis=(r.trace_basis&&String(r.trace_basis).trim())||'Trace time basis unknown';
+  return `<div class="grind-trace"><div class="grp">The grind trace</div>${curve(rhythm)}<div class="meta grind-trace-basis">${esc(basis)}</div></div>`;
+}
+
+function nextPracticeHref(r){
+  const lines=String(r.coach_plan||'').split('\n').map(x=>x.trim()).filter(Boolean);
+  if(!lines.length||!r.id) return '/?practices';
+  const q=new URLSearchParams();
+  q.set('practices','');
+  q.set('title',lines[0].slice(0,160));
+  q.set('instruction',lines.join('\n').slice(0,4000));
+  q.set('expected','A measurable change on the next comparable sitting');
+  if(r.harness) q.set('harness',String(r.harness).slice(0,100));
+  q.set('from_run',r.id);
+  q.set('context',(r.project?`From run on ${r.project}`:'From a saved run')+(r.title?`: ${r.title}`:''));
+  return '/?'+q.toString();
+}
+
+function journeyReadiness(r){
+  const gaps=[];
+  if(!r.rhythm||!r.rhythm.length) gaps.push('No grind rhythm was stored for this run.');
+  else if(!(r.trace_basis&&String(r.trace_basis).trim())) gaps.push('Grind-trace time basis was not recorded, so Progress cannot treat this trace as comparable.');
+  if(!r.measurement_revision) gaps.push('No measurement revision — Progress comparisons and practice baselines need one.');
+  if(!(r.coach_plan&&String(r.coach_plan).trim())) gaps.push('No coach next-practice plan on this run.');
+  const ok=!gaps.length;
+  return `<section class="panel reply-form journey-readiness" data-journey="${ok?'ready':'gaps'}">
+    <h2>Returning-user journey</h2>
+    ${ok?'<p>This run has a grind trace with a named time basis, a measurement revision, and a next-practice plan.</p>':
+      `<p>What this run is missing for the full return loop:</p><ul>${gaps.map(g=>`<li>${esc(g)}</li>`).join('')}</ul>`}
+    ${ME&&ME.id===r.profile_id?`<p><a class="act" href="/?mine">My runs</a>${r.measurement_revision?` <a class="act" href="/?progress&baseline=${r.id}">Compare from this run</a>`:''}${r.coach_plan?` <a class="act" href="${nextPracticeHref(r)}">Save coach plan as practice</a>`:''}</p>`:
+      '<p><a href="/?practices">Browse practices</a> · <a href="/?explore">Explore runs</a></p>'}
+  </section>`;
+}
+
 function routeMap(route){ if(!route||!route.length) return '';
   const w=800,h=74,pad=10,n=route.length,R=Math.max(...route)+1;
   const bandH=(h-2*pad)/Math.max(R,1);
@@ -709,17 +748,18 @@ function routeMap(route){ if(!route||!route.length) return '';
 
 // THE COACH'S VERDICT on the hosted card. Null-safe: a run posted before the coach columns
 // existed (or without --coach) has no verdict and draws nothing here; the five row above already
-// shows a dash for each number the database does not hold.
+// shows a dash for each number the database does not hold. The plan is the next practice.
 function coachBlock(r){
   if(!r) return '';
   const v=r.coach_verdict, plan=r.coach_plan, n=r.coach_tool_calls, pv=r.progress_verdict;
-  if(!v&&!pv) return '';
+  if(!v&&!pv&&!plan) return '';
   const who=v?`<div class="grp">the coach${n?` · verdict produced by <b>${esc(String(n))}</b> tool call${n==1?'':'s'}`:''}</div>`:'';
   const para=v?`<div class="para">${esc(String(v))}</div>`:'';
   const items=plan?String(plan).split('\n').filter(x=>x.trim()).map(x=>`<li>${esc(x)}</li>`).join(''):'';
-  const ul=items?`<ul class="plan">${items}</ul>`:'';
+  const practice=items?`<div class="grp">Next practice</div><ul class="plan">${items}</ul>
+    <div class="cta next-practice-actions">${ME&&ME.id===r.profile_id?`<a class="act" href="${nextPracticeHref(r)}">Save as my next practice</a>${r.measurement_revision?` <a class="act" href="/?progress&baseline=${r.id}">Compare from this run</a>`:''}`:`<a class="act" href="/?practices">Browse practices</a>`}</div>`:'';
   const prog=pv?`<div class="rule-line"><b>${esc(String(pv))}</b> vs your last grind on this project</div>`:'';
-  return who+para+ul+prog; }
+  return who+para+practice+prog; }
 
 
 function runCard(r,acked,count,opts={}){ const att=runAttribution(r),h=att.handle;
@@ -749,7 +789,7 @@ function runCard(r,acked,count,opts={}){ const att=runAttribution(r),h=att.handl
       <div class="stat"><div class="k">pace</div><div class="v">${pace(dm,r.prompts)}<i> /prompt</i></div></div>
       <div class="stat"><div class="k">commits</div><div class="v"${cnt(r.commits)}>${r.commits??'—'}</div></div></div>
     ${routeMap(r.route)}
-    ${curve(r.rhythm)}
+    ${grindTrace(r)}
     <div class="foot"><span class="meta">${r.tool_calls??'—'} tool calls${selfAck?' · your grind':''}</span>
       <span class="acts">${ackBtn}<a class="act" href="/?share=1&run=${r.id}">Share</a></span></div>
     ${picker}</div>`; }
@@ -1023,12 +1063,12 @@ function featuredCard(r){
       <span class="state" title="A client-supplied coach report; not independent server verification">Coach report</span></div>
     <div class="title">${esc(r.title||'A run')}</div>
     <div class="sub">${esc(r.harness||'agent')}${r.project?' · '+esc(r.project):''}${dm?' · '+fmtDur(dm):''}</div>
-    ${curve(r.rhythm)}
+    ${grindTrace(r)}
     ${vptHtml(r)}
+    ${plan.length?`<div class="grp">Next practice</div><ul class="plan">${plan.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}
     <details><summary class="pad">Coach notes and measurement details</summary>${fiveRow(r)}
     <div class="grp">the coach${n?` · verdict produced by <b>${esc(String(n))}</b> tool call${n==1?'':'s'}`:''}</div>
     ${r.coach_verdict?`<div class="para">${esc(String(r.coach_verdict))}</div>`:''}
-    ${plan.length?`<ul class="plan">${plan.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}
     </details>
     <div class="grp">Session activity</div>
     <div class="stats num">
@@ -1161,6 +1201,7 @@ async function viewRun(id){
   frame(railHtml(null,[r]), sidePanels([r]));
   app.innerHTML=`<div class="head"><h2>A run</h2><span class="meta">${esc(r.visibility==='public'?'public':r.crew_shared?'Crew members':r.visibility==='private'||r.visibility==='anonymous'?'private':'link only')}</span></div>`
     +runCard(r,ad.mine.has(r.id),ad.counts[r.id]||acks.length,{picker:openAck,suggested,selected:preselect})
+    +journeyReadiness(r)
     +`<div class="head"><h2>ACKs</h2><span class="meta">${acks.length}</span></div><div class="panel">`+ackListHtml(acks)+`</div>`
     +`<div class="cta">${r.visibility==='public'||r.visibility==='link'?'<button id="run-copy-link">Copy run link</button>':''}<a class="act" href="/?share=1&run=${r.id}">Share card</a>
       <a class="act" href="/?share=1&run=${r.id}&roast=1">Roast card</a>

@@ -59,11 +59,18 @@ def render_card(a: Activity) -> str:
     pb = '<span class="pb" title="high sustained cadence">High cadence</span>' if a.focus_pb else ""
     if a.trace:
         from .native_trace import svg
-        route = svg(a.trace, a.trace_basis)
+        route = svg(a.trace, a.trace_basis or "Trace time basis unknown")
     else:
-        route = _route_svg(a.rhythm) + ("<small>" + a.trace_basis + "</small>" if a.trace_basis else "")
+        basis = a.trace_basis or ("Trace time basis unknown" if a.rhythm else "")
+        route = _route_svg(a.rhythm) + (f'<small class="trace-basis">{basis}</small>' if basis else "")
     five = _five_row(a.five)
-    coach = (f'<section style="padding:20px"><h2>Next session</h2><small>{a.coach_mode}</small><p>{a.coach_verdict}</p><p style="white-space:pre-wrap">{a.coach_plan}</p></section>' if a.coach_verdict else "")
+    if a.coach_verdict or a.coach_plan:
+        plan = f'<div class="grp">Next practice</div><p style="white-space:pre-wrap">{a.coach_plan}</p>' if a.coach_plan else ""
+        coach = (f'<section style="padding:20px" class="next-practice">'
+                 f'<h2>Next session</h2><small>{a.coach_mode}</small>'
+                 f'<p>{a.coach_verdict}</p>{plan}</section>')
+    else:
+        coach = ""
     hl_title = ("verified per turn = (verified claims + artifacts produced) ÷ typed turns · "
                 + escape(a.headline_formula))
     return f'''<!doctype html>

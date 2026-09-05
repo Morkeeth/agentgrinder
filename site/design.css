@@ -42,6 +42,10 @@ button,summary{touch-action:manipulation}
 .history-run h2 a:hover{text-decoration:underline}
 .history-run p{margin:4px 0;color:var(--soft);font-size:12px}
 .history-trace{align-self:center;min-width:0}
+.history-trace .trace-basis,.grind-trace-basis,.trace-basis{display:block;margin-top:6px;color:var(--soft);font-size:12px;line-height:1.45}
+.journey-readiness ul{margin:8px 0 0;padding-left:18px}
+.journey-readiness li{margin:4px 0;line-height:1.45}
+.next-practice-actions{margin:8px 0 12px;display:flex;flex-wrap:wrap;gap:8px}
 .history-counts{display:flex;gap:16px;flex-wrap:wrap;margin:12px 0;font-size:12px;font-variant-numeric:tabular-nums}
 .progress-pair article{padding:20px;border:1px solid var(--rule);background:var(--box);min-width:0}
 .progress-pair svg{margin:16px 0}
