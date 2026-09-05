@@ -34,7 +34,7 @@ assert queries, 'No real run queries discovered'
 for query in sorted(queries):
     status, body = read('runs', {'select':query,'limit':'0'})
     assert status == 200, (query,status,body.get('code'),body.get('message'))
-for table in ('grinder_notifications','grinder_agent_tokens','grinder_agent_requests'):
+for table in ('grinder_notifications','grinder_agent_tokens','grinder_agent_requests','grinder_comparisons'):
     status, body = read(table, {'select':'*','limit':'0'})
     assert status in (401,403) and body.get('code')=='42501', (table,status,body)
 status, body = read('profiles', {'select':'id','id':'in.(f2000000-0000-0000-0000-000000000001,f2000000-0000-0000-0000-000000000002)'})

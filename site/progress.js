@@ -1,0 +1,78 @@
+/* Private returning-user journey: source runs, frozen comparisons, next practice. */
+window.GrinderProgress = function ({client: db, me, app, frame, status, signIn}) {
+  const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const $ = id => document.getElementById(id);
+  const uuid = value => /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(value || '');
+  const value = number => number == null ? 'Unknown' : esc(number);
+  const date = stamp => stamp && Number.isFinite(Date.parse(stamp)) ? new Date(stamp).toLocaleString([], {dateStyle:'medium',timeStyle:'short'}) : 'Session time unknown';
+  const title = run => run.title || 'Untitled run';
+  const audience = run => run.crew_shared ? 'Crew members' : ({private:'Only you',public:'Public',link:'Anyone with the link',anonymous:'Only you'}[run.visibility] || 'Only you');
+  async function rows(query) {const result = await query; if(result.error) throw Error(result.error.message); return result.data || [];}
+  function start(heading, active) {
+    frame(null,null);
+    app().innerHTML = `<nav class="social-nav" aria-label="Your work"><a href="/?mine" ${active==='runs'?'aria-current="page"':''}>My runs</a><a href="/?progress" ${active==='progress'?'aria-current="page"':''}>Progress</a><a href="/?practices">Next practice</a>${me()?`<a href="/?u=${encodeURIComponent(me().github_handle)}">My Scrapbook</a>`:''}</nav><div class="head"><h1>${esc(heading)}</h1><span class="meta">Private to your account</span></div><section id="progress-body" aria-live="polite">Loading…</section>`;
+    if(!me()) {$('progress-body').innerHTML='<div class="panel reply-form"><p>Sign in to see your own runs and progress. Shared runs stay on the public feed.</p><button id="progress-sign-in">Sign in</button></div>';$('progress-sign-in').onclick=signIn;return false;}
+    return true;
+  }
+  function fail(error) {status(GrinderContract.message(error),true);}
+  function bind(id, action) {
+    const form=$(id); if(!form)return;
+    form.onsubmit=async event=>{event.preventDefault();const button=form.querySelector('button[type="submit"],button:not([type])');if(button)button.disabled=true;try{await action(form)}catch(error){fail(error)}finally{if(button)button.disabled=false}};
+  }
+  async function ownRuns(offset=0) {return rows(db.from('runs').select('*').eq('profile_id',me().id).order('created_at',{ascending:false}).order('id',{ascending:false}).range(offset,offset+99));}
+  function runTile(run) {
+    return `<article class="history-run"><div class="history-trace">${GrinderContract.trace(run)}</div><div><small>${esc(run.harness || 'Harness unknown')} · ${esc(audience(run))}</small><h2><a href="/?run=${run.id}">${esc(title(run))}</a></h2><p>${esc(date(run.started_at))}</p><div class="history-counts"><span>${value(run.prompts)} typed turns</span><span>${value(run.artifacts_produced)} artifacts</span><span>${value(run.commits)} commits</span></div><a class="act" href="/?progress&baseline=${run.id}">Compare from this run</a></div></article>`;
+  }
+  async function historyView() {
+    if(!start('My runs','runs'))return;
+    try {
+      let loaded=await ownRuns(); let offset=loaded.length, more=loaded.length===100;
+      const outcomes=await Promise.allSettled([
+        rows(db.from('grinder_practice_attempts').select('id,practice_id,created_at,practice:grinder_practice_versions(title,instruction)').eq('owner_id',me().id).is('reviewed_at',null).order('created_at',{ascending:false}).limit(3)),
+        rows(db.from('grinder_notifications').select('id,kind,run_id,created_at').eq('recipient_id',me().id).is('read_at',null).order('created_at',{ascending:false}).limit(3))
+      ]);
+      const pending=outcomes[0].status==='fulfilled'?outcomes[0].value:[], notes=outcomes[1].status==='fulfilled'?outcomes[1].value:[];
+      $('progress-body').innerHTML=`<div class="return-actions"><section class="panel reply-form"><h2>Your next run</h2>${pending.length?pending.map(a=>`<p><a href="/?practice=${a.practice_id}#attempt-${a.id}">${esc(a.practice?.title || 'Review your practice')}</a><br><small>${esc(a.practice?.instruction || 'Your baseline is saved. Record the next session, then review what happened.')}</small></p>`).join(''):'<p>Choose one change after comparing your own runs.</p><a class="act" href="/?progress">Open Progress</a>'}</section><section class="panel reply-form"><h2>Responses to your work</h2>${notes.length?notes.map(n=>`<p><a href="${n.run_id?'/?run='+n.run_id:'/?inbox'}">${esc(n.kind==='ack'?'An ACK on your run':n.kind==='reply'?'A reply on your run':'A new follower')}</a><br><small>${esc(date(n.created_at))}</small></p>`).join(''):'<p>No unread responses. Share a run when you want someone else to see it.</p>'}<a href="/?inbox">Open Inbox</a></section></div><p>Find a run, revisit its trace, or choose two runs to compare. Counts describe activity; they do not rank quality.</p><form id="history-filter" class="history-filters"><label>Find a run<input name="query" type="search" placeholder="Title or project you shared"></label><label>Harness<select name="harness" aria-label="Harness"><option value="">All harnesses</option></select></label><label>Audience<select name="audience" aria-label="Audience"><option value="">All audiences</option><option value="private">Only me</option><option value="link">Link only</option><option value="public">Public</option><option value="crew">Crew members</option></select></label><button type="submit">Find runs</button></form><p id="history-count" class="meta"></p><div id="history-list"></div><button id="history-more" class="act" ${more?'':'hidden'}>Load older runs</button><p><a href="/?onboard">Record another run</a></p>`;
+      function render() {
+        const f=$('history-filter').elements;
+        const filtered=loaded.filter(r=>(!f.query.value || [r.title,r.project].join(' ').toLowerCase().includes(f.query.value.toLowerCase()))&&(!f.harness.value||r.harness===f.harness.value)&&(!f.audience.value||(f.audience.value==='crew'?r.crew_shared:r.visibility===f.audience.value)));
+        $('history-count').textContent=`${filtered.length} shown · ${loaded.length} loaded${more?' · older runs available':''}`;
+        $('history-list').innerHTML=filtered.map(runTile).join('')||`<div class="panel reply-form"><h2>${loaded.length?'No matching runs':'Your first run starts here'}</h2><p>${loaded.length?'Change the filters or load older runs.':'Record a local session, preview what leaves your machine, then save it privately.'}</p>${loaded.length?'':'<a href="/?onboard">Record my first run</a>'}</div>`;
+      }
+      function harnessOptions(){const select=$('history-filter').elements.harness, selected=select.value;select.innerHTML='<option value="">All harnesses</option>'+[...new Set(loaded.map(r=>r.harness).filter(Boolean))].sort().map(h=>`<option>${esc(h)}</option>`).join('');select.value=selected;}
+      harnessOptions();render();bind('history-filter',async()=>render());
+      $('history-more').onclick=async()=>{const button=$('history-more');button.disabled=true;try{const next=await ownRuns(offset);offset+=next.length;more=next.length===100;loaded=[...new Map([...loaded,...next].map(r=>[r.id,r])).values()];button.hidden=!more;harnessOptions();render()}catch(error){fail(error)}finally{button.disabled=false}};
+    } catch(error) {$('progress-body').innerHTML='<p>Your runs could not load. Refresh to try again.</p>';fail(error);}
+  }
+  function snapshot(run) {return {...run,turns_typed:run.turns_typed??run.prompts};}
+  function comparisonHTML(before, after, limitations) {
+    const metrics=[['turns_typed','Typed turns · cost'],['artifacts_produced','Artifacts produced'],['claims_verified','Claims with evidence'],['tool_calls','Tool calls'],['commits','Commits'],['duration_s','Elapsed seconds']];
+    const comparison = !limitations.length;
+    return `<div class="comparison-status"><h2>${comparison?'Comparable context declared':'Read these as two separate runs'}</h2>${limitations.length?'<ul>'+limitations.map(x=>`<li>${esc(x)}</li>`).join('')+'</ul>':'<p>You confirmed similar tasks and constraints. The recorded harness, format and time basis match. This is an observation, not evidence that one setup caused a better result.</p>'}</div><div class="progress-pair"><article><small>Earlier run</small><h2>${esc(title(before))}</h2><p>${esc(date(before.started_at))}</p>${GrinderContract.trace(before)}<small>${esc(before.trace_basis || 'Trace time basis unknown')}</small></article><article><small>Later run</small><h2>${esc(title(after))}</h2><p>${esc(date(after.started_at))}</p>${GrinderContract.trace(after)}<small>${esc(after.trace_basis || 'Trace time basis unknown')}</small></article></div><div class="progress-metrics">${metrics.map(([key,label])=>{const a=before[key],b=after[key],delta=comparison&&a!=null&&b!=null?b-a:null;return `<div class="progress-metric"><strong>${label}</strong><span>${value(a)} → ${value(b)}</span><small>${delta==null?'Change not compared':(delta>0?'+':'')+esc(delta)+' · later minus earlier'}</small></div>`}).join('')}</div><details class="panel reply-form"><summary>Frozen measurement references</summary><p>These identify the captured measurements, not independently verified scores.</p><p>Earlier: <code>${esc(before.measurement_revision || 'No revision')}</code></p><p>Later: <code>${esc(after.measurement_revision || 'No revision')}</code></p></details>`;
+  }
+  async function index() {
+    if(!start('Progress','progress'))return;
+    try {
+      const [runs,saved]=await Promise.all([ownRuns(),rows(db.from('grinder_comparisons').select('id,task_context,created_at,next_practice').eq('owner_id',me().id).order('created_at',{ascending:false}).limit(30))]);
+      const query=new URLSearchParams(location.search), wanted=query.get('baseline');
+      if(uuid(wanted)&&!runs.some(r=>r.id===wanted))runs.push(...await rows(db.from('runs').select('*').eq('profile_id',me().id).eq('id',wanted)));
+      const eligible=runs.filter(r=>r.measurement_revision);
+      const options=eligible.map(r=>`<option value="${r.id}">${esc(title(r))} · ${esc(date(r.started_at))}</option>`).join('');
+      $('progress-body').innerHTML=`<p>Compare two of your runs. Save the exact measurements before choosing one change for your next session.</p><form id="save-comparison" class="panel reply-form"><label>Earlier run<select name="earlier" aria-label="Earlier run" required><option value="">Choose a baseline</option>${options}</select></label><label>Later run<select name="later" aria-label="Later run" required><option value="">Choose a later run</option>${options}</select></label><label>What tasks and constraints are you comparing?<textarea name="context" required maxlength="2000" placeholder="For example: small bug fixes in the same project, same test command."></textarea></label><label><input name="similar" type="checkbox"> These runs had similar tasks and constraints.</label><p>Saved privately to your account. No automatic quality score or causal claim.</p><button type="submit" ${eligible.length<2?'disabled':''}>Save private comparison</button>${eligible.length<2?'<p>You need two runs with measurement revisions. Older unmeasured runs stay visible in <a href="/?mine">My runs</a>.</p>':''}</form><h2>Saved comparisons</h2><div>${saved.map(c=>`<article class="panel reply-form"><a href="/?comparison=${c.id}">${esc(c.task_context)}</a><small>${esc(date(c.created_at))}${c.next_practice?' · Next practice chosen':''}</small></article>`).join('')||'<p>No saved comparisons yet.</p>'}</div>`;
+      if(eligible.some(r=>r.id===wanted))$('save-comparison').elements.earlier.value=wanted;
+      const request=crypto.randomUUID();
+      bind('save-comparison',async form=>{const f=form.elements;if(f.earlier.value===f.later.value)throw Error('Choose two different runs.');const id=await rows(db.rpc('grinder_save_comparison',{earlier:f.earlier.value,later:f.later.value,context_text:f.context.value,similar_context:f.similar.checked,request}));history.replaceState(null,'','/?comparison='+id);await detail(id)});
+    } catch(error){$('progress-body').innerHTML='<p>Progress could not load. <a href="/?mine">Your runs are still available.</a></p>';fail(error);}
+  }
+  async function detail(id) {
+    if(!start('Your saved comparison','progress'))return;
+    if(!uuid(id)){$('progress-body').textContent='This comparison link is invalid.';return;}
+    try {
+      const saved=(await rows(db.from('grinder_comparisons').select('*').eq('owner_id',me().id).eq('id',id)))[0];
+      if(!saved){$('progress-body').textContent='This comparison is private or unavailable.';return;}
+      $('progress-body').innerHTML=`<p>${esc(saved.task_context)}</p><p class="meta">Saved ${esc(date(saved.created_at))}. Both measurements are frozen; later edits to a run do not change this comparison.</p>${comparisonHTML(saved.before_run,saved.after_run,saved.limitations||[])}${saved.next_practice?`<section class="panel reply-form"><h2>One change for your next run</h2><p>Your practice and its baseline are saved. Record a new session, then return to review what happened.</p><a class="act" href="/?practice=${saved.next_practice}#attempt-${saved.next_attempt}">Open my practice</a></section>`:`<form id="comparison-practice" class="panel reply-form"><h2>One change for your next run</h2><label>What will you do differently?<input name="action" required maxlength="160" placeholder="Run the named test before asking the agent to finish"></label><label>What change would you look for?<textarea name="expected" required maxlength="2000" placeholder="A test result in the same turn as the completion claim"></textarea></label><p>The later run above becomes the frozen baseline. The practice and attempt stay private.</p><button type="submit">Save practice and start attempt</button></form>`}<p><a href="/?progress">All comparisons</a> · <a href="/?mine">My runs</a></p>`;
+      bind('comparison-practice',async form=>{await rows(db.rpc('grinder_practice_from_comparison',{comparison:id,action_title:form.elements.action.value,expected_change:form.elements.expected.value}));await detail(id)});
+    } catch(error){$('progress-body').textContent='This comparison could not load.';fail(error);}
+  }
+  return {history:historyView,index,detail,comparisonHTML};
+};

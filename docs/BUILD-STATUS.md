@@ -68,3 +68,15 @@ python3 -m agentgrinder connect cursor --project /your/project
 ```
 
 The last command prints configuration; add `--install` to apply it. Local capture makes no network calls. Bedrock coaching is an optional network mode. Review exported notes and captions before sharing. Use `scripts/migration-order.txt` for deployment order; historical base fixtures describe the pre-migration schema, not today's live database.
+
+## NIGHT-2026-09-05 — private Progress slice
+
+Added searchable personal history, audience/harness filters, older-run pagination, pending practices and unread responses. Progress saves two immutable measurements with a declared task context. It shows unknown data and comparability limitations. A saved comparison can create one private practice and attempt using its frozen later measurement. The source run may change or be deleted without moving that baseline.
+
+New capability relative to frozen baseline `396b3df`: saved comparisons and their direct next-practice path. Existing capture, practice storage and hosted social infrastructure are carried-in capabilities.
+
+Validation: 239 Python tests passed, 1 skipped; ordered database migrations and comparison ownership/retry/frozen-baseline/deletion tests passed; existing browser fixtures passed; new history → comparison → practice → return fixture passed on phone and desktop with no overflow or JavaScript errors. The first fixture exposed ambiguous select labels; explicit accessible labels fixed that failure. Screenshots were inspected. These controlled fixtures do not represent independent users or measured improvement.
+
+The Progress migration is applied to production. Hosted checks pass, including anonymous denial on grinder_comparisons. Deployment `dpl_Zo1qwHiJmKv5cssd6YCF5BZsa6Tq` is ready and aliased to the product URL. All four changed hosted assets match tested source bytes; 12 outbound site files passed privacy scanning. The signed-in hosted walkthrough remains open after a browser-control timeout.
+
+A real-source probe also found that automated Claude CLI sessions with no human turns are rejected by the current capture contract. No guard was bypassed and no automated prompt was counted as human input. An explicit agent-only capture mode remains to build.
