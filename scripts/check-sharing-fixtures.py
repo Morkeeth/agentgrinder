@@ -33,7 +33,7 @@ with sync_playwright() as p:
  assert not page.evaluate('document.documentElement.scrollWidth>innerWidth')
  page.screenshot(path='/tmp/grinder-share-phone.png',full_page=True)
  page.evaluate("fixture.visibility='public';GrinderSharing.mount({run:fixture,slot:document.getElementById('app'),status:()=>{}})")
- assert '?run=fixture-run' in page.get_by_label('Caption',exact=True).input_value()
+ assert '/r/fixture-run' in page.get_by_label('Caption',exact=True).input_value()
  page.get_by_label('What did you build?').fill('<script>alert(1)</script>')
  assert not page.locator('#app script').count()
  assert not errors,errors

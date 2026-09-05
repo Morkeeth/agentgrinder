@@ -4,7 +4,7 @@
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function mount({run,slot,status}){
  const readable=['public','link'].includes(run.visibility), handle=run.profiles?.github_handle;
- const url=location.origin+'/?run='+encodeURIComponent(run.id);
+ const url=location.origin+(run.visibility==='public'?'/r/':'/?run=')+encodeURIComponent(run.id);
  slot.innerHTML=`<div class="head"><h2>Share your run</h2><a href="/?run=${encodeURIComponent(run.id)}">Back to run</a></div>
  <p class="hint">${readable?(run.visibility==='public'?'Public run · anyone can read it.':'Link-only run · anyone with the link can read it.'):'Private run · exporting an image does not change who can read the run.'}</p>
  <div class="share-studio"><form id="post-editor" class="panel reply-form">

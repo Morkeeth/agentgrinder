@@ -1,11 +1,16 @@
 {
   "name": "agentgrinder-web-checks",
   "private": true,
-  "engines": {"node": ">=20"},
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "test:database": "node scripts/test-database.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.8"
+  },
+  "dependencies": {
+    "@vercel/og": "0.8.5"
   }
 }

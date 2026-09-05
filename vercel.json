@@ -3,7 +3,21 @@
   "cleanUrls": true,
   "outputDirectory": "site",
   "rewrites": [
-    { "source": "/.well-known/:path*", "destination": "/.well-known/:path*" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/r/:id",
+      "destination": "/api/run?id=:id"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "/api/:path*"
+    },
+    {
+      "source": "/.well-known/:path*",
+      "destination": "/.well-known/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ]
 }
