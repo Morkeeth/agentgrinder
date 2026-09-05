@@ -47,6 +47,9 @@ button,summary{touch-action:manipulation}
 .progress-pair svg{margin:16px 0}
 .comparison-status{padding:20px;background:var(--blue-wash);border-left:2px solid var(--blue);margin:24px 0}
 .comparison-status li{margin:4px 0;line-height:1.5}
+.return-brief{border-left:2px solid var(--blue);background:var(--blue-wash);margin:18px 0}
+.return-brief h3{margin:4px 0 8px}
+.return-brief p{margin:8px 0;line-height:1.5}
 .progress-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--rule);border:1px solid var(--rule);margin-bottom:24px}
 .progress-metric{display:flex;flex-direction:column;gap:10px;padding:16px;background:var(--box);min-width:0}
 .progress-metric strong{font-size:12px;font-weight:500}

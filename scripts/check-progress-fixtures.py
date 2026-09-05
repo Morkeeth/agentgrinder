@@ -11,7 +11,9 @@ const owner='10000000-0000-0000-0000-000000000004';
 const earlier='20000000-0000-0000-0000-000000000004',later='20000000-0000-0000-0000-000000000005';
 const comparisonId='30000000-0000-0000-0000-000000000004',practiceId='40000000-0000-0000-0000-000000000004',attemptId='50000000-0000-0000-0000-000000000004';
 window.calls=[];
-const tables={runs:[{id:later,profile_id:owner,title:'Later fixture run',harness:'Codex',visibility:'private',schema_version:1,measurement_revision:'f'.repeat(64),trace_basis:'elapsed',started_at:'2026-09-02T10:00:00Z',prompts:4,artifacts_produced:2,rhythm:[1,2,1,4]},
+const outcome='20000000-0000-0000-0000-000000000007';
+const tables={runs:[{id:outcome,profile_id:owner,title:'Outcome fixture run',harness:'Codex',visibility:'private',schema_version:1,measurement_revision:'1'.repeat(64),trace_basis:'elapsed',started_at:'2026-09-03T10:00:00Z',prompts:2,artifacts_produced:3,rhythm:[1,1,2]},
+{id:later,profile_id:owner,title:'Later fixture run',harness:'Codex',visibility:'private',schema_version:1,measurement_revision:'f'.repeat(64),trace_basis:'elapsed',started_at:'2026-09-02T10:00:00Z',prompts:4,artifacts_produced:2,rhythm:[1,2,1,4]},
 {id:earlier,profile_id:owner,title:'Earlier fixture run',harness:'Codex',visibility:'private',schema_version:1,measurement_revision:'e'.repeat(64),trace_basis:'elapsed',started_at:'2026-09-01T10:00:00Z',prompts:3,artifacts_produced:1,rhythm:[3,1,2,1]},
 {id:'20000000-0000-0000-0000-000000000006',profile_id:owner,title:'Unmeasured fixture run',harness:'Cursor',visibility:'private',measurement_revision:null}],grinder_practice_attempts:[],grinder_notifications:[],grinder_comparisons:[],grinder_practice_versions:[],grinder_memberships:[]};
 const client={from(name){let filters=[],start=0,end=100;const q={select(){return q},eq(k,v){filters.push(r=>r[k]===v);return q},is(k,v){filters.push(r=>(r[k]??null)===v);return q},not(k,op,v){filters.push(r=>(r[k]??null)!==v);return q},order(){return q},range(a,b){start=a;end=b+1;return q},limit(n){end=n;return q},then(resolve,reject){return Promise.resolve({data:(tables[name]||[]).filter(r=>filters.every(f=>f(r))).slice(start,end)}).then(resolve,reject)}};return q},async rpc(name,payload){window.calls.push({name,payload});if(name==='grinder_save_comparison'){
@@ -67,6 +69,10 @@ with sync_playwright() as p:
     page.evaluate('practices.detail(practiceId)')
     page.get_by_role('heading',name='Run the named check',exact=True).wait_for()
     assert page.locator('#attempt-50000000-0000-0000-0000-000000000004').count()==1
+    outcome_select=page.locator('#review-50000000-0000-0000-0000-000000000004 select[name="run"]')
+    assert outcome_select.locator('option').count()==2
+    assert outcome_select.locator('option').nth(1).get_attribute('value')==outcome
+    assert 'Your baseline is saved' in page.locator('.return-brief').inner_text()
     page.evaluate('progress.history()')
     page.get_by_role('link',name='Run the named check',exact=True).wait_for()
     # Unknown context must display two observations without a numeric change claim.
