@@ -25,7 +25,7 @@ const tables={runs:[{id:outcome,profile_id:owner,title:'Outcome fixture run',har
 const client={from(name){let filters=[],start=0,end=100;const q={select(){return q},eq(k,v){filters.push(r=>r[k]===v);return q},is(k,v){filters.push(r=>(r[k]??null)===v);return q},not(k,op,v){filters.push(r=>(r[k]??null)!==v);return q},order(){return q},range(a,b){start=a;end=b+1;return q},limit(n){end=n;return q},then(resolve,reject){return Promise.resolve({data:(tables[name]||[]).filter(r=>filters.every(f=>f(r))).slice(start,end)}).then(resolve,reject)}};return q},async rpc(name,payload){window.calls.push({name,payload});if(name==='grinder_save_comparison'){
 // This is an explicit server-response fixture. Real freeze/ownership rules run in PostgreSQL tests.
 const before={...tables.runs.find(r=>r.id===earlier),turns_typed:3},after={...tables.runs.find(r=>r.id===later),turns_typed:4};
-tables.grinder_comparisons.push({id:comparisonId,owner_id:owner,task_context:payload.context_text,created_at:'2026-09-03T10:00:00Z',before_run:before,after_run:after,limitations:[],next_practice:null});return {data:comparisonId};}
+tables.grinder_comparisons.push({id:comparisonId,owner_id:owner,task_context:payload.context_text,created_at:'2026-09-02T11:00:00Z',before_run:before,after_run:after,limitations:[],next_practice:null});return {data:comparisonId};}
 if(name==='grinder_practice_from_comparison'){tables.grinder_comparisons[0].next_practice=practiceId;tables.grinder_comparisons[0].next_attempt=attemptId;tables.grinder_practice_versions.push({id:practiceId,title:payload.action_title,instruction:payload.action_title,task_context:'Two fixture bug fixes',expected:payload.expected_change,visibility:'private',harness:'Codex'});tables.grinder_practice_attempts.push({id:attemptId,practice_id:practiceId,owner_id:owner,created_at:'2026-09-02T12:00:00Z',baseline:tables.grinder_comparisons[0].after_run,visibility:'private',practice:{title:payload.action_title,instruction:payload.action_title}});return {data:{practice_id:practiceId,attempt_id:attemptId}};}
 if(name==='grinder_review_attempt'){const attempt=tables.grinder_practice_attempts.find(r=>r.id===payload.attempt),run=tables.runs.find(r=>r.id===payload.outcome_run);attempt.outcome=run?{...run,turns_typed:run.prompts}:null;attempt.tried=payload.was_tried;attempt.decision=payload.choice;attempt.note=payload.reflection;attempt.reviewed_at='2026-09-03T12:00:00Z';return {data:[]};}return {data:[]}}};
 const config={client,me:()=>({id:owner,github_handle:'fixture-builder'}),app:()=>document.getElementById('app'),frame:()=>{},status:text=>document.getElementById('status').textContent=text,signIn:()=>{}};
@@ -94,10 +94,16 @@ with sync_playwright() as p:
     page.get_by_text('This return is recorded',exact=True).wait_for()
     assert page.locator(f'#review-{ATTEMPT_ID}').count()==0
     assert 'The named check caught the regression' in page.locator(f'#attempt-{ATTEMPT_ID}').inner_text()
-    assert page.locator(f'#attempt-{ATTEMPT_ID}').get_by_text('Unknown',exact=True).count()>0
+    # Each metric cell includes its label; exact text 'Unknown' cannot match it.
+    unknown_cells = page.locator(f'#attempt-{ATTEMPT_ID} .comparison > div').filter(has=page.locator('small').filter(has_text=re.compile(r'^claims verified$')))
+    assert unknown_cells.count() == 2
+    assert [re.sub(r'\s+', '', value) for value in unknown_cells.all_inner_texts()] == ['claimsverifiedUnknown', 'claimsverifiedUnknown']
     page.evaluate('practices.detail(practiceId)')
     page.get_by_text('This return is recorded',exact=True).wait_for()
     assert page.locator(f'#review-{ATTEMPT_ID}').count()==0
+    page.set_viewport_size({'width':390,'height':844})
+    assert not page.evaluate('document.documentElement.scrollWidth>innerWidth')
+    page.screenshot(path=str(screenshots/'saved-review-phone.png'),full_page=True)
     page.evaluate('progress.history()')
     page.get_by_role('heading',name='Outcome fixture run',exact=True).wait_for()
     assert page.get_by_role('link',name='Run the named check',exact=True).count()==0
