@@ -68,6 +68,8 @@ window.GrinderPractices = function ({ client: db, me, app, frame, status }) {
     return `${r.title || "Untitled run"}${when}`;
   };
   const runOptions = (rows) => options(rows, "title", runLabel);
+  const eligibleOutcomeRuns = (attempt, runs) =>
+    GrinderPracticeEligibility.outcomeRuns(attempt, runs);
   async function index() {
     start("A practice worth trying");
     try {
@@ -172,11 +174,7 @@ window.GrinderPractices = function ({ client: db, me, app, frame, status }) {
     const baselineTime = baseline.started_at && Number.isFinite(Date.parse(baseline.started_at))
       ? new Date(baseline.started_at).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })
       : "session time unknown";
-    const later = runs.filter((r) =>
-      r.started_at && Number.isFinite(Date.parse(r.started_at)) &&
-      Date.parse(r.started_at) > Date.parse(baseline.started_at || "") &&
-      r.measurement_revision !== baseline.measurement_revision,
-    );
+    const later = eligibleOutcomeRuns(attempt, runs);
     return `<section class="return-brief panel"><p class="meta">RETURN REVIEW</p><h3>${attempt.reviewed_at ? "This return is recorded" : "Your baseline is saved"}</h3><p>${attempt.reviewed_at ? "This attempt is fixed. Start another attempt for the next cycle." : "Come back after a later run. Choose that session below and record what changed; if the evidence is missing or unlike the baseline, keep the result incomparable."}</p><p><strong>Baseline:</strong> ${esc(baselineTime)} · ${esc(baseline.harness || "Harness unknown")}</p>${later.length || attempt.reviewed_at ? "" : "<p class=\"hint\">No later measured session is available yet. The outcome can stay unknown until you return.</p>"}</section>`;
   }
   async function detail(id) {
@@ -210,7 +208,7 @@ window.GrinderPractices = function ({ client: db, me, app, frame, status }) {
         attempts
           .map(
             (a) =>
-              `<article class="card" id="attempt-${a.id}"><small>${a.visibility === "private" ? "Only you" : "Shared with practice readers"}</small><h3>${esc(a.decision || "In progress")}</h3>${!a.reviewed_at ? returnBrief(a, runs) : ""}${comparison(a)}<p>${esc(a.note || "")}</p>${me()?.id === a.owner_id && !a.reviewed_at ? `<form id="review-${a.id}" class="reply-form"><label>Did you try the practice?<select name="tried"><option value="true">Yes</option><option value="false">No</option></select></label><label>Later session after the baseline<select name="run"><option value="">No measured outcome (keep unknown)</option>${runOptions(runs.filter((r) => r.started_at && a.baseline?.started_at && Date.parse(r.started_at) > Date.parse(a.baseline.started_at) && r.measurement_revision !== a.baseline.measurement_revision))}</select></label><p class="hint">Only measured sessions after the frozen baseline are offered. Choose no outcome when the change was not measured.</p><label>Your decision<select name="decision"><option value="incomparable">Incomparable / missing evidence</option><option value="keep">Keep</option><option value="change">Change</option><option value="drop">Drop</option></select></label><label>What happened?<textarea name="note" maxlength="4000"></textarea></label><p>This review is fixed once saved. Start another attempt for the next cycle.</p><button>Save review</button></form>` : ""}</article>`,
+              `<article class="card" id="attempt-${a.id}"><small>${a.visibility === "private" ? "Only you" : "Shared with practice readers"}</small><h3>${esc(a.decision || "In progress")}</h3>${returnBrief(a, runs)}${comparison(a)}<p>${esc(a.note || "")}</p>${me()?.id === a.owner_id && !a.reviewed_at ? `<form id="review-${a.id}" class="reply-form"><label>Did you try the practice?<select name="tried"><option value="true">Yes</option><option value="false">No</option></select></label><label>Session after you started this attempt<select name="run"><option value="">No measured outcome (keep unknown)</option>${runOptions(eligibleOutcomeRuns(a, runs))}</select></label><p class="hint">Only measured sessions from this attempt onward and not in the future are offered. Choose no outcome when the change was not measured.</p><label>Your decision<select name="decision"><option value="incomparable">Incomparable / missing evidence</option><option value="keep">Keep</option><option value="change">Change</option><option value="drop">Drop</option></select></label><label>What happened?<textarea name="note" maxlength="4000"></textarea></label><p>This review is fixed once saved. Start another attempt for the next cycle.</p><button>Save review</button></form>` : ""}</article>`,
           )
           .join("") +
         (attempts.length
