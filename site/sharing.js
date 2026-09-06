@@ -2,9 +2,12 @@
 (function(root){
 'use strict';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function mount({run,slot,status}){
+function mount({run,slot,status,moment=null}){
+ if(moment&&(moment.run_id!==run.id||moment.measurement_revision!==run.measurement_revision)){
+  slot.innerHTML='<p>This moment belongs to a different measurement. Return to the grind and choose a current moment before making a card.</p>';return;
+ }
  const readable=['public','link'].includes(run.visibility), handle=run.profiles?.github_handle;
- const url=location.origin+(run.visibility==='public'?'/r/':'/?run=')+encodeURIComponent(run.id);
+ const url=moment?location.origin+'/?run='+encodeURIComponent(run.id)+'&moment='+encodeURIComponent(moment.id):location.origin+(run.visibility==='public'?'/r/':'/?run=')+encodeURIComponent(run.id);
  slot.innerHTML=`<div class="head"><h2>Share your run</h2><a href="/?run=${encodeURIComponent(run.id)}">Back to run</a></div>
  <p class="hint">${readable?(run.visibility==='public'?'Public run · anyone can read it.':'Link-only run · anyone with the link can read it.'):'Private run · exporting an image does not change who can read the run.'}</p>
  <div class="share-studio"><form id="post-editor" class="panel reply-form">
@@ -30,12 +33,19 @@ function mount({run,slot,status}){
  let y=665;const blocks=[['THE AGENT',f.contribution],['THE RESULT',f.result],['NEXT RUN',f.next]].filter(([,v])=>v);for(const [label,body] of blocks){ctx.fillStyle='#123cff';ctx.font='600 17px sans-serif';ctx.fillText(label,64,y);ctx.fillStyle='#111';clipped=lines(body,64,y+34,952,'26px sans-serif',32,portrait?3:2)||clipped;y+=portrait?160:110;}
  ctx.strokeStyle='#ddd';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(64,canvas.height-65);ctx.lineTo(1016,canvas.height-65);ctx.stroke();ctx.fillStyle='#666';ctx.font='18px sans-serif';ctx.fillText('Builder’s account · recorded counts are not independent verification',64,canvas.height-30);
  slot.querySelector('#post-caption').value=[f.title,f.contribution&&'Agent: '+f.contribution,f.result&&'Result: '+f.result,f.next&&'Next run: '+f.next,readable?url:''].filter(Boolean).join('\n\n');
- slot.querySelector('#post-message').textContent=clipped?'Some text is shortened in the image. Shorten your text or choose portrait. The caption keeps the full text.':'';
- const ready=form.elements.review.checked&&!!f.title;slot.querySelector('#post-download').disabled=!ready;slot.querySelector('#post-copy').disabled=!ready;
+ slot.querySelector('#post-message').textContent=clipped?'Some text is shortened in the image. Shorten your text or choose portrait. Moment exports require the complete text to fit; the caption keeps the full text.':'';
+ const ready=form.elements.review.checked&&!!f.title&&(!moment||!clipped);slot.querySelector('#post-download').disabled=!ready;slot.querySelector('#post-copy').disabled=!ready;
  }
  form.addEventListener('input',e=>{if(e.target.name!=='review')form.elements.review.checked=false;draw()});form.addEventListener('submit',e=>e.preventDefault());
  slot.querySelector('#post-copy').onclick=async()=>{try{await navigator.clipboard.writeText(slot.querySelector('#post-caption').value);status('Caption copied.')}catch(_){status('Select and copy the caption below the image.')}};
  slot.querySelector('#post-download').onclick=()=>canvas.toBlob(blob=>{if(!blob){status('Image export failed. Try again.');return}const link=document.createElement('a'),object=URL.createObjectURL(blob);link.href=object;link.download='agent-grinder-'+run.id+'-'+form.elements.format.value+'.png';link.click();setTimeout(()=>URL.revokeObjectURL(object),1000)},'image/png');
+ if(moment){
+  form.elements.title.value=moment.title;
+  form.elements.result.value=moment.claim+' Limit: '+moment.limitation;
+  form.elements.contribution.value='Builder-authored observation'+(moment.measurement_revision!==run.measurement_revision?' · earlier measurement, current run changed':'')+'. Not independently verified.';
+  form.elements.next.value=moment.next_action;
+  const context=document.createElement('p');context.className='hint';context.textContent='Moment selected. The full excerpt stays on the run; the card includes your claim and its limit. Review all text before exporting.';form.prepend(context);
+ }
  draw();return{draw};
 }
 root.GrinderSharing={mount};

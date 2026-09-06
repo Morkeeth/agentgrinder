@@ -14,3 +14,4 @@
 2026-09-05-link-privacy.sql
 2026-09-05-progress.sql
 2026-09-05-permissions.sql
+2026-09-06-moments.sql

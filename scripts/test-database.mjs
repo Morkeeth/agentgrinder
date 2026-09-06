@@ -631,6 +631,40 @@ const retainedProgress=(await db.query('select * from grinder_comparisons where 
 assert.equal(retainedProgress.earlier_run,null);
 assert.equal(retainedProgress.before_run.turns_typed,3);
 assert.equal(retainedProgress.after_run.turns_typed,4);
+// Authored moment -> exact visible evidence -> frozen private practice -> later review.
+await as(progressOwner);
+const momentRun=(await db.query("insert into runs(profile_id,title,visibility,harness,schema_version,measurement_revision,trace_basis,started_at,prompts) values($1,'TEST DATA moment grind','private','Codex',1,$2,'elapsed',now()-interval '2 days',3) returning id",[progressOwner,'a'.repeat(64)])).rows[0].id;
+const momentFields=[momentRun,progressOwner,'a'.repeat(64),'TEST DATA failure then repair','A local import check passed','TEST DATA receipt/check-import','TEST DATA: 1 check passed','One local check; no deployment or adoption','Run the check before editing'];
+const insertMoment='insert into grinder_run_moments(run_id,owner_id,measurement_revision,title,claim,evidence_ref,excerpt,limitation,next_action) values($1,$2,$3,$4,$5,$6,$7,$8,$9) returning id';
+const moment=(await db.query(insertMoment,momentFields)).rows[0].id;
+await denied('update grinder_run_moments set claim=$2 where id=$1',[moment,'rewritten']);
+await denied(insertMoment,[momentRun,progressOwner,'b'.repeat(64),...momentFields.slice(3)]);
+await anonymous();assert.equal((await db.query('select * from grinder_run_moments where id=$1',[moment])).rows.length,0);
+await as(userB);assert.equal((await db.query('select * from grinder_run_moments where id=$1',[moment])).rows.length,0);
+await denied("select grinder_practice_from_moment($1,'TEST DATA action','TEST DATA expectation')",[moment]);
+await denied(insertMoment,[momentRun,userB,...momentFields.slice(2)]);
+await as(progressOwner);await db.query("update runs set visibility='public' where id=$1",[momentRun]);
+await anonymous();assert.equal((await db.query('select excerpt from grinder_run_moments where id=$1',[moment])).rows[0].excerpt,momentFields[6]);
+await as(progressOwner);await db.query("update runs set visibility='private' where id=$1",[momentRun]);
+await anonymous();assert.equal((await db.query('select * from grinder_run_moments where id=$1',[moment])).rows.length,0);
+await as(progressOwner);
+const momentPractice=(await db.query("select grinder_practice_from_moment($1,'TEST DATA run the check first','TEST DATA check precedes edit') result",[moment])).rows[0].result;
+const retryMoment=(await db.query("select grinder_practice_from_moment($1,'TEST DATA run the check first','TEST DATA check precedes edit') result",[moment])).rows[0].result;
+assert.deepEqual(retryMoment,momentPractice);
+await denied("select grinder_practice_from_moment($1,'TEST DATA another action','TEST DATA check precedes edit')",[moment]);
+assert.equal((await db.query('select baseline from grinder_practice_attempts where id=$1',[momentPractice.attempt_id])).rows[0].baseline.measurement_revision,'a'.repeat(64));
+assert.equal((await db.query('select visibility from grinder_practice_versions where id=$1',[momentPractice.practice_id])).rows[0].visibility,'private');
+const staleMoment=(await db.query(insertMoment,momentFields)).rows[0].id;
+await db.query('update runs set measurement_revision=$2 where id=$1',[momentRun,'b'.repeat(64)]);
+await denied("select grinder_practice_from_moment($1,'TEST DATA action','TEST DATA expectation')",[staleMoment]);
+const momentLater=(await db.query("insert into runs(profile_id,title,visibility,harness,schema_version,measurement_revision,trace_basis,started_at,prompts) values($1,'TEST DATA later grind','private','Codex',1,$2,'elapsed',now(),2) returning id",[progressOwner,'c'.repeat(64)])).rows[0].id;
+await db.query("select grinder_review_attempt($1,$2,true,'keep','TEST DATA local check was used; no causal inference')",[momentPractice.attempt_id,momentLater]);
+assert.equal((await db.query('select decision from grinder_practice_attempts where id=$1',[momentPractice.attempt_id])).rows[0].decision,'keep');
+await db.query('delete from grinder_run_moments where id=$1',[moment]);
+assert.equal((await db.query('select * from runs where id=$1',[momentRun])).rows.length,1);
+assert.equal((await db.query('select * from grinder_practice_attempts where id=$1',[momentPractice.attempt_id])).rows.length,1);
+console.log('Moment checks passed: ownership, audience revocation, immutable excerpt, changed revision refusal, idempotent practice, frozen baseline, later review, no grind deletion.');
+
 await db.close();
 console.log(
   "Database checks passed: social permissions; agent capabilities; two-crew Challenge; locked Contract; frozen submission; rejection, appeal and revised review; late-submission denial.",

@@ -372,6 +372,7 @@ footer{max-width:1320px;margin:0 auto;padding:20px 24px 40px;color:var(--dim);fo
 <script src="/practices.js"></script>
 <script src="/progress.js"></script>
 <script src="/sharing.js"></script>
+<script src="/moments.js"></script>
 <script src="/forum.js"></script>
 <script>
 const SB_URL="https://kqxasvolwtrczusjhlli.supabase.co";
@@ -1158,7 +1159,7 @@ async function viewRun(id){
   frame(railHtml(null,[r]), sidePanels([r]));
   app.innerHTML=`<div class="head"><h2>A run</h2><span class="meta">${esc(r.visibility==='public'?'public':r.crew_shared?'Crew members':r.visibility==='private'||r.visibility==='anonymous'?'private':'link only')}</span></div>`
     +runCard(r,ad.mine.has(r.id),ad.counts[r.id]||acks.length,{picker:openAck,suggested,selected:preselect})
-    +`<div class="head"><h2>ACKs</h2><span class="meta">${acks.length}</span></div><div class="panel">`+ackListHtml(acks)+`</div>`
+    +`<section id="grind-moments"></section><div class="head"><h2>ACKs</h2><span class="meta">${acks.length}</span></div><div class="panel">`+ackListHtml(acks)+`</div>`
     +`<div class="cta">${r.visibility==='public'||r.visibility==='link'?'<button id="run-copy-link">Copy run link</button>':''}<a class="act" href="/?share=1&run=${r.id}">Share card</a>
       <a class="act" href="/?share=1&run=${r.id}&roast=1">Roast card</a>
       <span class="hint"><a href="/?u=${encodeURIComponent((r.profiles||{}).github_handle||'')}">see the profile</a></span></div><section id="grind-crew-share"></section><section id="grind-thread"></section>`;
@@ -1167,6 +1168,7 @@ async function viewRun(id){
   if(ME?.id===r.profile_id){const controls=document.createElement('div');controls.className='panel reply-form';controls.innerHTML='<label>Who can read this run<select id="run-audience"><option value="private">Only me</option><option value="public">Public</option><option value="link">Anyone with the link</option></select></label><button id="run-save-audience">Save audience</button><button id="run-delete" class="ghost">Delete run</button>';app.append(controls);$('run-audience').value=r.visibility==='anonymous'?'private':r.visibility;$('run-save-audience').onclick=async()=>{const {error}=await sb.from('runs').update({visibility:$('run-audience').value}).eq('id',r.id);if(error){status(error.message,true);return}await viewRun(r.id)};$('run-delete').onclick=async()=>{if(!confirm('Delete this run and its discussion? Submitted Challenge results stay in event history.'))return;const {error}=await sb.from('runs').delete().eq('id',r.id);if(error){status(error.message,true);return}history.replaceState(null,'','/');viewMe()};}
   wireKudos(); if(openAck){ const card=$('card-'+id); if(card) wireAckPicker(card,r,preselect); }
   if(q.get('ack')) history.replaceState(null,'',`/?run=${id}`);
+  await GrinderMoments.mount({run:r,slot:$('grind-moments'),client:sb,me:()=>ME,status});
   await social.thread(id,$('grind-thread'));
   await social.askControl(r,$('grind-thread'));
   await social.shareControl(r,$('grind-crew-share'));
@@ -1416,7 +1418,13 @@ async function viewShareRun(id){
   const {data:r,error:runError}=await sb.from('runs').select('*, profiles!runs_profile_id_fkey(github_handle,name,rig)').eq('id',id).single();
   if(runError&&runError.code!=='PGRST116'){app.innerHTML='<div class="empty">This run could not load. Please refresh to try again.</div>';return;}
   if(!r){ app.innerHTML='<div class="empty">Run not found or private.</div>'; return; }
-  GrinderSharing.mount({run:r,slot:app,status});
+  let moment=null;const mid=q.get('moment');
+  if(/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(mid||'')){
+    const result=await sb.from('grinder_run_moments').select('*').eq('id',mid).eq('run_id',r.id).single();
+    if(result.error||!result.data){app.innerHTML='<p>This moment is private, removed or unavailable. <a href="/?run='+encodeURIComponent(r.id)+'">Return to the grind</a>.</p>';return;}
+    moment=result.data;
+  }
+  GrinderSharing.mount({run:r,slot:app,status,moment});
 }
 async function viewShareRig(handle){
   const app=$('app'); frame(null,null);
