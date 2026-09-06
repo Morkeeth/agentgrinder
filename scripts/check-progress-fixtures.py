@@ -5,6 +5,8 @@ import re
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 ROOT=Path(__file__).resolve().parents[1]
+OUTCOME_ID='20000000-0000-0000-0000-000000000007'
+ATTEMPT_ID='50000000-0000-0000-0000-000000000004'
 style=(ROOT/'site/design.css').read_text()+re.search(r'<style>(.*?)</style>',(ROOT/'site/index.html').read_text(),re.S).group(1)+(ROOT/'site/social.css').read_text()
 setup=r'''
 const owner='10000000-0000-0000-0000-000000000004';
@@ -39,10 +41,10 @@ with sync_playwright() as p:
     page.add_script_tag(content=setup)
     page.evaluate('progress.history()')
     page.get_by_role('heading',name='Earlier fixture run').wait_for()
-    assert page.locator('.history-run').count()==7
+    assert page.locator('.history-run').count()==8
     page.get_by_label('Harness',exact=True).select_option('Codex')
     page.get_by_role('button',name='Find runs',exact=True).click()
-    assert page.locator('.history-run').count()==6
+    assert page.locator('.history-run').count()==7
     page.get_by_label('Find a run',exact=True).fill('Earlier')
     page.get_by_role('button',name='Find runs',exact=True).click()
     assert page.locator('.history-run').count()==1
@@ -74,28 +76,31 @@ with sync_playwright() as p:
     page.evaluate('practices.detail(practiceId)')
     page.get_by_role('heading',name='Run the named check',exact=True).wait_for()
     assert page.locator('#attempt-50000000-0000-0000-0000-000000000004').count()==1
-    outcome_select=page.locator('#review-50000000-0000-0000-0000-000000000004 select[name="run"]')
+    outcome_select=page.locator(f'#review-{ATTEMPT_ID} select[name="run"]')
     assert outcome_select.locator('option').count()==2
-    assert outcome_select.locator('option').nth(1).get_attribute('value')==outcome
+    assert outcome_select.locator('option').nth(1).get_attribute('value')==OUTCOME_ID
     assert 'Your baseline is saved' in page.locator('.return-brief').inner_text()
     screenshots=Path(os.environ['GRINDER_RECEIPT_DIR'])
+    page.set_viewport_size({'width':390,'height':844})
+    assert not page.evaluate('document.documentElement.scrollWidth>innerWidth')
     page.screenshot(path=str(screenshots/'return-review-phone.png'),full_page=True)
     page.set_viewport_size({'width':1280,'height':900})
     assert not page.evaluate('document.documentElement.scrollWidth>innerWidth')
     page.screenshot(path=str(screenshots/'return-review-desktop.png'),full_page=True)
-    outcome_select.select_option(outcome)
+    outcome_select.select_option(OUTCOME_ID)
     page.get_by_label('Your decision').select_option('keep')
     page.get_by_label('What happened?').fill('The named check caught the regression before the completion claim.')
     page.get_by_role('button',name='Save review').click()
     page.get_by_text('This return is recorded',exact=True).wait_for()
-    assert page.locator('#review-'+attemptId).count()==0
-    assert 'The named check caught the regression' in page.locator('#attempt-'+attemptId).inner_text()
-    assert page.locator('#attempt-'+attemptId).get_by_text('Unknown',exact=True).count()>0
+    assert page.locator(f'#review-{ATTEMPT_ID}').count()==0
+    assert 'The named check caught the regression' in page.locator(f'#attempt-{ATTEMPT_ID}').inner_text()
+    assert page.locator(f'#attempt-{ATTEMPT_ID}').get_by_text('Unknown',exact=True).count()>0
     page.evaluate('practices.detail(practiceId)')
     page.get_by_text('This return is recorded',exact=True).wait_for()
-    assert page.locator('#review-'+attemptId).count()==0
+    assert page.locator(f'#review-{ATTEMPT_ID}').count()==0
     page.evaluate('progress.history()')
-    page.get_by_role('link',name='Run the named check',exact=True).wait_for()
+    page.get_by_role('heading',name='Outcome fixture run',exact=True).wait_for()
+    assert page.get_by_role('link',name='Run the named check',exact=True).count()==0
     # Unknown context must display two observations without a numeric change claim.
     separate=page.evaluate("progress.comparisonHTML({turns_typed:3},{turns_typed:4},['Task context is not confirmed comparable'])")
     assert 'Read these as two separate runs' in separate and '+1' not in separate
