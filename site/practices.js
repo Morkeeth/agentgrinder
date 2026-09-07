@@ -199,8 +199,35 @@ window.GrinderPractices = function ({ client: db, me, app, frame, status }) {
           .limit(100),
       );
       const runs = await ownRuns();
+      // Provenance for a practice kept from someone else's grind moment. Readable only by
+      // the person who kept it. The source builder's counts are deliberately not rendered:
+      // two numbers side by side would assert a relationship nobody verified.
+      let kept = null;
+      if (me())
+        try {
+          kept = (
+            await data(
+              db
+                .from("grinder_adopted_moments")
+                .select(
+                  "moment_id,source_run,source_measurement_revision,source_measurement_stale,moment:grinder_run_moments(id,title)",
+                )
+                .eq("practice_id", id),
+            )
+          )[0] || null;
+        } catch (e) {
+          kept = null;
+        }
+      const keptHtml = kept
+        ? `<section class="panel kept-from"><p class="meta">KEPT FROM ANOTHER BUILDER’S GRIND MOMENT</p>${
+            kept.moment
+              ? `<p><a href="/?run=${encodeURIComponent(kept.source_run)}&moment=${encodeURIComponent(kept.moment_id)}">${esc(kept.moment.title)}</a> · read their evidence and the limit they wrote.</p>`
+              : "<p>That grind is no longer readable to you. Your practice, your frozen baseline and your review stay exactly as they are.</p>"
+          }<p><small>Source measurement <code>${esc(String(kept.source_measurement_revision || "").slice(0, 12))}</code>${kept.source_measurement_stale ? " · that grind has been measured again since this moment was written" : ""}</small></p><p>Their counts are not shown here. The comparison below is your own baseline against your own later session, and it does not establish that this practice caused the difference.</p></section>`
+        : "";
       $("practice-body").innerHTML =
         `<article class="card"><small>${esc(p.visibility)} · ${esc(p.harness || "Any harness")}</small><h2>${esc(p.title)}</h2><p>${esc(p.task_context)}</p><h3>Try this</h3><p>${esc(p.instruction)}</p><p>Expected: ${esc(p.expected)}</p><small>A saved version. An outcome is an observation, not proof that this practice caused it.</small></article>` +
+        keptHtml +
         (me()
           ? `<form id="start-attempt" class="panel reply-form"><h3>Start with a baseline</h3><label>Your earlier grind<select name="baseline" required>${options(runs, "title")}</select></label><label><input name="shared" type="checkbox"> Share my baseline counts, outcome counts and reflection with everyone who can read this practice</label><button ${runs.length ? "" : "disabled"}>Start attempt</button>${runs.length ? "" : "<p>Import a grind with a measurement revision first.</p>"}</form>`
           : "") +

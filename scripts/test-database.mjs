@@ -665,6 +665,68 @@ assert.equal((await db.query('select * from runs where id=$1',[momentRun])).rows
 assert.equal((await db.query('select * from grinder_practice_attempts where id=$1',[momentPractice.attempt_id])).rows.length,1);
 console.log('Moment checks passed: ownership, audience revocation, immutable excerpt, changed revision refusal, idempotent practice, frozen baseline, later review, no grind deletion.');
 
+// A stranger who was not there: read a moment, keep its next practice, bring their OWN baseline.
+await as(progressOwner);
+const sharedRun=(await db.query("insert into runs(profile_id,title,visibility,harness,schema_version,measurement_revision,trace_basis,started_at,prompts) values($1,'TEST DATA published grind','private','Codex',1,$2,'elapsed',now()-interval '5 days',9) returning id",[progressOwner,'4'.repeat(64)])).rows[0].id;
+const sharedFields=[sharedRun,progressOwner,'4'.repeat(64),'TEST DATA the check that changed the plan','A local import check passed','TEST DATA receipt/check-import','TEST DATA: 1 check passed','One local check; not deployment or adoption','Run the failing check before editing'];
+const sharedMoment=(await db.query(insertMoment,sharedFields)).rows[0].id;
+const secondMoment=(await db.query(insertMoment,sharedFields)).rows[0].id;
+const thirdMoment=(await db.query(insertMoment,sharedFields)).rows[0].id;
+const keepTitle='TEST DATA run the failing check before editing',keepExpected='TEST DATA the check runs before the first edit';
+await as(userB);
+const strangerBaseline=(await db.query("insert into runs(profile_id,title,visibility,harness,schema_version,measurement_revision,trace_basis,started_at,prompts) values($1,'TEST DATA stranger earlier grind','private','Codex',1,$2,'elapsed',now()-interval '3 days',5) returning id",[userB,'5'.repeat(64)])).rows[0].id;
+// A private grind is not a shared technique: the stranger cannot read it and cannot keep it.
+await denied('select grinder_adopt_moment($1,$2,$3,$4)',[sharedMoment,strangerBaseline,keepTitle,keepExpected]);
+await as(progressOwner);await db.query("update runs set visibility='public' where id=$1",[sharedRun]);
+await anonymous();await denied('select grinder_adopt_moment($1,$2,$3,$4)',[sharedMoment,strangerBaseline,keepTitle,keepExpected]);
+await as(userB);
+const kept=(await db.query('select grinder_adopt_moment($1,$2,$3,$4) result',[sharedMoment,strangerBaseline,keepTitle,keepExpected])).rows[0].result;
+const keptPractice=(await db.query('select * from grinder_practice_versions where id=$1',[kept.practice_id])).rows[0];
+assert.equal(keptPractice.owner_id,userB);
+assert.equal(keptPractice.visibility,'private');
+// the kept practice points at the STRANGER's own grind, never at the author's.
+assert.equal(keptPractice.source_run,strangerBaseline);
+assert.notEqual(keptPractice.source_run,sharedRun);
+const keptAttempt=(await db.query('select * from grinder_practice_attempts where id=$1',[kept.attempt_id])).rows[0];
+assert.equal(keptAttempt.owner_id,userB);
+assert.equal(keptAttempt.baseline.measurement_revision,'5'.repeat(64));
+assert.equal(keptAttempt.baseline.turns_typed,5);
+const provenance=(await db.query('select * from grinder_adopted_moments where practice_id=$1',[kept.practice_id])).rows[0];
+assert.equal(provenance.source_run,sharedRun);
+assert.equal(provenance.source_measurement_revision,'4'.repeat(64));
+assert.equal(provenance.source_measurement_stale,false);
+// keeping is idempotent, and the same moment cannot quietly become a different practice.
+assert.deepEqual((await db.query('select grinder_adopt_moment($1,$2,$3,$4) result',[sharedMoment,strangerBaseline,keepTitle,keepExpected])).rows[0].result,kept);
+await denied('select grinder_adopt_moment($1,$2,$3,$4)',[sharedMoment,strangerBaseline,'TEST DATA a different action',keepExpected]);
+// the baseline must be the stranger's own measured grind, not the author's.
+await denied('select grinder_adopt_moment($1,$2,$3,$4)',[secondMoment,sharedRun,keepTitle,keepExpected]);
+// nothing was written to the author's grind.
+assert.equal((await db.query('select count(*) n from grinder_run_moments where run_id=$1',[sharedRun])).rows[0].n,3);
+await denied("insert into grinder_adopted_moments(practice_id,adopter_id,attempt_id,moment_id,source_run,source_measurement_revision,source_measurement_stale) values($1,$2,$3,$4,$5,$6,false)",[kept.practice_id,userB,kept.attempt_id,secondMoment,sharedRun,'4'.repeat(64)]);
+// provenance is the adopter's own row: nobody else reads who kept what.
+await as(userC);assert.equal((await db.query('select * from grinder_adopted_moments where practice_id=$1',[kept.practice_id])).rows.length,0);
+await as(progressOwner);assert.equal((await db.query('select * from grinder_adopted_moments where practice_id=$1',[kept.practice_id])).rows.length,0);
+// an older source measurement is recorded, not refused: the technique is still readable.
+await db.query('update runs set measurement_revision=$2 where id=$1',[sharedRun,'6'.repeat(64)]);
+await as(userC);
+const otherBaseline=(await db.query("insert into runs(profile_id,title,visibility,harness,schema_version,measurement_revision,trace_basis,started_at,prompts) values($1,'TEST DATA third builder grind','private','Codex',1,$2,'elapsed',now()-interval '2 days',4) returning id",[userC,'7'.repeat(64)])).rows[0].id;
+const keptStale=(await db.query('select grinder_adopt_moment($1,$2,$3,$4) result',[thirdMoment,otherBaseline,keepTitle,keepExpected])).rows[0].result;
+assert.equal((await db.query('select source_measurement_stale from grinder_adopted_moments where practice_id=$1',[keptStale.practice_id])).rows[0].source_measurement_stale,true);
+// the stranger returns with a later session of their own. Their own two runs, no cross-account numbers.
+await as(userB);
+const strangerLater=(await db.query("insert into runs(profile_id,title,visibility,harness,schema_version,measurement_revision,trace_basis,started_at,prompts) values($1,'TEST DATA stranger later grind','private','Codex',1,$2,'elapsed',now(),3) returning id",[userB,'8'.repeat(64)])).rows[0].id;
+await db.query("select grinder_review_attempt($1,$2,true,'keep','TEST DATA tried the check first; one observation, no causal claim')",[kept.attempt_id,strangerLater]);
+const reviewed=(await db.query('select * from grinder_practice_attempts where id=$1',[kept.attempt_id])).rows[0];
+assert.equal(reviewed.decision,'keep');
+assert.equal(reviewed.outcome.measurement_revision,'8'.repeat(64));
+// the author narrows the audience afterwards: the source stops resolving, the stranger's own work survives.
+await as(progressOwner);await db.query("update runs set visibility='private' where id=$1",[sharedRun]);
+await as(userB);
+assert.equal((await db.query('select * from grinder_run_moments where id=$1',[sharedMoment])).rows.length,0);
+assert.equal((await db.query('select * from grinder_practice_versions where id=$1',[kept.practice_id])).rows.length,1);
+assert.equal((await db.query('select * from grinder_practice_attempts where id=$1',[kept.attempt_id])).rows.length,1);
+console.log('Stranger checks passed: private source refused, anonymous refused, own baseline enforced, author grind untouched, provenance private, stale source recorded, idempotent keep, later review, audience revocation survivable.');
+
 await db.close();
 console.log(
   "Database checks passed: social permissions; agent capabilities; two-crew Challenge; locked Contract; frozen submission; rejection, appeal and revised review; late-submission denial.",

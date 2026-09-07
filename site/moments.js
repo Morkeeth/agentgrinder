@@ -38,6 +38,39 @@
     let moments = [];
     let selected = null;
     let requestId = crypto.randomUUID();
+    // A reader who was not there keeps the practice on a grind of THEIR OWN.
+    // The author's counts are never offered as anyone else's baseline.
+    let ownRuns = [];
+    if (!owner && me())
+      try {
+        ownRuns = await rows(
+          db
+            .from("runs")
+            .select("id,title,started_at,measurement_revision")
+            .eq("profile_id", me().id)
+            .not("measurement_revision", "is", null)
+            .order("created_at", { ascending: false })
+            .limit(100),
+        );
+      } catch (e) {
+        ownRuns = [];
+      }
+    const runLabel = (r) =>
+      `${r.title || "Untitled grind"} · ${
+        r.started_at && Number.isFinite(Date.parse(r.started_at))
+          ? new Date(r.started_at).toLocaleString([], {
+              dateStyle: "medium",
+              timeStyle: "short",
+            })
+          : "session time unknown"
+      }`;
+    function keepForm(m, stale) {
+      if (!me())
+        return '<p>Sign in to keep this practice on a grind of your own. Nothing is sent to the author.</p>';
+      if (!ownRuns.length)
+        return '<p>Import one of your own measured grinds first. A practice needs your own baseline, never the author\u2019s numbers.</p>';
+      return `<form id="moment-keep" class="reply-form"><h3>Try it on your own next grind</h3>${stale ? '<p class="hint">This grind has been measured again since the moment was written. You can still keep the technique; the source measurement is recorded as it was.</p>' : ""}<label>One change<input name="action" required maxlength="160" value="${esc(m.next_action)}"></label><label>What would you look for?<textarea name="expected" required maxlength="2000" placeholder="Name the result or failure that would change your mind."></textarea></label><label>Your earlier grind, frozen as your baseline<select name="baseline" required>${ownRuns.map((r) => `<option value="${esc(r.id)}">${esc(runLabel(r))}</option>`).join("")}</select></label><p>This saves a private practice on your account and freezes your own chosen grind as its baseline. Nothing is sent to the author and nothing is added to this grind. The author\u2019s counts are never shown beside yours, and a later comparison of your own two sessions does not establish that this practice caused the difference.</p><label><input type="checkbox" name="consent" required> Keep this practice on my account.</label><button>Keep this practice</button><p id="moment-keep-status" role="status"></p></form>`;
+    }
     try {
       moments = await rows(
         db
@@ -83,7 +116,7 @@
         .forEach((b) =>
           b.setAttribute("aria-pressed", String(b.dataset.id === m.id)),
         );
-      reader.innerHTML = `<article id="moment-${esc(m.id)}"><p class="meta">${stale ? "OLD MEASUREMENT · CURRENT RUN CHANGED" : "BUILDER OBSERVATION"} · ${m.bucket == null ? "No time position claimed" : "Builder-selected bucket " + (m.bucket + 1)}</p><h3>${esc(m.title)}</h3><p class="moment-claim">${esc(m.claim)}</p><details class="moment-proof" open><summary>Inspect the exact evidence</summary><p>${link ? `<a href="${esc(link)}" target="_blank" rel="noreferrer noopener">${esc(m.evidence_ref)}</a>` : `<code>${esc(m.evidence_ref)}</code>`}</p><pre>${esc(m.excerpt)}</pre><p><strong>Limit:</strong> ${esc(m.limitation)}</p><small>Bound measurement: <code>${esc(m.measurement_revision)}</code>. A reference is not proof of its contents.</small></details><p><strong>Next practice:</strong> ${esc(m.next_action)}</p><div class="cta">${!stale ? `<a class="act" href="/?share=1&run=${encodeURIComponent(run.id)}&moment=${encodeURIComponent(m.id)}">Make this my share card</a>` : "<span>Share export unavailable: the run measurement changed.</span>"}${owner ? '<button class="ghost" id="moment-remove">Remove moment</button>' : ""}</div>${owner && !stale ? `<form id="moment-practice" class="reply-form"><h3>Try it on the next grind</h3><label>One change<input name="action" required maxlength="160" value="${esc(m.next_action)}"></label><label>What would you look for?<textarea name="expected" required maxlength="2000" placeholder="Name the result or failure that would change your mind."></textarea></label><p>Save a private practice and freeze this grind as its baseline. Review a later session through the existing practice flow.</p><button>Save practice and baseline</button></form>` : stale ? "<p>This moment belongs to an older measurement. Keep it as history; make a new moment before starting a practice.</p>" : '<p>Want to try a change yourself? <a href="/?practices">Choose a practice using your own baseline.</a></p>'}</article>`;
+      reader.innerHTML = `<article id="moment-${esc(m.id)}"><p class="meta">${stale ? "OLD MEASUREMENT · CURRENT RUN CHANGED" : "BUILDER OBSERVATION"} · ${m.bucket == null ? "No time position claimed" : "Builder-selected bucket " + (m.bucket + 1)}</p><h3>${esc(m.title)}</h3><p class="moment-claim">${esc(m.claim)}</p><details class="moment-proof" open><summary>Inspect the exact evidence</summary><p>${link ? `<a href="${esc(link)}" target="_blank" rel="noreferrer noopener">${esc(m.evidence_ref)}</a>` : `<code>${esc(m.evidence_ref)}</code>`}</p><pre>${esc(m.excerpt)}</pre><p><strong>Limit:</strong> ${esc(m.limitation)}</p><small>Bound measurement: <code>${esc(m.measurement_revision)}</code>. A reference is not proof of its contents.</small></details><p><strong>Next practice:</strong> ${esc(m.next_action)}</p><div class="cta">${!stale ? `<a class="act" href="/?share=1&run=${encodeURIComponent(run.id)}&moment=${encodeURIComponent(m.id)}">Make this my share card</a>` : "<span>Share export unavailable: the run measurement changed.</span>"}${owner ? '<button class="ghost" id="moment-remove">Remove moment</button>' : ""}</div>${!owner ? keepForm(m, stale) : !stale ? `<form id="moment-practice" class="reply-form"><h3>Try it on the next grind</h3><label>One change<input name="action" required maxlength="160" value="${esc(m.next_action)}"></label><label>What would you look for?<textarea name="expected" required maxlength="2000" placeholder="Name the result or failure that would change your mind."></textarea></label><p>Save a private practice and freeze this grind as its baseline. Review a later session through the existing practice flow.</p><button>Save practice and baseline</button></form>` : "<p>This moment belongs to an older measurement. Keep it as history; make a new moment before starting a practice.</p>"}</article>`;
       const remove = reader.querySelector("#moment-remove");
       if (remove)
         remove.onclick = async () => {
@@ -101,6 +134,32 @@
           } catch (e) {
             status(GrinderContract.message(e), true);
             remove.disabled = false;
+          }
+        };
+      const keep = reader.querySelector("#moment-keep");
+      if (keep)
+        keep.onsubmit = async (e) => {
+          e.preventDefault();
+          if (!keep.reportValidity()) return;
+          const b = keep.querySelector("button");
+          b.disabled = true;
+          try {
+            const result = await rows(
+              db.rpc("grinder_adopt_moment", {
+                moment: m.id,
+                baseline_run: keep.elements.baseline.value,
+                action_title: keep.elements.action.value,
+                expected_change: keep.elements.expected.value,
+              }),
+            );
+            location.href =
+              "/?practice=" +
+              result.practice_id +
+              "#attempt-" +
+              result.attempt_id;
+          } catch (error) {
+            status(GrinderContract.message(error), true);
+            b.disabled = false;
           }
         };
       const f = reader.querySelector("#moment-practice");

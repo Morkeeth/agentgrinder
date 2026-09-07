@@ -30,3 +30,20 @@ With Node22+ and installed project dependencies:
 - `python3 -m pytest -q tests/test_browser_contract.py tests/test_progress_fixture_contract.py tests/test_run_contract.py tests/test_privacy_promises.py`.
 
 Remaining: fresh review of this candidate, full routed authenticated hosted client after approved deployment, and whether a real builder finds this moment worth sharing or returns to the practice. Mechanical completion does not settle those product questions.
+
+## The stranger's path · 2026-09-07
+
+A moment could be read by anyone who could read the grind, but only its author could act on it. A reader who was not there got a link to a generic practice list, so the technique and its evidence were dropped on the floor at the exact point someone wanted to try it.
+
+- Any reader of a readable grind can now keep the moment's next practice on their own account. The gate is readability, not ownership (`grinder_adopt_moment`, `2026-09-07-adopt.sql`).
+- The frozen baseline is one of the **reader's own** measured grinds, chosen by them. `grinder_run_snapshot` refuses any run they do not own, so the author's numbers can never become someone else's baseline.
+- Keeping is an explicit consented act: an expected result, a chosen baseline and a ticked box. Nothing is sent to the author, nothing is written to their grind and no notification is raised.
+- The kept practice records provenance as references only: moment id, source grind id and the moment's bound measurement revision. No title, claim or excerpt is copied, so an audience change is honoured. When the source stops resolving the practice page says so and the reader's own baseline, review and outcome stay.
+- An older source measurement is labelled, not refused. That gate protects the author's own baseline binding; it is not a reason a reader cannot try the technique.
+- The practice page shows where the practice came from and states that the source builder's counts are not shown. The only comparison rendered is the reader's own baseline against their own later session, with unknown values rendered as Unknown, and it is labelled as not establishing that the practice caused the difference.
+
+### Limits
+
+Two attempts by the same person are still two observations, not a controlled result. Nothing here is uploaded, published or shared outward; the reader's practice is private by default and the author is never told. No real builder has used this path; the checks below are controlled fixtures.
+
+Verification adds: the stranger block in `scripts/test-database.mjs` (private source refused, anonymous refused, own baseline enforced, author grind untouched, provenance private to the adopter, stale source recorded, idempotent keep, later review, audience revocation survivable), the stranger journey in `scripts/check-moment-fixtures.py`, and `python3 -m pytest -q tests/test_stranger_practice.py`.
