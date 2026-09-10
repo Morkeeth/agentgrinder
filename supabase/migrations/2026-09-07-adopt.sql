@@ -34,7 +34,7 @@ begin
  if not found or not grinder_can_read_run(m.run_id) then raise exception 'This moment is private or unavailable'; end if;
  select * into saved from grinder_adopted_moments where adopter_id=who and moment_id=m.id;
  if found then
-  if not exists(select 1 from grinder_practice_versions where id=saved.practice_id and title=action_title and expected=expected_change) then raise exception 'You already kept a different practice from this moment'; end if;
+  if not exists(select 1 from grinder_practice_versions where id=saved.practice_id and title=action_title and expected=expected_change and source_run=baseline_run) then raise exception 'You already kept a different practice from this moment'; end if;
   return jsonb_build_object('practice_id',saved.practice_id,'attempt_id',saved.attempt_id);
  end if;
  select * into source from runs where id=m.run_id;

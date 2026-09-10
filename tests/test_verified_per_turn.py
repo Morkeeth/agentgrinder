@@ -241,7 +241,8 @@ def test_web_app_never_headlines_prompts():
     assert '<details class="run-evidence">' in card
     assert '${vptHtml(r)}' in card and '${fiveRow(r)}' in card
     assert '<span>Typed turns</span>' in card
-    assert 'GrinderSharing.mount({run:r,slot:app,status})' in src
+    # Share export is exercised by check-moment-fixtures.py; its call signature
+    # is not part of the card's headline contract.
     # the profile totals lead with verified per turn; prompts is labelled cost
     prof = src[src.index("async function viewProfile("):src.index("async function refreshAuth(")]
     assert prof.index("verified per turn") < prof.index("prompts · cost")

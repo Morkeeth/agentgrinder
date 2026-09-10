@@ -698,6 +698,10 @@ assert.equal(provenance.source_measurement_stale,false);
 // keeping is idempotent, and the same moment cannot quietly become a different practice.
 assert.deepEqual((await db.query('select grinder_adopt_moment($1,$2,$3,$4) result',[sharedMoment,strangerBaseline,keepTitle,keepExpected])).rows[0].result,kept);
 await denied('select grinder_adopt_moment($1,$2,$3,$4)',[sharedMoment,strangerBaseline,'TEST DATA a different action',keepExpected]);
+// A retry with a different baseline must not report success for the original attempt.
+const changedBaseline=(await db.query("insert into runs(profile_id,title,visibility,harness,schema_version,measurement_revision,trace_basis,started_at,prompts) values($1,'TEST DATA other chosen baseline','private','Codex',1,$2,'elapsed',now()-interval '4 days',6) returning id",[userB,'9'.repeat(64)])).rows[0].id;
+await denied('select grinder_adopt_moment($1,$2,$3,$4)',[sharedMoment,changedBaseline,keepTitle,keepExpected]);
+await denied('select grinder_adopt_moment($1,$2,$3,$4)',[sharedMoment,sharedRun,keepTitle,keepExpected]);
 // the baseline must be the stranger's own measured grind, not the author's.
 await denied('select grinder_adopt_moment($1,$2,$3,$4)',[secondMoment,sharedRun,keepTitle,keepExpected]);
 // nothing was written to the author's grind.
