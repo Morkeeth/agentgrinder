@@ -230,11 +230,14 @@ def headline_of(run: dict) -> Headline:
 
 def build_activity(run: dict) -> Activity:
     turns = run.get("turns_typed")
-    dur = run.get("duration_s")
     tools = run.get("tool_calls")
     files = run.get("files_touched")
     commits = run.get("commits")
     rhythm = run.get("rhythm") or []
+    caps = run.get("capabilities") or {}
+    # Refuse elapsed/rate displays when the harness says the trace is not a timed clock.
+    timed = caps.get("timed_trace", True) is not False and run.get("duration_s") is not None
+    dur = run.get("duration_s") if timed else None
 
     pace_sec = (dur / turns) if (dur and turns) else None
     pph = (turns / (dur / 3600)) if (dur and turns) else None
@@ -248,6 +251,14 @@ def build_activity(run: dict) -> Activity:
         date_str = started or "—"
 
     hl = headline_of(run)
+    moving = _fmt_dur(dur) if timed else "—"
+    pace = _fmt_pace(pace_sec) if timed else "—"
+    cadence = f"{pph:.1f}/h" if pph else ("—" if not timed else "—")
+    if not timed:
+        # Tooltip-facing copy lives on the card cost group via dash + trace_basis.
+        moving = "—"
+        pace = "—"
+        cadence = "—"
 
     return Activity(
         athlete=run.get("athlete", "athlete"),
@@ -256,12 +267,12 @@ def build_activity(run: dict) -> Activity:
         project=run.get("project", "—"),
         date_str=date_str,
         distance=f"{turns} prompts" if turns is not None else "—",
-        moving_time=_fmt_dur(dur),
-        pace=_fmt_pace(pace_sec),
+        moving_time=moving,
+        pace=pace,
         effort=f"{tools} tool calls" if tools is not None else "—",
         segments=f"{files} files" if files is not None else "—",
         commits=str(commits) if commits is not None else "—",
-        prompts_per_hour=f"{pph:.1f}/h" if pph else "—",
+        prompts_per_hour=cadence,
         focus_pb=focus_pb,
         rhythm=[int(x) for x in rhythm],
         coach_verdict=run.get("coach_verdict") or "",

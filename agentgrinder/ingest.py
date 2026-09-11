@@ -338,7 +338,13 @@ def parse_cursor_session(path: str, athlete: str = "you", records=None) -> dict:
     from .native_sittings import cursor_time
     pts = [p for p in (cursor_time('<timestamp>'+s+'</timestamp>') for s in stamps) if p]
     if len(pts) >= 2:
-        dur = int((max(pts) - min(pts)).total_seconds())
+        # Wall-clock stamps exist on typed turns, but the Cursor grind trace is ordered by
+        # turn position, not elapsed time (capabilities.timed_trace=False). Publishing
+        # duration/pace/cadence from the same stamps while the route says spacing is not
+        # elapsed time is a false measured-rate claim. Refuse elapsed rates here.
+        dur = None
+    else:
+        dur = None
 
     # rhythm: bucket typed turns by position (24 buckets) — shape without needing per-turn time
     buckets = min(24, max(1, typed))
@@ -347,8 +353,10 @@ def parse_cursor_session(path: str, athlete: str = "you", records=None) -> dict:
         rhythm[min(buckets - 1, i * buckets // typed)] += 1
 
     proj = project_label(os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(path)))))
-    title_src = best_prompt or first_prompt
-    title = (title_src[:60] + "…") if title_src and len(title_src) > 60 else (title_src or f"{proj} session")
+    # Safe public title: project + harness sitting — not a raw user_query excerpt.
+    # The longest typed prompt stays local-only for the author; share/card defaults never paste it.
+    private_title_prompt = best_prompt or first_prompt
+    title = f"{proj} · Cursor sitting" if proj else "Cursor sitting"
 
     # THE REPOSITORY, from the files the session actually wrote. Cursor never states a cwd, so the
     # root is the git work tree enclosing the most-edited path. A session that wrote nothing, or
@@ -399,6 +407,7 @@ def parse_cursor_session(path: str, athlete: str = "you", records=None) -> dict:
         "reach": reach_value, "reach_reason": reach_reason,
         "route": _route_indices(route),      # integers only, safe to publish
         "route_legend": _dedupe(route),      # region names, LOCAL only, never pushed
+        "private_title_prompt": private_title_prompt,  # LOCAL only — never a share default
     }
 
 

@@ -141,6 +141,7 @@ def render_card(a: Activity) -> str:
       <div class="stat"><div class="v">{a.moving_time}</div><div class="k">Moving time</div></div>
       <div class="stat"><div class="v">{a.pace}</div><div class="k">Pace</div></div>
     </div>
+    {"" if a.moving_time != "—" or not a.trace_basis else '<p class="grp" style="text-transform:none;letter-spacing:0;padding-top:0">Moving time, pace and cadence are unavailable: this harness trace is turn order, not a measured elapsed clock.</p>'}
     <div class="sec">
       <div><span>Effort</span><br><b>{a.effort}</b></div>
       <div><span>Segments</span><br><b>{a.segments}</b></div>

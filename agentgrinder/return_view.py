@@ -32,6 +32,14 @@ def _metric_pair(before: dict, after: dict) -> dict:
     }
 
 
+def _fmt_metric(v, places=2):
+    if v is None:
+        return "—"
+    if isinstance(v, float):
+        return f"{v:.{places}f}"
+    return str(v)
+
+
 def _field_rows(before: dict, after: dict, comparable_headline: bool) -> list[tuple[str, str, str, str]]:
     """label, earlier, later, note — unknowns stay unknown."""
     rows = []
@@ -57,14 +65,14 @@ def _field_rows(before: dict, after: dict, comparable_headline: bool) -> list[tu
     m = _metric_pair(before, after)
     if m["comparable"]:
         sign = "+" if m["delta"] > 0 else ""
-        note = f"same metric ({m['before_id']}); Δ {sign}{m['delta']}"
+        note = f"same metric ({m['before_id']}); Δ {sign}{_fmt_metric(m['delta'])}"
     else:
         note = (f"incomparable: {m['before_id']} vs {m['after_id']} — "
                 "do not treat the number change as improvement")
     rows.insert(0, (
         "headline metric",
-        f"{_num(m['before_value'])} ({m['before_label']})",
-        f"{_num(m['after_value'])} ({m['after_label']})",
+        f"{_fmt_metric(m['before_value'])} ({m['before_label']})",
+        f"{_fmt_metric(m['after_value'])} ({m['after_label']})",
         note,
     ))
     return rows
@@ -101,6 +109,12 @@ def render_return_html(model: dict) -> str:
         f"<td class='note'>{escape(note)}</td></tr>"
         for lab, a, b, note in model["rows"]
     )
+    stack = "".join(
+        f"<article><strong>{escape(lab)}</strong>"
+        f"<div>Earlier: {escape(a)}</div><div>Later: {escape(b)}</div>"
+        f"<p class='note'>{escape(note)}</p></article>"
+        for lab, a, b, note in model["rows"]
+    )
     unk = "".join(f"<li>{escape(u)}</li>" for u in model["unknowns"]) or "<li>None named</li>"
     verdict = escape(str(review.get("outcome") or "not reviewed yet"))
     tried = escape(str(review.get("tried") or "unknown"))
@@ -108,6 +122,18 @@ def render_return_html(model: dict) -> str:
     comparable = m["comparable"]
     status = ("Comparable under the same headline metric"
               if comparable else "Not comparable as the same headline metric")
+    default_title = (model["after"].get("title")
+                     or f"{model['after'].get('project') or 'session'} · {model['after'].get('harness') or 'run'}")
+    hist_expected = ""
+    exp = p.get("expected") or ""
+    if "verified-per-turn" in exp.lower() or "verified per turn" in exp.lower():
+        hist_expected = ("<p class='meta'><em>Historical expectation text</em> (written before the "
+                         "artifacts-per-turn label repair): ")
+        hist_expected += escape(exp) + "</p>"
+        expected_line = "<p class='meta'>Current rule: headline metric must match what was measured.</p>"
+    else:
+        expected_line = f"<p class='meta'>Expected: {escape(exp or '—')}</p>"
+        hist_expected = ""
     return f'''<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -127,6 +153,7 @@ h1{{font-size:22px;margin:0 0 6px}} h2{{font-size:14px;text-transform:uppercase;
 table{{width:100%;border-collapse:collapse;font-size:13.5px}}
 th,td{{border-top:1px solid var(--line);padding:8px 6px;text-align:left;vertical-align:top}}
 th{{width:28%;color:var(--muted);font-weight:600}} .note{{color:var(--muted);font-size:12.5px}}
+.cmp-stack{{display:none}}
 ul{{margin:0;padding-left:18px}} .actions{{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}}
 button,a.btn{{appearance:none;border:1px solid var(--ink);background:var(--ink);color:#fff;
   padding:10px 14px;font:inherit;font-weight:650;cursor:pointer;text-decoration:none}}
@@ -135,7 +162,15 @@ button:disabled{{opacity:.4;cursor:not-allowed}}
 textarea,input[type=text]{{width:100%;font:inherit;padding:8px;border:1px solid var(--line);
   background:var(--bg);color:var(--ink);margin:6px 0 10px}}
 .foot{{margin-top:18px;font-size:12.5px;color:var(--muted)}}
-@media (max-width:420px){{body{{padding:12px 8px}} th{{width:34%}} .actions{{flex-direction:column}}}}
+.title-preview{{border:1px dashed var(--line);padding:10px 12px;margin:8px 0 12px;background:var(--bg)}}
+@media (max-width:420px){{
+  body{{padding:12px 8px}}
+  table.cmp{{display:none}}
+  .cmp-stack{{display:block}}
+  .cmp-stack article{{border-top:1px solid var(--line);padding:10px 0}}
+  .cmp-stack strong{{display:block;margin-bottom:4px}}
+  .actions{{flex-direction:column}}
+}}
 </style></head>
 <body>
 <div class="wrap" id="return-root">
@@ -146,8 +181,9 @@ textarea,input[type=text]{{width:100%;font:inherit;padding:8px;border:1px solid 
   <div class="panel">
     <h2>Practice you tried</h2>
     <p><strong>{escape(p.get("title") or "Untitled practice")}</strong></p>
-    <p class="meta">Expected: {escape(p.get("expected") or "—")}</p>
     <p class="meta">Source measurement <code>{escape(str(p.get("source_revision") or "")[:16])}…</code></p>
+    {expected_line}
+    {hist_expected}
     <p>Review: tried <strong>{tried}</strong> · decision <strong>{verdict}</strong></p>
     {f"<p class='meta'>{note}</p>" if note else ""}
     <p class="meta">{escape(model["causation"])}</p>
@@ -160,8 +196,19 @@ textarea,input[type=text]{{width:100%;font:inherit;padding:8px;border:1px solid 
       {escape(str(model["before"].get("started") or ""))}</p>
     <p class="meta">Later: {escape(str(model["after"].get("title") or "")[:80])} ·
       {escape(str(model["after"].get("started") or ""))}</p>
-    <table><thead><tr><th>Field</th><th>Earlier</th><th>Later</th><th>Reading</th></tr></thead>
+    <table class="cmp"><thead><tr><th>Field</th><th>Earlier</th><th>Later</th><th>Reading</th></tr></thead>
     <tbody>{rows}</tbody></table>
+    <div class="cmp-stack" aria-label="Comparison stacked for narrow screens">{stack}</div>
+  </div>
+
+  <div class="panel">
+    <h2>Share title (what leaves the machine)</h2>
+    <p class="meta">Default is project/session metadata — not a raw prompt. Edit before any export.
+      Private transcript text never appears here unless you type it.</p>
+    <label>Title for a share card
+      <input id="share-title" type="text" maxlength="120" value="{escape(str(default_title)[:120])}">
+    </label>
+    <div class="title-preview" id="title-preview">Preview: <strong>{escape(str(default_title)[:120])}</strong></div>
   </div>
 
   <div class="panel">
@@ -198,6 +245,13 @@ textarea,input[type=text]{{width:100%;font:inherit;padding:8px;border:1px solid 
 <script>
 (function(){{
   const status = t => document.getElementById('export-status').textContent = t;
+  const titleInput = document.getElementById('share-title');
+  const preview = document.getElementById('title-preview');
+  if (titleInput && preview) {{
+    titleInput.addEventListener('input', () => {{
+      preview.innerHTML = 'Preview: <strong>' + titleInput.value.replace(/[&<>]/g, c => ({{'&':'&amp;','<':'&lt;','>':'&gt;'}}[c])) + '</strong>';
+    }});
+  }}
   document.getElementById('export-html').onclick = () => {{
     const html = '<!doctype html>\\n' + document.documentElement.outerHTML;
     const blob = new Blob([html], {{type:'text/html'}});
