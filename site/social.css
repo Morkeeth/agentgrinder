@@ -17,7 +17,7 @@
 #crew-invite{overflow-wrap:anywhere;margin-top:16px}
 .social-follow{margin-top:12px}
 @media(max-width:600px){.social-nav{justify-content:space-between;gap:12px}.reply-form button{width:100%}}
-@media(max-width:700px){.mobile-product-nav{display:flex;gap:20px;overflow-x:auto;padding:12px 18px;white-space:nowrap;border-bottom:1px solid var(--rule);font-size:13px}.mobile-product-nav[hidden]{display:none}}
+@media(max-width:900px){.mobile-product-nav{display:flex;gap:16px;overflow-x:auto;padding:12px 18px;white-space:nowrap;border-bottom:1px solid var(--rule);font-size:13px;-webkit-overflow-scrolling:touch}.mobile-product-nav[hidden]{display:none}.mobile-product-nav a{flex:0 0 auto}}
 
 #practice-body .card,#practice-body .panel{padding:20px;margin-bottom:18px;overflow-wrap:anywhere}.comparison{display:grid;grid-template-columns:1fr 1fr;gap:12px}.comparison small{display:block;color:var(--muted)}
 

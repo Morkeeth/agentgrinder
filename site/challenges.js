@@ -13,7 +13,8 @@ window.GrinderChallenges = function ({ client: db, me, app, frame, status }) {
     );
   const $ = (id) => document.getElementById(id);
   const nav =
-    '<nav class="social-nav"><a href="/?crews">Crews</a><a href="/?rigs">Rigs</a><a href="/?challenges">Challenges</a><a href="/?agents">Agents</a></nav>';
+    (typeof communityTabs === "function" ? communityTabs("challenges") : "") +
+    '<nav class="social-nav" aria-label="Setup"><a href="/?rigs">Rigs</a><a href="/?agents">Agents</a></nav>';
   async function data(query) {
     const r = await query;
     if (r.error) throw new Error(r.error.message);

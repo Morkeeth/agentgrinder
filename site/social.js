@@ -25,11 +25,23 @@ window.GrinderSocial = function ({
   const link = (p) =>
     `<a href="/?u=${encodeURIComponent(p?.github_handle || "")}">${esc(profile(p))}</a>`;
   const nav =
-    '<nav class="social-nav"><a href="/?following">Following</a><a href="/?crews">Crews</a><a href="/?inbox">Inbox</a></nav>';
-  function start(title, description) {
+    (typeof communityTabs === "function" ? communityTabs("crews") : "") +
+    '<nav class="social-nav" aria-label="Community extras"><a href="/?inbox">Inbox</a></nav>';
+  function start(title, description, section) {
     frame(null, null);
+    if (typeof setPrimarySection === "function") {
+      setPrimarySection(section === "inbox" ? "inbox" : section === "feed" ? "feed" : "community");
+    }
+    const tabs =
+      section === "feed" && typeof feedTabs === "function"
+        ? feedTabs("following")
+        : section === "inbox"
+          ? ""
+          : typeof communityTabs === "function"
+            ? communityTabs(section === "crews" ? "crews" : "hub")
+            : nav;
     app().innerHTML =
-      nav +
+      tabs +
       `<div class="head"><h2>${esc(title)}</h2></div><p>${esc(description)}</p><div id="social-body" aria-live="polite">Loading…</div>`;
   }
   function signedIn() {
@@ -60,6 +72,7 @@ window.GrinderSocial = function ({
     start(
       "Your following feed",
       "The real grinds of people you choose to follow.",
+      "feed",
     );
     if (!signedIn()) return;
     try {
@@ -368,7 +381,7 @@ window.GrinderSocial = function ({
   }
 
   async function inbox() {
-    start("Your inbox", "Recognition and conversations about your work.");
+    start("Your inbox", "Recognition and conversations about your work.", "inbox");
     if (!signedIn()) return;
     try {
       const rows = await result(
@@ -447,7 +460,7 @@ window.GrinderSocial = function ({
   }
 
   async function crews() {
-    start("Crews", "Build with people whose work you want to follow.");
+    start("Crews", "Build with people whose work you want to follow.", "crews");
     if (!signedIn()) return;
     try {
       const memberships = await result(

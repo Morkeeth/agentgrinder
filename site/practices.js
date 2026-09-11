@@ -21,7 +21,10 @@ window.GrinderPractices = function ({ client: db, me, app, frame, status }) {
   function start(title) {
     frame(null, null);
     app().innerHTML =
-      '<nav class="social-nav"><a href="/?practices">Practices</a><a href="/?crews">Crews</a><a href="/?rigs">Rigs</a><a href="/?challenges">Challenges</a></nav><div class="head"><h2>' +
+      (typeof myRunsTabs === "function"
+        ? myRunsTabs("practices")
+        : '<nav class="social-nav"><a href="/?practices">Practices</a><a href="/?mine">My runs</a><a href="/?progress">Progress</a></nav>') +
+      '<div class="head"><h2>' +
       esc(title) +
       '</h2></div><div id="practice-body" aria-live="polite">Loading…</div>';
   }

@@ -10,7 +10,8 @@ window.GrinderProgress = function ({client: db, me, app, frame, status, signIn})
   async function rows(query) {const result = await query; if(result.error) throw Error(result.error.message); return result.data || [];}
   function start(heading, active) {
     frame(null,null);
-    app().innerHTML = `<nav class="social-nav" aria-label="Your work"><a href="/?mine" ${active==='runs'?'aria-current="page"':''}>My runs</a><a href="/?progress" ${active==='progress'?'aria-current="page"':''}>Progress</a><a href="/?practices">Next practice</a>${me()?`<a href="/?u=${encodeURIComponent(me().github_handle)}">My Scrapbook</a>`:''}</nav><div class="head"><h1>${esc(heading)}</h1><span class="meta">Private to your account</span></div><section id="progress-body" aria-live="polite">Loading…</section>`;
+    app().innerHTML = (typeof myRunsTabs === 'function' ? myRunsTabs(active === 'runs' ? 'runs' : active === 'progress' ? 'progress' : 'practices') : `<nav class="social-nav" aria-label="My runs"><a href="/?mine" ${active==='runs'?'aria-current="page"':''}>My runs</a><a href="/?progress" ${active==='progress'?'aria-current="page"':''}>Progress</a><a href="/?practices">Practices</a></nav>`) + `<div class="head"><h1>${esc(heading)}</h1><span class="meta">Private to your account</span></div><section id="progress-body" aria-live="polite">Loading…</section>`;
+    if(typeof setPrimarySection==='function') setPrimarySection('mine');
     if(!me()) {$('progress-body').innerHTML='<div class="panel reply-form"><p>Sign in to see your own runs and progress. Shared runs stay on the public feed.</p><button id="progress-sign-in">Sign in</button></div>';$('progress-sign-in').onclick=signIn;return false;}
     return true;
   }
