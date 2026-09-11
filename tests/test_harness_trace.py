@@ -14,9 +14,10 @@ What this file holds is the behaviour, on fixtures written here. Two rules are l
 each has its own test: a failed patch is not a write, and a count that has no source stays None
 rather than becoming a zero.
 
-The claim rule is deliberately NOT wired into either parser. Its published precision was measured
-over a line population produced by the parsers as they stood, and feeding a new harness in would
-move that population while the number stayed still. tests/test_claim_rule.py holds that seam.
+The claim *evidence* rule is deliberately NOT wired into either parser for verification
+(Cursor/Codex transcripts do not retain tool stdout for same-turn matching). Cursor does
+count claim *lines* from assistant prose; `claims_verified` stays None so a missing evidence
+channel is never printed as a fabricated zero. tests/test_claim_rule.py holds the detector seam.
 """
 import json
 import os
@@ -175,7 +176,11 @@ def test_neither_parser_invents_a_zero(tmp_path):
                       "artifacts_promised", "corrections", "reach"):
             assert run[field] is None, f"{run['harness']} invented {field} = {run[field]!r}"
         assert run["reach_reason"]
-        assert "claims" not in run and "claims_verified" not in run
+        # Evidence half stays unmeasured — never a fabricated verified=0.
+        assert run.get("claims_verified") is None
+    # Cursor counts claim lines from assistant prose (0 when none); Codex still omits the field.
+    assert cur["claims"] == 0
+    assert "claims" not in cod
 
 
 # ---- the empty machine: no green check over a population of zero -----------------------------

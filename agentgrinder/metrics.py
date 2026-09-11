@@ -149,16 +149,30 @@ def five_cells(run: dict) -> list[Cell]:
     reach = run.get("reach")
     share = _ratio(verified, claims)   # None when no claims were made
     corr = _ratio(corrections, turns)
+    caps = run.get("capabilities") or {}
 
     def _n(v):
         return "—" if v is None else str(v)
 
+    if share is not None:
+        verified_cell = f"{verified}/{claims} · {share:.0%}"
+        verified_src = SOURCES["verified_share"]
+    elif verified is not None and claims is not None:
+        verified_cell = f"{verified}/{claims}"
+        verified_src = SOURCES["verified_share"]
+    elif claims is not None and caps.get("claim_evidence") is False:
+        # Claims counted from assistant prose; same-turn tool stdout is not in this harness's
+        # transcript, so the evidence half stays unmeasured (baseline), never a fabricated 0.
+        verified_cell = f"—/{claims}"
+        verified_src = ("claims counted from assistant text; same-turn tool stdout is not in this "
+                        "harness transcript, so verified share cannot be measured here today")
+    else:
+        verified_cell = "—"
+        verified_src = SOURCES["verified_share"]
+
     return [
         Cell("typed turns", _n(turns), SOURCES["typed_turns"], cost=True),
-        Cell("verified claims",
-             f"{verified}/{claims} · {share:.0%}" if share is not None else
-             (f"{verified}/{claims}" if verified is not None and claims is not None else "—"),
-             SOURCES["verified_share"]),
+        Cell("verified claims", verified_cell, verified_src),
         Cell("correction rate", f"{corr:.0%}" if corr is not None else "—", SOURCES["correction_rate"]),
         Cell("produced ÷ promised", f"{_n(produced)} ÷ {_n(promised)}", SOURCES["produced_over_promised"]),
         # the reach dash carries the sentence the probe wrote for THIS run ("no commit landed
@@ -169,7 +183,12 @@ def five_cells(run: dict) -> list[Cell]:
 
 
 def headline_of(run: dict) -> Headline:
-    """Verified per turn from a run dict, or a dash that says which part is missing."""
+    """Verified per turn from a run dict, or a dash that says which part is missing.
+
+    When a harness cannot measure claim evidence at all (`capabilities.claim_evidence` is False),
+    the headline still uses measured artifacts ÷ typed turns and names that limit in the formula.
+    That is not inventing verified=0; it is refusing to pretend evidence was checked.
+    """
     turns = run.get("turns_typed")
     verified = run.get("claims_verified")
     produced = run.get("artifacts_produced")
@@ -178,12 +197,19 @@ def headline_of(run: dict) -> Headline:
         text = f"{vpt:.2f}"
         formula = f"({verified} verified + {produced} artifacts) ÷ {turns} typed turns"
     else:
-        text = "—"
-        missing = [k for k, v in (("verified claims", verified), ("artifacts produced", produced),
-                                  ("typed turns", turns)) if v is None]
-        formula = "needs " + ", ".join(missing) if missing else "no typed turns"
+        caps = run.get("capabilities") or {}
+        if (caps.get("claim_evidence") is False and produced is not None and turns
+                and verified is None):
+            vpt = produced / turns
+            text = f"{vpt:.2f}"
+            formula = (f"(claims evidence not in this harness transcript; {produced} artifacts) "
+                       f"÷ {turns} typed turns")
+        else:
+            text = "—"
+            missing = [k for k, v in (("verified claims", verified), ("artifacts produced", produced),
+                                      ("typed turns", turns)) if v is None]
+            formula = "needs " + ", ".join(missing) if missing else "no typed turns"
     return Headline(text=text, value=vpt, formula=formula, five=five_cells(run))
-
 
 def build_activity(run: dict) -> Activity:
     turns = run.get("turns_typed")
