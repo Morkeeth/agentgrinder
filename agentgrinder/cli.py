@@ -93,7 +93,7 @@ def _render(run: dict, out: Path, open_it: bool) -> None:
     # terminal summary (Oscar reads the terminal too)
     print(f"\n  {a.athlete} · {a.title}")
     print(f"  {a.harness} · {a.project} · {a.date_str}")
-    print(f"\n  VERIFIED PER TURN  {a.headline}    {a.headline_formula}")
+    print(f"\n  {a.headline_label.upper()}  {a.headline}    {a.headline_formula}")
     print("  " + " · ".join(f"{c.label} {c.value}" + (" (cost)" if c.cost else "") for c in a.five))
     print(f"\n  cost: {a.distance} | {a.moving_time} | {a.pace}")
     print(f"  effort {a.effort} · {a.segments} · {a.commits} commits · {a.prompts_per_hour}"
@@ -116,6 +116,14 @@ def main(argv=None) -> int:
     add_capture_parser(sub)
     from .rig_config import add_parser as add_rig_parser
     add_rig_parser(sub)
+    rv = sub.add_parser("return-view",
+                        help="after a later run: show practice, comparable change, unknowns, next practice")
+    rv.add_argument("--practice", required=True, help="practice.json from practice accept")
+    rv.add_argument("--before", required=True, help="earlier run JSON")
+    rv.add_argument("--after", required=True, help="later run JSON")
+    rv.add_argument("--review", default=None, help="optional practice review JSON")
+    rv.add_argument("-o", "--out", default="return-view.html")
+    rv.add_argument("--no-open", action="store_true")
     d = sub.add_parser("demo", help="render the bundled sample run")
     d.add_argument("--no-open", action="store_true")
     c = sub.add_parser("card", help="render a run JSON to a card")
@@ -268,6 +276,16 @@ def main(argv=None) -> int:
     if args.cmd == "practice":
         from .practices import run_cli
         return run_cli(args)
+    if args.cmd == "return-view":
+        from .return_view import write_return_view
+        model = write_return_view(args.practice, args.before, args.after, args.out, args.review)
+        print(f"  return view -> {args.out}")
+        print(f"  practice: {model['practice'].get('title','')[:80]}")
+        print(f"  comparable: {model['metric']['comparable']} "
+              f"({model['metric']['before_id']} → {model['metric']['after_id']})")
+        if not args.no_open:
+            webbrowser.open(Path(args.out).resolve().as_uri())
+        return 0
     if args.cmd == "agent":
         from .agent_api import run_cli
         return run_cli(args)

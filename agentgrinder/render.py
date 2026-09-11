@@ -13,7 +13,7 @@ from .brand import CARD_THEME
 
 from html import escape
 
-from .metrics import HEADLINE_TIP, Activity, Cell
+from .metrics import ARTIFACTS_PER_TURN_TIP, HEADLINE_TIP, Activity, Cell
 
 
 def _route_svg(rhythm: list[int], w: int = 720, h: int = 150) -> str:
@@ -64,8 +64,9 @@ def render_card(a: Activity) -> str:
         route = _route_svg(a.rhythm) + ("<small>" + a.trace_basis + "</small>" if a.trace_basis else "")
     five = _five_row(a.five)
     coach = (f'<section style="padding:20px"><h2>Next session</h2><small>{a.coach_mode}</small><p>{a.coach_verdict}</p><p style="white-space:pre-wrap">{a.coach_plan}</p></section>' if a.coach_verdict else "")
-    hl_title = ("verified per turn = (verified claims + artifacts produced) ÷ typed turns · "
-                + escape(a.headline_formula))
+    tip = (ARTIFACTS_PER_TURN_TIP if a.headline_metric_id == "artifacts_per_turn"
+           else HEADLINE_TIP)
+    hl_title = escape(tip) + " · " + escape(a.headline_formula)
     return f'''<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -130,7 +131,7 @@ def render_card(a: Activity) -> str:
     <div class="sub">{a.harness} · {a.project}</div>
     <div class="hl" title="{hl_title}">
       <div class="n">{a.headline}</div>
-      <div class="lbl">verified per turn<span class="f">{escape(a.headline_formula)}</span></div>
+      <div class="lbl">{a.headline_label}<span class="f">{escape(a.headline_formula)}</span></div>
     </div>
     <div class="fiverow">{five}</div>
     <div class="routewrap">{route}</div>
@@ -162,7 +163,7 @@ def render_profile(p: dict) -> str:
     cards = "".join(f'''
       <a class="runrow" href="#">
         <div class="rt">{a.title}</div>
-        <div class="rm"><span class="hl" title="{escape(HEADLINE_TIP)} · {escape(a.headline_formula)}">{a.headline} verified/turn</span>
+        <div class="rm"><span class="hl" title="{escape(ARTIFACTS_PER_TURN_TIP if a.headline_metric_id=='artifacts_per_turn' else HEADLINE_TIP)} · {escape(a.headline_formula)}">{a.headline} {a.headline_label}</span>
           <span class="cost">{a.distance} · cost</span><span>{a.moving_time}</span><span>{a.pace}</span>
           <span>{a.commits} commits</span>{" <span class='pb'>★ PB</span>" if a.focus_pb else ""}</div>
         <div class="rs">{a.harness} · {a.project} · {a.date_str}</div>

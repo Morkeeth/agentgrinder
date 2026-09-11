@@ -19,6 +19,8 @@ def record_and_attach(run: dict, path: str | None = None, command: str = "agentg
         p["baseline_revision_id"] = revision.get("baseline_revision_id")
         from ..practices import context
         run["practice_context"] = context(conn, project,run.get('project_identity'))
+        run["headline_metric_id"] = revision.get("metric_id")
+        run["headline_label"] = revision.get("metric_label")
     finally:
         conn.close()
     run["progress"] = p

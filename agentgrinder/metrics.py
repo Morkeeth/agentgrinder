@@ -85,6 +85,19 @@ def _ratio(num: int | None, den: int | None) -> float | None:
     return num / den
 
 
+HEADLINE_TIP = ("verified per turn = (verified claims + artifacts produced) ÷ typed turns. "
+                "Local: the calibrated claims.py rule (precision 0.63, recall 0.66 held out) plus "
+                "Edit/Write paths on disk. A rate, not a count: a count of claims moves with how "
+                "much the agent talks, see /methodology")
+
+ARTIFACTS_PER_TURN_TIP = ("artifacts per turn = artifacts produced ÷ typed turns. Used only when "
+                          "claim evidence cannot be measured on this harness. It is not verified "
+                          "per turn; do not compare it to a verified-per-turn reading as the same metric.")
+
+METRIC_VERIFIED_PER_TURN = "verified_per_turn"
+METRIC_ARTIFACTS_PER_TURN = "artifacts_per_turn"
+
+
 @dataclass
 class Cell:
     """One of the five run numbers: the printed value, and where it comes from."""
@@ -121,12 +134,9 @@ class Activity:
     headline: str = "—"                        # e.g. "0.21"
     headline_val: float | None = None
     headline_formula: str = ""                 # "(6 verified + 4 artifacts) ÷ 47 typed turns"
+    headline_label: str = "verified per turn"
+    headline_metric_id: str = METRIC_VERIFIED_PER_TURN
     five: list = field(default_factory=list)   # five Cell rows, in the metric spec's order
-
-HEADLINE_TIP = ("verified per turn = (verified claims + artifacts produced) ÷ typed turns. "
-                "Local: the calibrated claims.py rule (precision 0.63, recall 0.66 held out) plus "
-                "Edit/Write paths on disk. A rate, not a count: a count of claims moves with how "
-                "much the agent talks, see /methodology")
 
 
 @dataclass
@@ -137,6 +147,8 @@ class Headline:
     value: float | None
     formula: str               # "(6 verified + 4 artifacts) ÷ 47 typed turns" / "needs …"
     five: list                 # five Cell rows, in the metric spec's order
+    metric_id: str = METRIC_VERIFIED_PER_TURN
+    label: str = "verified per turn"
 
 
 def five_cells(run: dict) -> list[Cell]:
@@ -183,33 +195,38 @@ def five_cells(run: dict) -> list[Cell]:
 
 
 def headline_of(run: dict) -> Headline:
-    """Verified per turn from a run dict, or a dash that says which part is missing.
+    """Headline number for a run: verified-per-turn when both inputs exist.
 
-    When a harness cannot measure claim evidence at all (`capabilities.claim_evidence` is False),
-    the headline still uses measured artifacts ÷ typed turns and names that limit in the formula.
-    That is not inventing verified=0; it is refusing to pretend evidence was checked.
+    When claim evidence cannot be measured (`capabilities.claim_evidence` is False and
+    `claims_verified` is None), the headline is **artifacts per turn** — a different metric
+    identity. Never label that number "verified per turn".
     """
     turns = run.get("turns_typed")
     verified = run.get("claims_verified")
     produced = run.get("artifacts_produced")
     vpt = verified_per_turn(verified, produced, turns)
     if vpt is not None:
-        text = f"{vpt:.2f}"
-        formula = f"({verified} verified + {produced} artifacts) ÷ {turns} typed turns"
-    else:
-        caps = run.get("capabilities") or {}
-        if (caps.get("claim_evidence") is False and produced is not None and turns
-                and verified is None):
-            vpt = produced / turns
-            text = f"{vpt:.2f}"
-            formula = (f"(claims evidence not in this harness transcript; {produced} artifacts) "
-                       f"÷ {turns} typed turns")
-        else:
-            text = "—"
-            missing = [k for k, v in (("verified claims", verified), ("artifacts produced", produced),
-                                      ("typed turns", turns)) if v is None]
-            formula = "needs " + ", ".join(missing) if missing else "no typed turns"
-    return Headline(text=text, value=vpt, formula=formula, five=five_cells(run))
+        return Headline(
+            text=f"{vpt:.2f}", value=vpt,
+            formula=f"({verified} verified + {produced} artifacts) ÷ {turns} typed turns",
+            five=five_cells(run),
+            metric_id=METRIC_VERIFIED_PER_TURN, label="verified per turn")
+    caps = run.get("capabilities") or {}
+    if (caps.get("claim_evidence") is False and produced is not None and turns
+            and verified is None):
+        apt = produced / turns
+        return Headline(
+            text=f"{apt:.2f}", value=apt,
+            formula=f"{produced} artifacts ÷ {turns} typed turns",
+            five=five_cells(run),
+            metric_id=METRIC_ARTIFACTS_PER_TURN, label="artifacts per turn")
+    missing = [k for k, v in (("verified claims", verified), ("artifacts produced", produced),
+                              ("typed turns", turns)) if v is None]
+    return Headline(
+        text="—", value=None,
+        formula="needs " + ", ".join(missing) if missing else "no typed turns",
+        five=five_cells(run),
+        metric_id=METRIC_VERIFIED_PER_TURN, label="verified per turn")
 
 def build_activity(run: dict) -> Activity:
     turns = run.get("turns_typed")
@@ -255,5 +272,7 @@ def build_activity(run: dict) -> Activity:
         headline=hl.text,
         headline_val=hl.value,
         headline_formula=hl.formula,
+        headline_label=hl.label,
+        headline_metric_id=hl.metric_id,
         five=hl.five,
     )

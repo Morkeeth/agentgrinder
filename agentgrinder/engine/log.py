@@ -88,7 +88,8 @@ def record_run(conn: sqlite3.Connection, run: dict, command: str = "agentgrinder
     if not started:
         raise ValueError("a reading needs the sitting's start time")
     from ..metrics import headline_of
-    value = headline_of(run).value
+    hl = headline_of(run)
+    value = hl.value
     row = dict(project=project, started=started, recorded_at=_now(),
                turns_typed=run.get("turns_typed"), claims=run.get("claims"),
                claims_verified=run.get("claims_verified"), artifacts_produced=run.get("artifacts_produced"),
@@ -96,7 +97,8 @@ def record_run(conn: sqlite3.Connection, run: dict, command: str = "agentgrinder
                rule_version=run.get("rule_version", rule_fingerprint() + ":" + EVIDENCE_VERSION),
                parser_version=run.get("parser_version", "0.1.0"),
                input_digest=run.get("input_digest"), project_identity=run.get("project_identity"),
-               capabilities=run.get("capabilities"))
+               capabilities=run.get("capabilities"),
+               metric_id=hl.metric_id, metric_label=hl.label)
     revision = _save_revision(conn, row)
     conn.execute("INSERT OR IGNORE INTO readings (project, started, recorded_at, turns_typed, claims, claims_verified, "
                  "artifacts_produced, commits, value, command, revision_id) VALUES (?,?,?,?,?,?,?,?,?,?,?)",

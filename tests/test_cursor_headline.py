@@ -2,7 +2,7 @@
 from agentgrinder.metrics import headline_of
 
 
-def test_cursor_harness_headline_uses_artifacts_not_fake_verified_zero():
+def test_cursor_harness_headline_is_artifacts_per_turn_not_verified():
     run = {
         "turns_typed": 6,
         "claims": 4,
@@ -16,8 +16,10 @@ def test_cursor_harness_headline_uses_artifacts_not_fake_verified_zero():
     hl = headline_of(run)
     assert hl.text == "1.50"
     assert hl.value == 1.5
-    assert "claims evidence not in this harness" in hl.formula
-    assert "9 artifacts" in hl.formula
+    assert hl.metric_id == "artifacts_per_turn"
+    assert hl.label == "artifacts per turn"
+    assert "9 artifacts ÷ 6 typed turns" == hl.formula
+    assert "verified" not in hl.label
     assert hl.five[1].value == "—/4"
     assert "tool stdout" in hl.five[1].source
 
@@ -32,3 +34,4 @@ def test_missing_artifacts_still_dashes_even_on_cursor():
     hl = headline_of(run)
     assert hl.text == "—"
     assert hl.value is None
+    assert hl.label == "verified per turn"

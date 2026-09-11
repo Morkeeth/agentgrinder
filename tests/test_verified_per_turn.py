@@ -275,4 +275,4 @@ def test_profile_headlines_verified_per_turn_and_leaves_missing_runs_out():
     assert "Verified per turn" in first_cell and "0.21" in first_cell
     assert '<div class="k">Prompts</div>' not in html
     assert "Cost — 147 prompts typed across 2 runs" in html
-    assert "0.21 verified/turn" in html and "47 prompts · cost" in html
+    assert "0.21 verified per turn" in html and "47 prompts · cost" in html

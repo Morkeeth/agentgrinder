@@ -19,7 +19,7 @@ from datetime import datetime
 
 from .authorship import CATEGORIES, COMMAND
 from . import privacy
-from .metrics import HEADLINE_TIP, headline_of
+from .metrics import ARTIFACTS_PER_TURN_TIP, HEADLINE_TIP, headline_of
 from .render import _five_row
 from .soloroute import render_route_svg, render_phone_svg, _esc, span_minutes
 
@@ -205,6 +205,7 @@ def render_solo_card(run: dict, title: str | None = None, ranks: dict | None = N
     h_title, callout = headline(run)
     h_title = title or h_title
     hl = headline_of(run)          # verified per turn, or a dash that names what is missing
+    tip = ARTIFACTS_PER_TURN_TIP if hl.metric_id == "artifacts_per_turn" else HEADLINE_TIP
     five = _five_row(hl.five)
     pace = (run["duration_s"] / run["turns_typed"]) if run["turns_typed"] else None
     per_prompt = (run["tool_calls"] / run["turns_typed"]) if run["turns_typed"] else None
@@ -467,9 +468,9 @@ def render_solo_card(run: dict, title: str | None = None, ranks: dict | None = N
     {f'<div class="callout">{callout}</div>' if callout else ''}
     {prog}
 
-    <div class="hl" title="{_esc(HEADLINE_TIP)} · {_esc(hl.formula)}">
+    <div class="hl" title="{_esc(tip)} · {_esc(hl.formula)}">
       <div class="n">{hl.text}</div>
-      <div class="lbl">verified per turn<span class="f">{_esc(hl.formula)}</span></div>
+      <div class="lbl">{_esc(hl.label)}<span class="f">{_esc(hl.formula)}</span></div>
     </div>
     <div class="fiverow">{five}</div>
     {_verdict_block(run)}
