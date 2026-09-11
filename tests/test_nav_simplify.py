@@ -12,10 +12,15 @@ def test_primary_nav_has_three_destinations_not_ten():
     assert 'data-section="community"' in INDEX
     assert 'data-section="inbox"' in INDEX
     primary = INDEX.split('id="nav"', 1)[1].split("</nav>", 1)[0]
-    top = re.findall(r"<a\s[^>]*>([^<]+)</a>", primary.split("<details", 1)[0])
+    before_account = primary.split("<details", 1)[0]
+    # Inbox embeds a badge <span>; strip tags for label compare
+    top = [
+        re.sub(r"<[^>]+>", "", m).strip()
+        for m in re.findall(r"<a\s[^>]*>(.*?)</a>", before_account, flags=re.S)
+    ]
     assert top == ["Feed", "My runs", "Community", "Inbox"]
     for label in ("Following", "Forum", "Crews", "Challenges"):
-        assert f">{label}</a>" not in primary.split("<details", 1)[0]
+        assert f">{label}</a>" not in before_account
     assert "Account" in primary
     assert "/?community" in INDEX
 
