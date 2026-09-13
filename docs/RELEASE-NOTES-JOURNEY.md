@@ -10,7 +10,10 @@ Stacked on candidate `day/2026-09-11-grinder-ambition` @ `be5704c`. PR1 remains 
 - Coaching-to-practice: accept/edit the experiment on a measured grind, freeze that grind as baseline, return with keep/change/drop/incomparable, original measurements preserved, one observed outcome required.
 - Bundled example continues through moment review, a second-builder fixture role on **their** baseline, and outcome export using the existing share studio.
 - Community overview leads with public techniques (honest empty state if none). Returning builders land on pending practices and recognition, not a marketing page.
-- Forward migration `2026-09-13-coach-mode.sql` (nullable `runs.coach_mode`). Not applied to production here.
+- Forward migration `2026-09-13-coach-mode.sql` (nullable `runs.coach_mode`) and `2026-09-13-comparable-sittings.sql` (keep/change/drop requires matching harness **and** time basis). Not applied to production here.
+- Practice review UI and return-view export refuse a green comparable badge when harness or `trace_basis` differs, even if claim counts are present on both sittings.
+- Coach `named_targets` no longer extracts directory paths from claim text. Export, import, HTML cards, JSON dumps and push replace path-shaped tokens. Local coaching still names `test_*` identifiers and slash-free basenames.
+- Real two-builder persistence (coach freeze → later review → share → adopt onto the reader's baseline → their outcome → revocation) is exercised in isolated PGlite with distinct JWTs, not `example.js` sessionStorage. `site/example.js` stays labelled onboarding.
 
 Preserved: existing moment authoring, adoption RPC, outcome export, practice RLS, nav (Feed / My runs / Community / Inbox).
 

@@ -5,7 +5,8 @@
     "node": ">=20"
   },
   "scripts": {
-    "test:database": "node scripts/test-database.mjs"
+    "test:database": "node scripts/test-database.mjs",
+    "test:journey": "node scripts/check-persisted-journey.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.8"
