@@ -156,30 +156,19 @@ window.GrinderPractices = function ({ client: db, me, app, frame, status }) {
     const observed = attempt.note
       ? `<p><strong>Observed outcome:</strong> ${esc(attempt.note)}</p>`
       : "<p>No observed outcome recorded yet. A score alone is not the payoff.</p>";
-    const beforeMetric =
-      before.headline_metric_id ||
-      (before.claims_verified == null && before.artifacts_produced != null
-        ? "artifacts_per_turn"
-        : "verified_per_turn");
-    const afterMetric =
-      after.headline_metric_id ||
-      (after.claims_verified == null && after.artifacts_produced != null
-        ? "artifacts_per_turn"
-        : "verified_per_turn");
-    const comparable =
-      !!attempt.outcome &&
-      beforeMetric === afterMetric &&
-      (before.claims_verified != null) === (after.claims_verified != null);
-    const why = !attempt.outcome
-      ? "No later measurement is bound yet."
-      : beforeMetric !== afterMetric
-        ? `Headline metrics differ (${beforeMetric} vs ${afterMetric}); do not read a number change as the same claim.`
-        : "Same metric identity. This is an observation, not proof the practice caused the difference. Different task difficulty is not productivity proof.";
+    const verdict =
+      typeof GrinderContract === "object" && GrinderContract.sittingsComparable
+        ? GrinderContract.sittingsComparable(before, after)
+        : {
+            ok: false,
+            why: "Comparison rules could not load. Read these as two separate sittings.",
+          };
+    const comparable = !!attempt.outcome && verdict.ok;
     return (
       '<div class="comparison-status"><h2>' +
       (comparable ? "Comparable under the same measurements" : "Read these as two separate sittings") +
       "</h2><p>" +
-      esc(why) +
+      esc(verdict.why) +
       "</p></div>" +
       observed +
       '<div class="comparison"><div>' +

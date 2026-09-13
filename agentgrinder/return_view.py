@@ -20,7 +20,10 @@ def _num(v):
 
 def _metric_pair(before: dict, after: dict) -> dict:
     hb, ha = headline_of(before), headline_of(after)
-    same = hb.metric_id == ha.metric_id and hb.value is not None and ha.value is not None
+    same_metric = hb.metric_id == ha.metric_id and hb.value is not None and ha.value is not None
+    same_harness = bool(before.get("harness")) and before.get("harness") == after.get("harness")
+    same_basis = bool(before.get("trace_basis")) and before.get("trace_basis") == after.get("trace_basis")
+    same = same_metric and same_harness and same_basis
     delta = round(ha.value - hb.value, 4) if same else None
     return {
         "before_label": hb.label, "after_label": ha.label,
@@ -29,6 +32,8 @@ def _metric_pair(before: dict, after: dict) -> dict:
         "before_formula": hb.formula, "after_formula": ha.formula,
         "comparable": same,
         "delta": delta,
+        "same_harness": same_harness,
+        "same_trace_basis": same_basis,
     }
 
 
@@ -120,8 +125,8 @@ def render_return_html(model: dict) -> str:
     tried = escape(str(review.get("tried") or "unknown"))
     note = escape(str(review.get("note") or ""))
     comparable = m["comparable"]
-    status = ("Comparable under the same headline metric"
-              if comparable else "Not comparable as the same headline metric")
+    status = ("Comparable under the same measurements"
+              if comparable else "Read these as two separate sittings")
     default_title = (model["after"].get("title")
                      or f"{model['after'].get('project') or 'session'} · {model['after'].get('harness') or 'run'}")
     hist_expected = ""

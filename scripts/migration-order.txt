@@ -17,3 +17,4 @@
 2026-09-06-moments.sql
 2026-09-07-adopt.sql
 2026-09-13-coach-mode.sql
+2026-09-13-comparable-sittings.sql

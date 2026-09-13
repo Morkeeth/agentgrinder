@@ -15,17 +15,84 @@ import re
 from typing import Any
 
 TEST_NAME = re.compile(r"\btest_\w+")
-PATH_NAME = re.compile(
-    r"[\w.\-]+(?:/[\w.\-]+)+\.\w{1,6}|\b[\w\-]+\.(?:py|ts|js|tsx|jsx|md|json|html|toml|sh)\b"
+BASENAME = re.compile(
+    r"\b[\w.-]+\.(?:py|ts|js|tsx|jsx|md|json|html|toml|sh)\b"
 )
 
 
+def looks_like_path(token: str) -> bool:
+    """Directory, home, or drive-shaped. A bare basename is not a path leak."""
+    t = (token or "").strip(".,;:()[]{}'\"`")
+    if not t:
+        return False
+    if t.startswith("~") or t.startswith("/") or t.startswith("\\"):
+        return True
+    if "\\" in t or t.count("/") >= 1:
+        return True
+    if re.match(r"^[A-Za-z]:", t):
+        return True
+    return False
+
+
 def named_targets(line: str) -> list[str]:
+    """Public-safe names only: test_ identifiers and slash-free file basenames.
+
+    Claim text can carry a home directory. Those tokens are dropped, not shortened.
+    A test_ name that appears as its own word is the useful local coaching target.
+    """
     seen: list[str] = []
-    for tok in [*TEST_NAME.findall(line or ""), *PATH_NAME.findall(line or "")]:
-        if tok not in seen:
-            seen.append(tok)
+    for raw in (line or "").split():
+        tok = raw.strip(".,;:()[]{}'\"`")
+        if not tok or looks_like_path(tok):
+            continue
+        for m in [*TEST_NAME.findall(tok), *BASENAME.findall(tok)]:
+            if m not in seen and not looks_like_path(m):
+                seen.append(m)
     return seen
+
+
+def public_text(value: str | None) -> str | None:
+    """Replace path-shaped tokens. Metrics, test names and basenames stay. Newlines stay."""
+    if value is None:
+        return None
+    lines = []
+    for line in str(value).splitlines():
+        parts = []
+        for raw in line.split():
+            tok = raw.strip(".,;:()[]{}'\"`")
+            parts.append("[file]" if looks_like_path(tok) else raw)
+        lines.append(" ".join(parts))
+    return "\n".join(lines)
+
+
+def public_experiment(exp: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Coach experiment safe to export. Local callers may keep the unsanitised dict."""
+    if not exp:
+        return exp
+    out: dict[str, Any] = {}
+    for k, v in exp.items():
+        if k == "plan" and isinstance(v, list):
+            out[k] = [public_text(x) for x in v]
+        elif isinstance(v, str):
+            out[k] = public_text(v)
+        else:
+            out[k] = v
+    return out
+
+
+LOCAL_RUN_KEYS = ("coach_experiment_local", "private_coach_plan")
+
+
+def public_run_view(run: dict[str, Any]) -> dict[str, Any]:
+    """JSON that may leave the process: drop local-only keys and strip path-shaped tokens."""
+    out = {k: v for k, v in run.items() if k not in LOCAL_RUN_KEYS}
+    if "coach_verdict" in out:
+        out["coach_verdict"] = public_text(out.get("coach_verdict"))
+    if "coach_plan" in out:
+        out["coach_plan"] = public_text(out.get("coach_plan"))
+    if "coach_experiment" in out:
+        out["coach_experiment"] = public_experiment(out.get("coach_experiment"))
+    return out
 
 
 def select_experiment(

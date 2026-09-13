@@ -9,10 +9,10 @@ from agentgrinder.metrics import build_activity
 def test_return_view_marks_same_artifacts_metric_comparable():
     before = {"turns_typed": 6, "artifacts_produced": 12, "claims_verified": None,
               "capabilities": {"claim_evidence": False}, "title": "A", "started": "2026-09-11T12:00:00+00:00",
-              "measurement_revision": "a" * 64}
+              "measurement_revision": "a" * 64, "harness": "Cursor", "trace_basis": "typed-turn order"}
     after = {"turns_typed": 6, "artifacts_produced": 13, "claims_verified": None,
              "capabilities": {"claim_evidence": False}, "title": "B", "started": "2026-09-11T13:00:00+00:00",
-             "measurement_revision": "b" * 64}
+             "measurement_revision": "b" * 64, "harness": "Cursor", "trace_basis": "typed-turn order"}
     practice = {"title": "Freeze raw before grind", "expected": "non-null revision", "source_revision": "a" * 64}
     model = build_return_model(practice, before, after, {"tried": "yes", "outcome": "keep"})
     assert model["metric"]["comparable"] is True
@@ -23,6 +23,32 @@ def test_return_view_marks_same_artifacts_metric_comparable():
     assert "Export this return view" in html
     assert "Choose your next practice" in html
     assert "does not establish" in html
+
+
+def test_return_view_marks_different_harness_incomparable_even_with_claims():
+    """A green comparable badge must not appear when harness differs and claims are measured."""
+    before = {"turns_typed": 6, "artifacts_produced": 12, "claims_verified": 2,
+              "capabilities": {"claim_evidence": True}, "harness": "Claude Code",
+              "trace_basis": "elapsed"}
+    after = {"turns_typed": 6, "artifacts_produced": 12, "claims_verified": 3,
+             "capabilities": {"claim_evidence": True}, "harness": "Cursor",
+             "trace_basis": "elapsed"}
+    model = build_return_model({"title": "x", "expected": "y"}, before, after)
+    assert model["metric"]["comparable"] is False
+    html = render_return_html(model)
+    assert "Comparable under the same measurements" not in html
+    assert "two separate sittings" in html
+
+
+def test_return_view_marks_different_trace_basis_incomparable():
+    before = {"turns_typed": 6, "artifacts_produced": 12, "claims_verified": 2,
+              "capabilities": {"claim_evidence": True}, "harness": "Cursor",
+              "trace_basis": "typed-turn order"}
+    after = {"turns_typed": 6, "artifacts_produced": 12, "claims_verified": 3,
+             "capabilities": {"claim_evidence": True}, "harness": "Cursor",
+             "trace_basis": "elapsed"}
+    model = build_return_model({"title": "x", "expected": "y"}, before, after)
+    assert model["metric"]["comparable"] is False
 
 
 def test_return_view_marks_mixed_metrics_incomparable():

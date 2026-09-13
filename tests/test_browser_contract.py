@@ -22,6 +22,34 @@ for(const bad of [{...run,claims_verified:4},{...run,turns_typed:true},{...run,s
     subprocess.run(["node", "-e", script, str(module), json.dumps(payload)], check=True)
 
 
+def test_sittings_comparable_requires_harness_and_trace_basis():
+    module = Path(__file__).resolve().parents[1] / "site/run-contract.js"
+    script = r"""
+const {sittingsComparable,rejectPaths}=require(process.argv[1]);
+const claims={turns_typed:6,claims_verified:2,artifacts_produced:12};
+const same={...claims,harness:'Cursor',trace_basis:'elapsed'};
+const ok=sittingsComparable(same,{...same,claims_verified:3});
+if(!ok.ok) throw new Error('same harness/basis should compare: '+ok.why);
+const harness=sittingsComparable(
+  {...claims,harness:'Claude Code',trace_basis:'elapsed'},
+  {...claims,harness:'Cursor',trace_basis:'elapsed',claims_verified:3}
+);
+if(harness.ok) throw new Error('different harnesses with claims must not be comparable');
+if(!/Harness/.test(harness.why)) throw new Error('missing harness reason');
+const basis=sittingsComparable(
+  {...claims,harness:'Cursor',trace_basis:'typed-turn order'},
+  {...claims,harness:'Cursor',trace_basis:'elapsed'}
+);
+if(basis.ok) throw new Error('different trace_basis must not be comparable');
+const missing=sittingsComparable({...claims,claims_verified:2},{...claims,claims_verified:3});
+if(missing.ok) throw new Error('unknown harness must not be comparable');
+const leaked=rejectPaths('Saved /Users/casey/Documents/notes/secret-plan.md and ~/private/keys.env');
+if(/Users\/casey|secret-plan|~\//.test(leaked)) throw new Error('path survived rejectPaths: '+leaked);
+if(!leaked.includes('[file]')) throw new Error('expected [file] replacement');
+"""
+    subprocess.run(["node", "-e", script, str(module)], check=True)
+
+
 def test_practice_outcome_selector_matches_server_chronology():
     module = Path(__file__).resolve().parents[1] / "site/practice-eligibility.js"
     script = r"""

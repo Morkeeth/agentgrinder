@@ -809,18 +809,23 @@ function coachModeBanner(r){
   return `<p class="mode-banner">${esc(label)}</p>`;
 }
 function parseCoachExperiment(r){
-  if(r.coach_experiment && r.coach_experiment.instruction) return r.coach_experiment;
-  const lines=String(r.coach_plan||'').split('\n').map(x=>x.trim()).filter(Boolean);
-  const grab=p=>{const row=lines.find(l=>l.toLowerCase().startsWith(p));return row?row.slice(p.length).trim():'';};
-  const friction=grab('friction:');
-  const instruction=grab('experiment:')||lines[0]||'';
-  const expected=grab('look for:');
-  if(!instruction) return null;
-  return {title:instruction.slice(0,160), instruction, expected:expected||'Record what you observed. Unknown stays unknown.', friction, consequence:grab('consequence:'), evidence:''};
+  let exp=null;
+  if(r.coach_experiment && r.coach_experiment.instruction) exp=r.coach_experiment;
+  else {
+    const lines=String(r.coach_plan||'').split('\n').map(x=>x.trim()).filter(Boolean);
+    const grab=p=>{const row=lines.find(l=>l.toLowerCase().startsWith(p));return row?row.slice(p.length).trim():'';};
+    const friction=grab('friction:');
+    const instruction=grab('experiment:')||lines[0]||'';
+    const expected=grab('look for:');
+    if(instruction) exp={title:instruction.slice(0,160), instruction, expected:expected||'Record what you observed. Unknown stays unknown.', friction, consequence:grab('consequence:'), evidence:''};
+  }
+  return exp && typeof GrinderContract==='object' && GrinderContract.rejectPaths ? GrinderContract.rejectPaths(exp) : exp;
 }
 function coachBlock(r){
   if(!r) return '';
-  const v=r.coach_verdict, plan=r.coach_plan, n=r.coach_tool_calls, pv=r.progress_verdict;
+  const v=typeof GrinderContract==='object'&&GrinderContract.rejectPaths?GrinderContract.rejectPaths(r.coach_verdict):r.coach_verdict;
+  const plan=typeof GrinderContract==='object'&&GrinderContract.rejectPaths?GrinderContract.rejectPaths(r.coach_plan):r.coach_plan;
+  const n=r.coach_tool_calls, pv=r.progress_verdict;
   if(!v&&!pv) return '';
   const who=v?`<div class="grp">the coach${n?` · verdict produced by <b>${esc(String(n))}</b> tool call${n==1?'':'s'}`:''}</div>`:'';
   const para=v?`<div class="para">${esc(String(v))}</div>`:'';
@@ -1488,6 +1493,11 @@ function importRun(){
   let run; try{ run=JSON.parse(atob(decodeURIComponent(m[1]))); }catch(_){ return false; }
   try{ GrinderContract.validate(run); }
   catch(error){ frame(null,null); $('app').innerHTML='<div class="card"><h2>This grind could not be imported</h2><p>'+esc(error.message)+'</p></div>'; return true; }
+  if(typeof GrinderContract==='object' && GrinderContract.rejectPaths){
+    run.coach_verdict=GrinderContract.rejectPaths(run.coach_verdict);
+    run.coach_plan=GrinderContract.rejectPaths(run.coach_plan);
+    run.coach_experiment=GrinderContract.rejectPaths(run.coach_experiment);
+  }
   const app=$('app');
   const rows=[['harness',run.harness],['project',run.project],['prompts (cost)',run.turns_typed],
     ['minutes',run.duration_s?Math.round(run.duration_s/60):null],['tool calls',run.tool_calls],

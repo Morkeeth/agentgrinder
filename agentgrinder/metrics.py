@@ -228,6 +228,12 @@ def headline_of(run: dict) -> Headline:
         five=five_cells(run),
         metric_id=METRIC_VERIFIED_PER_TURN, label="verified per turn")
 
+def _public_coach_text(value: str) -> str:
+    """HTML cards are an export destination. Paths stay off them; local CLI text is separate."""
+    from .coach.experiment import public_text
+    return public_text(value) or ""
+
+
 def build_activity(run: dict) -> Activity:
     turns = run.get("turns_typed")
     tools = run.get("tool_calls")
@@ -275,8 +281,8 @@ def build_activity(run: dict) -> Activity:
         prompts_per_hour=cadence,
         focus_pb=focus_pb,
         rhythm=[int(x) for x in rhythm],
-        coach_verdict=run.get("coach_verdict") or "",
-        coach_plan="\n".join(x for x in [run.get("coach_plan"),run.get("private_coach_plan")] if x),
+        coach_verdict=_public_coach_text(run.get("coach_verdict") or ""),
+        coach_plan=_public_coach_text("\n".join(x for x in [run.get("coach_plan"), run.get("private_coach_plan")] if x)),
         coach_mode=run.get("coach_mode") or "",
         trace=run.get("trace") or [],
         trace_basis=run.get("trace_basis") or "",

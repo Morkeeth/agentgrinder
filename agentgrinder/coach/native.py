@@ -77,8 +77,17 @@ def review_activity(run, mode='local'):
         agent('Review this session using only the supplied activity and capability limits.')
     if state['verdict'] is None:raise ValueError('The activity coach did not produce an accepted review.')
     verdict=state['verdict']
-    from .experiment import activity_experiment
-    run.update(coach_mode=label,coach_verdict=verdict['paragraph'],coach_plan='\n'.join(verdict['plan']),coach_numbers=verdict['numbers'],coach_tool_calls=len(ctx.dispatch),coach_experiment=activity_experiment(run))
+    from .experiment import activity_experiment, public_experiment, public_text
+    exp = activity_experiment(run)
+    run.update(
+        coach_mode=label,
+        coach_verdict=public_text(verdict['paragraph']),
+        coach_plan=public_text('\n'.join(verdict['plan'])),
+        coach_numbers=verdict['numbers'],
+        coach_tool_calls=len(ctx.dispatch),
+        coach_experiment=public_experiment(exp),
+        coach_experiment_local=exp,
+    )
     if run.get('practice_context'):
         run['private_coach_plan']='Review your accepted practice: '+run['practice_context'][0]['title']
     return label+'\n'+verdict['paragraph']+'\n'+'\n'.join('- '+p for p in verdict['plan'])

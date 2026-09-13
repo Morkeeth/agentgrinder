@@ -754,6 +754,73 @@ assert.equal(
 );
 console.log("Coach mode column is nullable and writable by the owner.");
 
+await as(userA);
+const cmpBase = (
+  await db.query(
+    "insert into runs(profile_id,title,visibility,harness,schema_version,measurement_revision,trace_basis,started_at,prompts,claims,claims_verified) values($1,'TEST DATA comparable baseline','private','Codex',1,$2,'elapsed',now()-interval '2 days',4,4,2) returning id",
+    [userA, "2".repeat(64)],
+  )
+).rows[0].id;
+const cmpPractice = (
+  await db.query(
+    "insert into grinder_practice_versions(owner_id,title,task_context,instruction,expected,visibility,source_run,harness) values($1,'TEST DATA run the named check','Coach experiment on this grind','Run test_draft_renders in the same turn','check_claim returns verified','private',$2,'Codex') returning id",
+    [userA, cmpBase],
+  )
+).rows[0].id;
+const cmpAttempt = (
+  await db.query("select grinder_start_attempt($1,$2,false) id", [cmpPractice, cmpBase])
+).rows[0].id;
+const cursorLater = (
+  await db.query(
+    "insert into runs(profile_id,title,visibility,harness,schema_version,measurement_revision,trace_basis,started_at,prompts,claims,claims_verified) values($1,'TEST DATA cursor later','private','Cursor',1,$2,'elapsed',now(),3,4,3) returning id",
+    [userA, "3".repeat(64)],
+  )
+).rows[0].id;
+await denied(
+  "select grinder_review_attempt($1,$2,true,'keep','TEST DATA different harness')",
+  [cmpAttempt, cursorLater],
+);
+const basisLater = (
+  await db.query(
+    "insert into runs(profile_id,title,visibility,harness,schema_version,measurement_revision,trace_basis,started_at,prompts,claims,claims_verified) values($1,'TEST DATA basis later','private','Codex',1,$2,'typed-turn order',now(),3,4,3) returning id",
+    [userA, "e".repeat(64)],
+  )
+).rows[0].id;
+await denied(
+  "select grinder_review_attempt($1,$2,true,'keep','TEST DATA different time basis')",
+  [cmpAttempt, basisLater],
+);
+await db.query(
+  "select grinder_review_attempt($1,$2,true,'incomparable','TEST DATA harness differed; not a keep')",
+  [cmpAttempt, cursorLater],
+);
+assert.equal(
+  (await db.query("select decision from grinder_practice_attempts where id=$1", [cmpAttempt]))
+    .rows[0].decision,
+  "incomparable",
+);
+const cmpAttempt2 = (
+  await db.query("select grinder_start_attempt($1,$2,false) id", [cmpPractice, cmpBase])
+).rows[0].id;
+const sameLater = (
+  await db.query(
+    "insert into runs(profile_id,title,visibility,harness,schema_version,measurement_revision,trace_basis,started_at,prompts,claims,claims_verified) values($1,'TEST DATA same harness later','private','Codex',1,$2,'elapsed',now(),3,4,3) returning id",
+    [userA, "f".repeat(64)],
+  )
+).rows[0].id;
+await db.query(
+  "select grinder_review_attempt($1,$2,true,'keep','TEST DATA same measurements; one observation')",
+  [cmpAttempt2, sameLater],
+);
+assert.equal(
+  (await db.query("select decision from grinder_practice_attempts where id=$1", [cmpAttempt2]))
+    .rows[0].decision,
+  "keep",
+);
+console.log(
+  "Comparable sittings: keep denied across harness and trace_basis even with claim counts; same measurements still keep.",
+);
+
 await db.close();
 console.log(
   "Database checks passed: social permissions; agent capabilities; two-crew Challenge; locked Contract; frozen submission; rejection, appeal and revised review; late-submission denial.",

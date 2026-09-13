@@ -764,7 +764,8 @@ def _grind(args) -> int:
         run["input_digest"] = source_digest
         record_and_attach(run)
     if args.as_json:
-        print(json.dumps(run, indent=2)); return 0
+        from .coach.experiment import public_run_view
+        print(json.dumps(public_run_view(run), indent=2)); return 0
 
     ranks = None
     if not args.no_rank:
@@ -855,7 +856,8 @@ def _native_grind(run, args, path, source_digest):
         except Exception as error:
             print('Activity coach failed: '+str(error),file=sys.stderr);return 1
     if args.as_json:
-        print(json.dumps(run,indent=2));return 0
+        from .coach.experiment import public_run_view
+        print(json.dumps(public_run_view(run), indent=2)); return 0
     _render(run,Path(args.out),False)
     print('  '+run.get('trace_basis','Trace timing unavailable'))
     if coach_text:print(coach_text)
@@ -933,7 +935,8 @@ def _coach(args) -> int:
         print(coach_install_hint() + f"  ({e})\n")
         return 1
     if args.as_json:
-        print(json.dumps(ctx.run, indent=2, default=str)); return 0
+        from .coach.experiment import public_run_view
+        print(json.dumps(public_run_view(ctx.run), indent=2, default=str)); return 0
     print()
     print(text)
     print()
