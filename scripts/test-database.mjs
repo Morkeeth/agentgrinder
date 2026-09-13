@@ -731,6 +731,29 @@ assert.equal((await db.query('select * from grinder_practice_versions where id=$
 assert.equal((await db.query('select * from grinder_practice_attempts where id=$1',[kept.attempt_id])).rows.length,1);
 console.log('Stranger checks passed: private source refused, anonymous refused, own baseline enforced, author grind untouched, provenance private, stale source recorded, idempotent keep, later review, audience revocation survivable.');
 
+await as(userA);
+const coachRun = (
+  await db.query(
+    "insert into runs(profile_id,title,visibility,harness,schema_version,measurement_revision,trace_basis,started_at,prompts) values($1,'TEST DATA coach mode grind','private','Codex',1,$2,'elapsed',now(),2) returning id",
+    [userA, "d".repeat(64)],
+  )
+).rows[0].id;
+await db.query("update runs set coach_mode='local scripted Strands loop' where id=$1", [
+  coachRun,
+]);
+assert.equal(
+  (await db.query("select coach_mode from runs where id=$1", [coachRun])).rows[0]
+    .coach_mode,
+  "local scripted Strands loop",
+);
+await db.query("update runs set coach_mode=null where id=$1", [coachRun]);
+assert.equal(
+  (await db.query("select coach_mode from runs where id=$1", [coachRun])).rows[0]
+    .coach_mode,
+  null,
+);
+console.log("Coach mode column is nullable and writable by the owner.");
+
 await db.close();
 console.log(
   "Database checks passed: social permissions; agent capabilities; two-crew Challenge; locked Contract; frozen submission; rejection, appeal and revised review; late-submission denial.",

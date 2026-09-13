@@ -169,7 +169,7 @@ window.GrinderPractices = function ({ client: db, me, app, frame, status }) {
     const comparable =
       !!attempt.outcome &&
       beforeMetric === afterMetric &&
-      before.claims_verified != null === (after.claims_verified != null);
+      (before.claims_verified != null) === (after.claims_verified != null);
     const why = !attempt.outcome
       ? "No later measurement is bound yet."
       : beforeMetric !== afterMetric

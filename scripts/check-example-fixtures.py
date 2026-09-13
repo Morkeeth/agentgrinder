@@ -71,9 +71,10 @@ def main():
               document.body.prepend(b);
             }"""
         )
-        page.get_by_text("Deterministic demo", exact=False).wait_for()
-        page.get_by_text("test_draft_renders", exact=False).wait_for()
-        page.get_by_text("not autonomous reasoning", exact=False).wait_for()
+        page.get_by_text("Deterministic demo", exact=False).first.wait_for()
+        page.locator(".experiment-card").get_by_text("test_draft_renders").first.wait_for()
+        page.get_by_text("not autonomous reasoning", exact=False).first.wait_for()
+        page.screenshot(path=str(OUT / "example-coach-phone.png"), full_page=True)
         page.get_by_role("button", name="Freeze this fixture as my baseline").wait_for()
         assert page.get_by_text("BUNDLED EXAMPLE", exact=False).count() >= 1
         page.get_by_role("button", name="Freeze this fixture as my baseline").click()
@@ -101,10 +102,15 @@ def main():
         page.set_viewport_size({"width": 1280, "height": 900})
         assert not page.evaluate("document.documentElement.scrollWidth>innerWidth")
         page.screenshot(path=str(OUT / "example-desktop.png"), full_page=True)
+        page.set_viewport_size({"width": 390, "height": 844})
         page.goto(base + "/", wait_until="domcontentloaded")
         page.get_by_role("button", name="Try the bundled example").wait_for()
         page.get_by_text("I tried this. Show me what changed.", exact=False).wait_for()
+        page.wait_for_timeout(700)
         page.screenshot(path=str(OUT / "landing-phone.png"), full_page=True)
+        assert not page.evaluate("document.documentElement.scrollWidth>innerWidth")
+        page.set_viewport_size({"width": 1280, "height": 900})
+        page.screenshot(path=str(OUT / "landing-desktop.png"), full_page=True)
         assert not failures, failures
         assert data["fixture"] is True
         print("example fixture ok", OUT)

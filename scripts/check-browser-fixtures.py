@@ -25,6 +25,7 @@ with sync_playwright() as p:
     style=(ROOT/'site/design.css').read_text()+re.search(r'<style>(.*?)</style>',(ROOT/'site/index.html').read_text(),re.S).group(1)+(ROOT/'site/social.css').read_text()
     page.set_content('<style>'+style+'</style><div style="padding:12px;background:#fff3bb">UI TEST FIXTURE — no live users or results</div><div id="status"></div><main id="app"></main>')
     page.add_script_tag(content=(ROOT/'site/run-contract.js').read_text())
+    page.add_script_tag(content=(ROOT/'site/practice-eligibility.js').read_text())
     page.add_script_tag(content=(ROOT/'site/practices.js').read_text())
     page.add_script_tag(content=setup)
     page.evaluate('fixture.index()')
@@ -131,6 +132,7 @@ with sync_playwright() as p:
     refresh=html[html.index('async function refreshAuth(){'):html.index('// The publish payload')]
     profile.add_script_tag(content=r"""
       const $=id=>document.getElementById(id),esc=s=>String(s),status=(text)=>$('status').textContent=text;
+      function syncAuthNav(){}
       let ME=null;window.createdProfiles=0;window.existingProfile={id:'profile-fixture',auth_uid:'auth-fixture',github_handle:'chosen-handle',name:'Chosen name'};
       const sb={auth:{async getSession(){return {data:{session:{user:{id:'auth-fixture',user_metadata:{user_name:'provider-handle'}}}}}}},
         from(){const q={select(){return q},eq(){return q},async maybeSingle(){return {data:window.existingProfile,error:null}},insert(row){window.createdProfiles++;window.existingProfile={id:'profile-fixture',...row};return q},async single(){return {data:window.existingProfile,error:null}}};return q}};

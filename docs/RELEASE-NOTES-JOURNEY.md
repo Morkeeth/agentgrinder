@@ -16,9 +16,10 @@ Preserved: existing moment authoring, adoption RPC, outcome export, practice RLS
 
 ## Tested
 
-- Unit: coach experiment selection, live-status secrecy, landing contract, bundled fixture hygiene, existing coach/practice/nav suites (269 passed on this machine; one pre-existing Cursor/Codex `claims` key assertion in `test_coach_degrade.py` is unchanged from the candidate).
-- Database: ordered PGlite migrations including the new additive column (run in this change set).
-- Browser fixtures: bundled example phone+desktop; existing moment/practice/nav fixtures remain the authority for SQL-backed paths.
+- Unit: coach experiment selection, live-status secrecy, landing contract, bundled fixture hygiene. Full `tests/` minus `test_claim_rule.py`: 269 passed; one pre-existing Cursor/Codex `claims` key assertion in `test_coach_degrade.py` is unchanged from the candidate.
+- Clean venv install of the package. `agentgrinder coach --live-status` exit 2 with exact missing items (`strands-agents`, `aws-region`, `aws-credentials`); no credential values printed.
+- Database: ordered PGlite migrations including nullable `runs.coach_mode`, plus existing moment/adopt/revocation checks.
+- Browser fixtures, labelled: bundled example phone+desktop; practice discovery/attempt; moment author → stranger keep on own baseline → return/export; progress freeze→review; signed-in nav at 390 and 1280.
 - Not claimed: hosted auth against production, live Bedrock execution, independent human adoption.
 
 ## Hosted

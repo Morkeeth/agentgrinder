@@ -43,7 +43,7 @@
   }
   async function view() {
     const app = $("app");
-    if (typeof frame === "function") frame(typeof railHtml === "function" ? railHtml("onboard") : null, null);
+    if (typeof frame === "function") frame(null, null);
     if (typeof setPrimarySection === "function") setPrimarySection("feed");
     app.innerHTML = '<p class="hint">Loading the bundled example…</p>';
     let data;
@@ -80,7 +80,7 @@
       )
       .join("");
     const freezeForm =
-      step === "coach" || step === "experiment"
+      step === "experiment" || (step === "coach" && state.played)
         ? `<form id="ex-accept" class="panel reply-form"><h2>One experiment for the next sitting</h2>
         <p class="hint">Accept or edit. Freezing keeps the original measurements on this fixture. Nothing is uploaded.</p>
         <label>What will you do?<input name="title" required maxlength="160" value="${esc(exp.title)}"></label>
@@ -186,6 +186,7 @@
           if (i === steps.length - 1) {
             state.played = true;
             saveState(state);
+            view();
           }
         }, 280 + i * 420),
       );

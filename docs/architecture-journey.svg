@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 640" role="img" aria-labelledby="title desc">
-  <title id="title">Agent Grinder  focused user journey</title>
+  <title id="title">Agent Grinder — focused user journey</title>
   <desc id="desc">A stranger tries a labelled bundled example, a Strands coach names one friction and one experiment, the builder freezes a baseline and returns, then another builder keeps the technique on their own grind. Local capture stays private. Live Bedrock is opt-in and never fabricated.</desc>
   <style>
     text { font-family: "IBM Plex Sans", system-ui, sans-serif; fill: #0a0a0a; }
@@ -9,12 +9,11 @@
     .p { font-size: 12px; fill: #3a3a38; }
     .box { fill: #fff; stroke: #e3e3df; }
     .accent { fill: #f2f5ff; stroke: #0047ff; }
-    .ink { fill: #0a0a0a; }
   </style>
   <rect width="980" height="640" fill="#f7f7f5"/>
   <text x="32" y="36" class="label">AGENT GRINDER</text>
   <text x="32" y="62" class="h" font-size="22">I tried this. Show me what changed.</text>
-  <text x="32" y="84" class="p">Local capture never uploads by itself. Hosted sharing is an explicit click. Demo coach ` live model.</text>
+  <text x="32" y="84" class="p">Local capture never uploads by itself. Hosted sharing is an explicit click. Demo coach vs live model.</text>
 
   <rect class="accent" x="32" y="108" width="176" height="112" rx="2"/>
   <text x="44" y="128" class="label">1 · STRANGER</text>
@@ -71,7 +70,7 @@
   <text x="516" y="318" class="p">Import preview defaults to private. You choose audience.</text>
   <text x="516" y="336" class="p">Moments inherit run audience. Adoption uses the reader's grind.</text>
   <text x="516" y="354" class="p">Revocation hides source excerpt; owned baselines stay.</text>
-  <text x="516" y="372" class="p">Public techniques lead to attempts  never invented users.</text>
+  <text x="516" y="372" class="p">Public techniques lead to attempts — never invented users.</text>
   <text x="516" y="390" class="p">coach_mode distinguishes demo vs live on the card.</text>
 
   <rect class="box" x="32" y="440" width="916" height="168" rx="2"/>
