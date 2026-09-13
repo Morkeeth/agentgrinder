@@ -37,6 +37,8 @@ def export_run(run: dict) -> dict:
         "coach_verdict": run.get("coach_verdict"),
         "coach_plan": run.get("coach_plan"),
         "coach_tool_calls": run.get("coach_tool_calls"),
+        "coach_mode": run.get("coach_mode"),
+        "coach_experiment": run.get("coach_experiment"),
         # this grind vs your previous grind on the same project (agentgrinder/engine)
         "progress_verdict": (run.get("progress") or {}).get("verdict"),
         "progress_delta": (run.get("progress") or {}).get("delta"),

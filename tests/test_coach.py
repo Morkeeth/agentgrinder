@@ -107,7 +107,12 @@ def test_local_mode_report_says_what_it_is_and_is_not(tmp_path):
     assert "DEGRADED" not in text
     assert ctx.run["coach_tool_calls"] == 6
     assert ctx.run["coach_verdict"].startswith("1 of 2 claims had evidence")
-    assert "Claims [2] had no evidence" in ctx.run["coach_plan"]
+    assert ctx.run["coach_plan"].startswith("Friction:")
+    assert "Experiment:" in ctx.run["coach_plan"]
+    assert "Look for:" in ctx.run["coach_plan"]
+    assert "test_never_ran" in ctx.run["coach_plan"]
+    assert "Claims [" not in ctx.run["coach_plan"]
+    assert ctx.run["coach_experiment"]["kind"] == "unverified-named-claim"
     assert ctx.run["coach_numbers"]["claims_verified"] == 1
     # the report carries no typed prompt and no absolute path
     assert "please fix it" not in text and str(tmp_path) not in text
@@ -127,6 +132,7 @@ def test_a_failing_agent_mode_shouts_degraded(tmp_path, monkeypatch):
         raise RuntimeError("no credentials")
 
     monkeypatch.setattr(coach_agent, "run_strands_coach", boom)
+    monkeypatch.setattr("agentgrinder.coach.live_config.missing_live_config", lambda: [])
     path, _, _ = _sitting(tmp_path)
     printed = []
     ctx, text = run_coach(path, mode="bedrock", out=printed.append)

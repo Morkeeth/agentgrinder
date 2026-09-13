@@ -175,6 +175,8 @@ def main(argv=None) -> int:
     co.add_argument("--athlete", default="you")
     co.add_argument("--json", dest="as_json", action="store_true",
                     help="print the run with the verdict attached, as JSON (counts only, no prompt text)")
+    co.add_argument("--live-status", action="store_true",
+                    help="print whether Amazon Bedrock live coaching is configured; never prints credentials")
     pd = sub.add_parser("predict", help="write down what your next grind on a project will do, before it happens")
     pd.add_argument("text", help="the prediction, in your words, e.g. 'ships 2 files, every claim verified'")
     pd.add_argument("--project", default=None, help="project name (default: the git repository of the current directory)")
@@ -884,13 +886,23 @@ def _run_coach_into(run: dict, path: str, pick: int, gap_s: int, mode: str, athl
     except ImportError as e:
         print(coach_install_hint() + f"  ({e})\n")
         return None
-    for k in ("coach_mode", "coach_tool_calls", "coach_verdict", "coach_plan", "coach_numbers"):
+    except Exception as e:
+        from .coach.live_config import LiveConfigError
+        if isinstance(e, LiveConfigError):
+            print(str(e)); return None
+        raise
+    for k in ("coach_mode", "coach_tool_calls", "coach_verdict", "coach_plan",
+              "coach_numbers", "coach_experiment"):
         run[k] = ctx.run.get(k)
     return text
 
 
 def _coach(args) -> int:
     """`agentgrinder coach` : the verdict, on its own, for one sitting."""
+    from .coach.live_config import LiveConfigError, live_status_text, missing_live_config
+    if getattr(args, "live_status", False):
+        print(live_status_text())
+        return 0 if not missing_live_config() else 2
     from .solo import latest_grind
     if args.session and not Path(args.session).exists():
         print(f"no such transcript: {args.session}"); return 1
@@ -913,6 +925,8 @@ def _coach(args) -> int:
         print(coach_install_hint() + f"  ({e})\n"); return 1
     try:
         ctx, text = run_coach(path, pick=pick, gap=args.gap * 60, mode=args.model, athlete=args.athlete)
+    except LiveConfigError as e:
+        print(str(e)); return 2
     except ValueError as e:
         print(f"  {e}"); return 1
     except ImportError as e:

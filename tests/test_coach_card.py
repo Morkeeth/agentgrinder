@@ -56,7 +56,7 @@ def test_export_run_carries_the_coach_and_progress_fields_and_drops_nulls():
 def test_site_reads_writes_and_renders_the_coach_fields_null_safe():
     html = open(os.path.join(REPO, "site", "index.html"), encoding="utf-8").read()
     for col in ("claims", "claims_verified", "artifacts_produced", "coach_verdict", "coach_plan",
-                "coach_tool_calls", "progress_verdict"):
+                "coach_tool_calls", "coach_mode", "progress_verdict"):
         assert f"{col}:run.{col}??null" in html, col          # the insert carries it
     assert "function coachBlock(r)" in html and "${coachBlock(r)}" in html
     assert "if(!v&&!pv) return '';" in html                    # null-safe: no verdict, no block

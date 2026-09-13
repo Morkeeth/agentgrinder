@@ -6,6 +6,10 @@ FIELDS=('turns_typed','tool_calls','files_touched','commits','claims','claims_ve
 
 
 def review_activity(run, mode='local'):
+    if mode=='bedrock':
+        from .live_config import LiveConfigError, live_status_text, missing_live_config
+        if missing_live_config():
+            raise LiveConfigError(live_status_text())
     facts={key:run.get(key) for key in FIELDS}
     state={'read':False,'verdict':None}
     ctx=SimpleNamespace(dispatch=[])
@@ -26,9 +30,12 @@ def review_activity(run, mode='local'):
         first=history[0][2]
         if len(history)>1:return None
         n=first['numbers']
-        paragraph=f"The transcript records {n['turns_typed']} human turns and {n['tool_calls']} tool calls. Claim verification is unavailable for this adapter; no success rate is inferred."
-        plan=['Choose one behavior to check in the next session and record its expected result before starting.']
-        return ('write_verdict',dict(numbers=n,paragraph=paragraph,plan=plan))
+        from .experiment import activity_experiment
+        experiment=activity_experiment(run)
+        paragraph=(f"The transcript records {n['turns_typed']} human turns and {n['tool_calls']} "
+                   "tool calls. Claim verification is unavailable for this adapter; no success "
+                   "rate is inferred.")
+        return ('write_verdict',dict(numbers=n,paragraph=paragraph,plan=experiment['plan']))
     if mode=='none':
         history=[]
         while True:
@@ -70,7 +77,8 @@ def review_activity(run, mode='local'):
         agent('Review this session using only the supplied activity and capability limits.')
     if state['verdict'] is None:raise ValueError('The activity coach did not produce an accepted review.')
     verdict=state['verdict']
-    run.update(coach_mode=label,coach_verdict=verdict['paragraph'],coach_plan='\n'.join(verdict['plan']),coach_numbers=verdict['numbers'],coach_tool_calls=len(ctx.dispatch))
+    from .experiment import activity_experiment
+    run.update(coach_mode=label,coach_verdict=verdict['paragraph'],coach_plan='\n'.join(verdict['plan']),coach_numbers=verdict['numbers'],coach_tool_calls=len(ctx.dispatch),coach_experiment=activity_experiment(run))
     if run.get('practice_context'):
         run['private_coach_plan']='Review your accepted practice: '+run['practice_context'][0]['title']
     return label+'\n'+verdict['paragraph']+'\n'+'\n'.join('- '+p for p in verdict['plan'])

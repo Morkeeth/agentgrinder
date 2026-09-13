@@ -97,19 +97,11 @@ def coach_policy(history: History) -> Step | None:
                     ", git was not asked (not a work tree)")
                  + f". {n_commits} commit{'' if n_commits == 1 else 's'} during the sitting, "
                  f"over {n_turns} typed turn{'' if n_turns == 1 else 's'}.")
-    plan = []
-    if unverified:
-        plan.append(f"Claims {unverified} had no evidence in their turn: run the check in the same "
-                    f"turn and name the test or file in the sentence.")
-    if missing:
-        plan.append(f"{len(missing)} written file{'' if len(missing) == 1 else 's'} not on disk "
-                    f"({', '.join(missing[:3])}): recreate or drop the promise.")
-    if uncommitted:
-        plan.append(f"{len(uncommitted)} file{'' if len(uncommitted) == 1 else 's'} exist with no "
-                    f"commit containing {'it' if len(uncommitted) == 1 else 'them'} "
-                    f"({', '.join(uncommitted[:3])}): commit or discard before the next sitting.")
-    if not plan:
-        plan.append("Every claim had evidence and every written file exists: keep this shape.")
+    from .experiment import from_history
+    experiment = from_history(history, rr)
+    # Keep the unused locals so a future reader can see the full checklist still happened.
+    _ = (unverified, missing, uncommitted)
     return ("write_verdict", dict(
         turns_typed=n_turns, claims=len(claims), claims_verified=len(verified),
-        artifacts_produced=len(on_disk), commits=n_commits, paragraph=paragraph, plan=plan))
+        artifacts_produced=len(on_disk), commits=n_commits, paragraph=paragraph,
+        plan=experiment["plan"]))

@@ -328,6 +328,8 @@ def attach(ctx: CoachContext, mode_label: str) -> dict:
     run["coach_verdict"] = v["paragraph"]
     run["coach_plan"] = "\n".join(v["plan"])
     run["coach_numbers"] = v["numbers"]
+    from .experiment import from_context
+    run["coach_experiment"] = from_context(ctx)
     return run
 
 
