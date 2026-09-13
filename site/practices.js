@@ -238,7 +238,7 @@ window.GrinderPractices = function ({ client: db, me, app, frame, status }) {
         attempts
           .map(
             (a) =>
-              `<article class="card" id="attempt-${a.id}"><small>${a.visibility === "private" ? "Only you" : "Shared with practice readers"}</small><h3>${esc(a.decision || "In progress")}</h3>${returnBrief(a, runs)}${comparison(a)}<p>${esc(a.note || "")}</p>${me()?.id === a.owner_id && !a.reviewed_at ? `<form id="review-${a.id}" class="reply-form"><label>Did you try the practice?<select name="tried"><option value="true">Yes</option><option value="false">No</option></select></label><label>Session after you started this attempt<select name="run"><option value="">No measured outcome (keep unknown)</option>${runOptions(eligibleOutcomeRuns(a, runs))}</select></label><p class="hint">Only measured sessions from this attempt onward and not in the future are offered. Choose no outcome when the change was not measured.</p><label>Your decision<select name="decision"><option value="incomparable">Incomparable / missing evidence</option><option value="keep">Keep</option><option value="change">Change</option><option value="drop">Drop</option></select></label><label>What happened?<textarea name="note" maxlength="4000"></textarea></label><p>This review is fixed once saved. Start another attempt for the next cycle.</p><button>Save review</button></form>` : ""}</article>`,
+              `<article class="card" id="attempt-${a.id}"><small>${a.visibility === "private" ? "Only you" : "Shared with practice readers"}</small><h3>${esc(a.decision || "In progress")}</h3>${returnBrief(a, runs)}${comparison(a)}<p>${esc(a.note || "")}</p>${me()?.id === a.owner_id && a.reviewed_at ? `<button type="button" class="ghost" id="share-return-${a.id}">Share my outcome</button><div class="return-export" id="return-export-${a.id}"></div>` : ""}${me()?.id === a.owner_id && !a.reviewed_at ? `<form id="review-${a.id}" class="reply-form"><label>Did you try the practice?<select name="tried"><option value="true">Yes</option><option value="false">No</option></select></label><label>Session after you started this attempt<select name="run"><option value="">No measured outcome (keep unknown)</option>${runOptions(eligibleOutcomeRuns(a, runs))}</select></label><p class="hint">Only measured sessions from this attempt onward and not in the future are offered. Choose no outcome when the change was not measured.</p><label>Your decision<select name="decision"><option value="incomparable">Incomparable / missing evidence</option><option value="keep">Keep</option><option value="change">Change</option><option value="drop">Drop</option></select></label><label>What happened?<textarea name="note" maxlength="4000"></textarea></label><p>This review is fixed once saved. Start another attempt for the next cycle.</p><button>Save review</button></form>` : ""}</article>`,
           )
           .join("") +
         (attempts.length
@@ -254,6 +254,14 @@ window.GrinderPractices = function ({ client: db, me, app, frame, status }) {
         );
         await detail(id);
       });
+      for (const a of attempts) {
+        const share = $("share-return-" + a.id);
+        if (share) share.onclick = () => {
+          app().querySelectorAll(".return-export").forEach(slot => { slot.innerHTML = ""; });
+          GrinderSharing.mountReview({attempt: a, viewerId: me()?.id,
+            slot: $("return-export-" + a.id), status});
+        };
+      }
       for (const a of attempts)
         bind("review-" + a.id, async (f) => {
           const v = f.elements;
