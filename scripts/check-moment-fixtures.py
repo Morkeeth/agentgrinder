@@ -13,7 +13,7 @@ const strangerGrind={id:strangerRun,profile_id:stranger,title:'TEST DATA my own 
 const tables=JSON.parse(sessionStorage.getItem('fixtureTables')||'null')||{grinder_run_moments:[],grinder_practice_versions:[],grinder_practice_attempts:[],grinder_adopted_moments:[],runs:[run,{...run,id:'20000000-0000-0000-0000-000000000005',title:'TEST DATA later check',started_at:'2026-09-03T10:00:00Z',measurement_revision:'b'.repeat(64),prompts:2},strangerGrind]};
 const persist=()=>sessionStorage.setItem('fixtureTables',JSON.stringify(tables));
 let failSave=false;
-const db={from(name){let filters=[],insert=null,del=false;const q={select(){return q},eq(k,v){filters.push(r=>r[k]===v);return q},not(){return q},order(){return q},limit(){return q},insert(v){insert=v;return q},delete(){del=true;return q},then(resolve,reject){if(insert&&failSave)return Promise.resolve({error:{message:'TEST DATA save unavailable'}}).then(resolve,reject);let data=(tables[name]||[]).filter(r=>filters.every(f=>f(r)));if(insert){data=[{...insert,created_at:'2026-09-02T10:00:00Z'}];tables[name].push(...data);persist()}if(del){tables[name]=tables[name].filter(r=>!data.includes(r));persist()}return Promise.resolve({data}).then(resolve,reject)}};return q},async rpc(name,payload){if(name==='grinder_practice_from_moment'){tables.grinder_practice_versions.push({id:practiceId,title:payload.action_title,instruction:payload.action_title,expected:payload.expected_change,visibility:'private',harness:'Codex',task_context:'TEST DATA from moment'});tables.grinder_practice_attempts.push({id:attemptId,owner_id:owner,practice_id:practiceId,baseline:{...run,turns_typed:3},visibility:'private',created_at:'2026-09-02T12:00:00Z'});persist();return {data:{practice_id:practiceId,attempt_id:attemptId}}}if(name==='grinder_adopt_moment'){const m=tables.grinder_run_moments.find(x=>x.id===payload.moment);const base=tables.runs.find(r=>r.id===payload.baseline_run);if(base.profile_id!==stranger)throw Error('Choose one of your grinds');tables.grinder_practice_versions.push({id:keptId,owner_id:stranger,title:payload.action_title,instruction:payload.action_title,expected:payload.expected_change,visibility:'private',harness:'Codex',task_context:'TEST DATA kept from a moment',source_run:base.id});tables.grinder_practice_attempts.push({id:keptAttempt,owner_id:stranger,practice_id:keptId,baseline:{...base,turns_typed:base.prompts},visibility:'private',created_at:'2026-09-02T12:00:00Z'});tables.grinder_adopted_moments.push({practice_id:keptId,adopter_id:stranger,attempt_id:keptAttempt,moment_id:m.id,source_run:run.id,source_measurement_revision:m.measurement_revision,source_measurement_stale:false,moment:{id:m.id,title:m.title}});persist();return {data:{practice_id:keptId,attempt_id:keptAttempt}}}if(name==='grinder_review_attempt'){const a=tables.grinder_practice_attempts[0];a.reviewed_at='2026-09-04T10:00:00Z';a.decision=payload.choice;a.note=payload.reflection;a.outcome={...tables.runs.find(r=>r.id===payload.outcome_run),turns_typed:2};persist();return {data:[]}}throw Error('Unexpected fixture RPC '+name)}};
+const db={from(name){let filters=[],insert=null,del=false;const q={select(){return q},eq(k,v){filters.push(r=>r[k]===v);return q},not(){return q},order(){return q},limit(){return q},insert(v){insert=v;return q},delete(){del=true;return q},then(resolve,reject){if(insert&&failSave)return Promise.resolve({error:{message:'TEST DATA save unavailable'}}).then(resolve,reject);let data=(tables[name]||[]).filter(r=>filters.every(f=>f(r)));if(insert){data=[{...insert,created_at:'2026-09-02T10:00:00Z'}];tables[name].push(...data);persist()}if(del){tables[name]=tables[name].filter(r=>!data.includes(r));persist()}return Promise.resolve({data}).then(resolve,reject)}};return q},async rpc(name,payload){if(name==='grinder_practice_from_moment'){tables.grinder_practice_versions.push({id:practiceId,title:payload.action_title,instruction:payload.action_title,expected:payload.expected_change,visibility:'private',harness:'Codex',task_context:'TEST DATA from moment'});tables.grinder_practice_attempts.push({id:attemptId,owner_id:owner,practice_id:practiceId,baseline:{...run,turns_typed:3},visibility:'private',created_at:'2026-09-02T12:00:00Z'});persist();return {data:{practice_id:practiceId,attempt_id:attemptId}}}if(name==='grinder_adopt_moment'){const m=tables.grinder_run_moments.find(x=>x.id===payload.moment);const base=tables.runs.find(r=>r.id===payload.baseline_run);if(base.profile_id!==stranger)throw Error('Choose one of your grinds');tables.grinder_practice_versions.push({id:keptId,owner_id:stranger,title:payload.action_title,instruction:payload.action_title,expected:payload.expected_change,visibility:'private',harness:'Codex',task_context:'TEST DATA kept from a moment',source_run:base.id});tables.grinder_practice_attempts.push({id:keptAttempt,owner_id:stranger,practice_id:keptId,baseline:{...base,turns_typed:base.prompts},visibility:'private',created_at:'2026-09-02T12:00:00Z'});tables.grinder_adopted_moments.push({practice_id:keptId,adopter_id:stranger,attempt_id:keptAttempt,moment_id:m.id,source_run:run.id,source_measurement_revision:m.measurement_revision,source_measurement_stale:false,moment:{id:m.id,title:m.title}});persist();return {data:{practice_id:keptId,attempt_id:keptAttempt}}}if(name==='grinder_review_attempt'){const a=tables.grinder_practice_attempts.find(x=>x.id===payload.attempt);a.reviewed_at='2026-09-04T10:00:00Z';a.decision=payload.choice;a.tried=payload.was_tried;a.note=payload.reflection;a.outcome={...tables.runs.find(r=>r.id===payload.outcome_run),turns_typed:tables.runs.find(r=>r.id===payload.outcome_run).prompts};persist();return {data:[]}}throw Error('Unexpected fixture RPC '+name)}};
 const status=text=>document.getElementById('status').textContent=text;
 const config={client:db,me:()=>({id:owner,github_handle:'fixture-builder'}),app:()=>document.getElementById('app'),frame:()=>{},status};
 window.openMoments=()=>GrinderMoments.mount({...config,run,slot:document.getElementById('app')});
@@ -71,6 +71,22 @@ with sync_playwright() as p:
  page.get_by_role('button',name='Save review').click();page.get_by_role('heading',name='This return is recorded',exact=True).wait_for()
  page.set_viewport_size({'width':390,'height':844});assert not page.evaluate('document.documentElement.scrollWidth>innerWidth')
  page.screenshot(path=str(OUT/'moment-return-phone.png'),full_page=True)
+ # Explicit outcome export uses only this participant's frozen outcome, not saved private text.
+ page.get_by_role('button',name='Share my outcome',exact=True).click()
+ assert page.get_by_role('button',name='Download PNG').is_disabled()
+ assert 'TEST DATA check ran first' not in page.get_by_label('Caption',exact=True).input_value()
+ page.get_by_label('What was the result?',exact=True).fill('TEST DATA I ran the check first. One local observation, not proof of cause.')
+ page.get_by_label('Image format').select_option('portrait')
+ page.get_by_label('I have reviewed this image').check()
+ with page.expect_download() as outcomeDownload:page.get_by_role('button',name='Download PNG').click()
+ outcomeDownload.value.save_as(str(OUT/'review-share.png'))
+ assert '?run=' not in page.get_by_label('Caption',exact=True).input_value()
+ assert not page.evaluate('document.documentElement.scrollWidth>innerWidth')
+ page.screenshot(path=str(OUT/'review-editor-phone.png'),full_page=True)
+ page.set_viewport_size({'width':1440,'height':1000});page.screenshot(path=str(OUT/'review-editor-desktop.png'),full_page=True)
+ page.get_by_label('What was the result?',exact=True).fill('Changed after review')
+ assert page.get_by_role('button',name='Download PNG').is_disabled()
+
  # A stranger who was not there: the same authored evidence, then a practice on THEIR OWN baseline.
  page.goto('https://grinder-moment-fixture.test/?run=20000000-0000-0000-0000-000000000004')
  boot();page.evaluate('openStranger()')
@@ -107,6 +123,26 @@ with sync_playwright() as p:
  boot();page.evaluate('openKeptPractice()')
  page.get_by_text('That grind is no longer readable to you.',exact=False).wait_for()
  assert page.get_by_role('heading',name='Your baseline is saved',exact=True).count()==1
+ # The reader returns with their OWN later fixture run even after source access is removed.
+ page.evaluate("tables.runs.push({...strangerGrind,id:'20000000-0000-0000-0000-000000000010',title:'TEST DATA reader later run',started_at:'2026-09-05T10:00:00Z',measurement_revision:'d'.repeat(64),prompts:5});persist();openKeptPractice()")
+ page.get_by_label('Session after you started this attempt').select_option('20000000-0000-0000-0000-000000000010')
+ page.get_by_label('Your decision').select_option('change')
+ page.get_by_label('What happened?',exact=True).fill('PRIVATE reader reflection must not enter export')
+ page.get_by_role('button',name='Save review',exact=True).click()
+ page.get_by_role('heading',name='This return is recorded',exact=True).wait_for()
+ page.get_by_role('button',name='Share my outcome',exact=True).click()
+ caption=page.get_by_label('Caption',exact=True).input_value()
+ assert 'My decision: change' in caption and 'PRIVATE' not in caption and 'fixture-builder' not in caption
+ assert page.get_by_label('What was the result?',exact=True).input_value()==''
+ page.get_by_label('What was the result?',exact=True).fill('TEST DATA reader outcome. I will change the practice; one observation, not proof.')
+ page.get_by_label('Image format').select_option('portrait')
+ page.get_by_label('I have reviewed this image').check()
+ with page.expect_download() as readerDownload:page.get_by_role('button',name='Download PNG').click()
+ readerDownload.value.save_as(str(OUT/'reader-review-share.png'))
+ page.set_viewport_size({'width':390,'height':844});assert not page.evaluate('document.documentElement.scrollWidth>innerWidth')
+ page.screenshot(path=str(OUT/'reader-return-phone.png'),full_page=True)
+ page.set_viewport_size({'width':1440,'height':1000});page.screenshot(path=str(OUT/'reader-return-desktop.png'),full_page=True)
+ assert page.evaluate("GrinderSharing.reviewExport(tables.grinder_practice_attempts.find(a=>a.id===keptAttempt),stranger).run.turns_typed")==5
  # Frozen moment cannot be shared against different current metrics or used as a new baseline.
  page.evaluate("run.measurement_revision='f'.repeat(64);openMoments()")
  assert page.get_by_role('button',name='Save practice and baseline').count()==0
@@ -116,5 +152,5 @@ with sync_playwright() as p:
  assert page.evaluate("GrinderMoments.safeLink('javascript:alert(1)')") is None
  assert page.evaluate("GrinderMoments.safeLink('https://user:password@example.test')") is None
  assert not errors,errors
- print(json.dumps({'fixture':'controlled browser responses, not hosted users','moment_save_retry':True,'escaped_exact_excerpt':True,'pin':True,'review_gated_PNG':'1080x1350','private_caption_no_link':True,'practice_handoff_and_return':True,'stranger_keeps_practice_on_own_baseline':True,'source_counts_never_beside_readers':True,'phone_overflow':False,'page_errors':errors}))
+ print(json.dumps({'fixture':'controlled browser responses, not hosted users','moment_save_retry':True,'escaped_exact_excerpt':True,'pin':True,'review_gated_PNG':'1080x1350','private_caption_no_link':True,'practice_handoff_and_return':True,'stranger_keeps_practice_on_own_baseline':True,'stranger_returns_and_exports_own_outcome':True,'saved_reflection_excluded':True,'source_counts_never_beside_readers':True,'phone_overflow':False,'page_errors':errors}))
  browser.close()
