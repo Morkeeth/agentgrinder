@@ -144,10 +144,11 @@ def main():
             page = casey_ctx.new_page()
             page.on("pageerror", lambda e: failures.append("casey " + str(e)))
             page.goto(base + "/?run=" + info["caseyRun"], wait_until="domcontentloaded")
-            page.get_by_text("NEXT EXPERIMENT", exact=False).wait_for()
-            page.get_by_text("test_draft_renders", exact=False).first.wait_for()
-            page.get_by_text("not autonomous", exact=False).wait_for()
-            page.get_by_text("deterministic fallback", exact=False).wait_for()
+            page.locator("#run-experiment").wait_for()
+            page.locator("#grind-experiment").get_by_text("test_draft_renders", exact=False).first.wait_for()
+            page.locator("#grind-experiment .mode-banner").first.wait_for()
+            assert "not autonomous" in page.locator("#grind-experiment").inner_text().lower()
+            assert "deterministic fallback" in page.locator("#grind-experiment").inner_text().lower()
             page.locator("#run-experiment input[name='title']").fill(
                 "Run test_draft_renders in the same turn as the claim"
             )
@@ -201,7 +202,7 @@ def main():
             )
             page.get_by_label("I reviewed these fields").check()
             page.get_by_role("button", name="Save moment").click()
-            page.get_by_text("TEST DATA the named check that was missing", exact=False).wait_for()
+            page.get_by_role("heading", name="TEST DATA the named check that was missing").wait_for()
             page.locator("#run-audience").select_option("public")
             page.get_by_role("button", name="Save audience").click()
             page.get_by_text("public", exact=False).first.wait_for()
@@ -213,11 +214,14 @@ def main():
             other.on("pageerror", lambda e: failures.append("riley " + str(e)))
             other.goto(base + "/?run=" + info["caseyRun"], wait_until="domcontentloaded")
             other.get_by_text("Keep this practice on my account", exact=False).wait_for()
+            other.get_by_label("What would you look for?").fill(
+                "check_claim returns verified on my own later sitting"
+            )
             other.get_by_label("Keep this practice on my account").check()
             other.get_by_role("button", name="Keep this practice").click()
             other.wait_for_url("**/?practice=*", timeout=20000)
             assert info["caseyRun"] not in other.url
-            other.get_by_text("KEPT FROM ANOTHER", exact=False).wait_for()
+            other.locator(".kept-from").wait_for()
             riley_practice = other.url.split("practice=")[-1].split("&")[0].split("#")[0]
             assert riley_practice != practice_id
             riley_later = insert_run(

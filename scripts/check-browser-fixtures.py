@@ -43,7 +43,7 @@ with sync_playwright() as p:
     page.get_by_role('button',name='Find practices',exact=True).click()
     page.get_by_text('No matching practices yet.',exact=True).wait_for()
     page.evaluate("fixture.detail('20000000-0000-0000-0000-000000000001')")
-    page.get_by_text('Frozen baseline',exact=True).wait_for()
+    page.get_by_text('Frozen baseline',exact=True).first.wait_for()
     assert page.get_by_role('heading', name='Comparable under the same measurements').count()==1
     assert page.get_by_role('heading', name='Read these as two separate sittings').count()==1
     assert 'Harness differs' in page.content() or 'not the same measurement' in page.content()

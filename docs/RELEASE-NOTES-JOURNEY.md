@@ -19,11 +19,13 @@ Preserved: existing moment authoring, adoption RPC, outcome export, practice RLS
 
 ## Tested
 
-- Unit: coach experiment selection, live-status secrecy, landing contract, bundled fixture hygiene. Full `tests/` minus `test_claim_rule.py`: 269 passed; one pre-existing Cursor/Codex `claims` key assertion in `test_coach_degrade.py` is unchanged from the candidate.
-- Clean venv install of the package. `agentgrinder coach --live-status` exit 2 with exact missing items (`strands-agents`, `aws-region`, `aws-credentials`); no credential values printed.
-- Database: ordered PGlite migrations including nullable `runs.coach_mode`, plus existing moment/adopt/revocation checks.
-- Browser fixtures, labelled: bundled example phone+desktop; practice discovery/attempt; moment author → stranger keep on own baseline → return/export; progress freeze→review; signed-in nav at 390 and 1280.
-- Not claimed: hosted auth against production, live Bedrock execution, independent human adoption.
+- Unit: 276 passed (`tests/` minus `test_claim_rule.py`); one pre-existing Cursor/Codex `claims` key assertion in `test_coach_degrade.py` is unchanged from the candidate.
+- Path leak: synthetic `/Users/…/secret-plan.md`, `~/private/keys.env` and `C:\Users\…` are absent from named_targets, export_run, solocard, render, JSON dumps and import `rejectPaths`. `test_draft_renders` remains the supported experiment.
+- Comparable sittings: UI badge, return-view HTML, and `grinder_review_attempt` refuse keep/green comparable when harness or `trace_basis` differs even with non-null claim counts.
+- Database: ordered PGlite migrations including `2026-09-13-comparable-sittings.sql`, plus existing moment/adopt/revocation checks.
+- Persisted journey: `npm run test:journey` and `python3 scripts/check-persisted-journey.py` — two JWT contexts, real RPCs, disposable PGlite, labelled TEST DATA. Not production.
+- Browser: bundled example phone+desktop; practice discovery plus harness-mismatch badge; persisted coach→adopt→revoke at 390 and 1280.
+- Not claimed: hosted auth against production, live Bedrock execution, independent human adoption, a Vercel preview on this PR (none attached at push time).
 
 ## Hosted
 
