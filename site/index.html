@@ -818,8 +818,11 @@ function coachModeBanner(r){
   const label=r.coach_mode||'';
   const kind=coachModeKind(label);
   if(!label && !kind) return '';
-  if(kind==='live' && /metrics-only/i.test(label)) return `<p class="mode-banner live">Live model · ${esc(label)}. Run measurements were sent to AWS; no transcript or file checks.</p>`;
-  if(kind==='live') return `<p class="mode-banner live">Live model · ${esc(label)}. Claim lines left this machine.</p>`;
+  if(kind==='live'){
+    const description=[...new Set(label.split('·').map(x=>x.trim()).filter(x=>!/^metrics-only\b/i.test(x)).map(x=>x.replace(/^live(?: model)?\s*/i,'').trim()).filter(Boolean))].join(' · ');
+    const scope=/metrics-only/i.test(label)?'Metrics-only review. Run measurements were sent to AWS; no transcript or file checks.':'Claim lines left this machine.';
+    return `<p class="mode-banner live">Live model${description?' · '+esc(description):''}. ${scope}</p>`;
+  }
   if(kind==='demo') return `<p class="mode-banner demo">${esc(label)} · not autonomous reasoning.</p>`;
   return `<p class="mode-banner">${esc(label)}</p>`;
 }

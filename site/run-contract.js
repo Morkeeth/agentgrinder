@@ -148,7 +148,10 @@
           .split(/\s+/)
           .map((raw) => {
             if (!raw) return raw;
-            const tok = raw.replace(/^[,.;:()[\]{}'"`]+|[,.;:()[\]{}'"`]+$/g, "");
+            // Keep sentence punctuation around the redacted token. Dropping it turns
+            // "(diff or path) before" into an unfinished parenthetical in the UI.
+            const parts = raw.match(/^([,.;:()[\]{}'"`]*)(.*?)([,.;:()[\]{}'"`]*)$/);
+            const tok = parts[2];
             if (
               tok.startsWith("/") ||
               tok.startsWith("~") ||
@@ -156,7 +159,7 @@
               tok.includes("/") ||
               /^[A-Za-z]:/.test(tok)
             )
-              return "[file]";
+              return parts[1] + "[file]" + parts[3];
             return raw;
           })
           .join(" "),
