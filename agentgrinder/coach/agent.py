@@ -5,7 +5,7 @@ THREE MODES, AND THE MODE IS ALWAYS PRINTED (the shape is MAGNET's `agent_run.py
             `ScriptedLocalModel`. No network, no AWS credentials, no spend. The loop, the tool
             registry, the dispatch and the hook are genuine Strands machinery; the token
             generation is a deterministic policy, not a language model.
-  bedrock   the same loop with the Strands default provider (Amazon Bedrock): a language model
+  bedrock   the same loop with an explicit bounded Amazon Bedrock provider: a language model
             actually choosing the tools. Needs AWS credentials, costs money, and sends the claim
             lines and result snippets off the machine. Opt-in, and the command says so first.
   none      the five plain functions called in a fixed order, no Agent. The fallback.
@@ -20,6 +20,7 @@ that log, and the number is the SDK's, not the plan's and not a claim.
 from __future__ import annotations
 
 import importlib.util
+import json
 from datetime import datetime
 
 from ..solo import SITTING_GAP
@@ -49,7 +50,12 @@ SYSTEM_PROMPT = (
     "4. Never quote or paraphrase anything the person typed. You work on counts, claim lines "
     "and git evidence only.\n"
     "5. Say what the evidence supports and no more: an unverified claim is 'no evidence in its "
-    "turn', not 'false'."
+    "turn', not 'false'.\n"
+    "6. Verified per turn is a count divided by typed turns, never a success or verification "
+    "rate. A current file observation does not prove the session created it. Outside this "
+    "repository does not establish a different repository. Unknown is not failure.\n"
+    "7. Your paragraph and plan are interpretations, not facts certified by the numeric gate. "
+    "Name the supporting tool observation for each recommendation."
 )
 
 COACH_TASK = ("Referee this sitting. Read it, check every claim against its own turn, verify "
@@ -76,12 +82,22 @@ def _dispatch_log(ctx: CoachContext):
             tu = getattr(event, "tool_use", None) or {}
             res = getattr(event, "result", None) or {}
             dur = getattr(event, "duration", None)
+            outcome = {}
+            for block in res.get("content", []):
+                value = block.get("json")
+                if value is None and isinstance(block.get("text"), str):
+                    try:
+                        value = json.loads(block["text"])
+                    except (ValueError, TypeError):
+                        continue
+                if isinstance(value, dict) and isinstance(value.get("accepted"), bool):
+                    outcome["accepted"] = value["accepted"]
             ctx.dispatch.append(dict(
                 tool=tu.get("name"), status=res.get("status"),
                 duration_ms=(round(dur.total_seconds() * 1000) if hasattr(dur, "total_seconds")
                              else (round(dur * 1000) if isinstance(dur, (int, float)) else None)),
                 at=datetime.now().astimezone().isoformat(timespec="seconds"),
-                source="strands AfterToolCallEvent"))
+                source="strands AfterToolCallEvent", **outcome))
 
     return DispatchLog()
 
@@ -118,7 +134,8 @@ def run_strands_coach(ctx: CoachContext, mode: str) -> tuple[str, list[str], str
         model = ScriptedLocalModel()
         label = model.MODE_LABEL
     elif mode == "bedrock":
-        model, label = None, BEDROCK_LABEL
+        from .bedrock import create_model, model_label
+        model, label = create_model(), model_label()
     else:
         raise ValueError(f"unknown agent mode: {mode!r}")
     agent = create_coach(ctx, model=model)
@@ -211,7 +228,7 @@ def report(ctx: CoachContext, label: str, calls: list[str], said: str, mode: str
                   f"    commits            {n['commits']}",
                   f"    verified per turn  {vpt if vpt is not None else 'needs typed turns'}",
                   f"    card agrees        {'yes' if v['matches_card'] else 'NO, rule drift'}",
-                  "", f"  {v['paragraph']}", "", "  next session"]
+                  "", f"  Coach interpretation (not validated by the numeric check):\n  {v['paragraph']}", "", "  next session"]
         lines += [f"    - {p}" for p in v["plan"]]
     else:
         lines += ["", "  verdict              none written (write_verdict was refused or never called)"]
