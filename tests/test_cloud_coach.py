@@ -85,14 +85,14 @@ def test_paid_failure_no_fallback_or_refund(seams):
 
 def test_proposal_unknown_and_fabricated_evidence_rejected():
     p=c.Proposal({k:(3 if k=='prompts' else None) for k in c.METRICS})
-    args=('Try smaller tasks','Record a smaller change','Compare observations')
-    assert not p.propose(*args,['prompts'])['accepted']
+    args=('Review one change','Ask for one small diff, then pause before the next change','Inspect whether the diff can be explained on its own')
+    assert not p.propose(*args,['prompts'], 'review_one_change')['accepted']
     p.read_metrics()
     for fields in [['quality'],['claims_verified'],[],['prompts',{}]]:
-        assert not p.propose(*args,fields)['accepted']
+        assert not p.propose(*args,fields, 'review_one_change')['accepted']
         assert p.value is None
-    assert not p.propose('x'*161,*args[1:],['prompts'])['accepted']
-    assert p.propose(*args,['prompts'])['accepted']
+    assert not p.propose('x'*161,*args[1:],['prompts'], 'review_one_change')['accepted']
+    assert p.propose(*args,['prompts'], 'review_one_change')['accepted']
 
 
 def test_atomic_quota_caps_and_fail_closed(monkeypatch):
@@ -133,7 +133,7 @@ def test_actual_model_wrapper_stops_before_fifth_request(monkeypatch):
             asyncio.run(run())
             self.kwargs['tools'][0]()
             self.kwargs['hooks'][0].after_tool(None)
-            self.kwargs['tools'][1]('Try','Inspect','Record',['prompts'])
+            self.kwargs['tools'][1]('Try','Inspect one diff before the next change','Review whether the diff stands alone',['prompts'],'review_one_change')
             self.kwargs['hooks'][0].after_tool(None)
     monkeypatch.setattr(strands.models,'BedrockModel',FakeBedrock)
     monkeypatch.setattr(strands,'Agent',FakeAgent)
@@ -143,3 +143,15 @@ def test_actual_model_wrapper_stops_before_fifth_request(monkeypatch):
     assert calls==4 and proposal['title']=='Try' and tool_calls==2
     assert bases[0].config['max_tokens']==1024
     assert bases[0].config['boto_client_config'].retries['total_max_attempts']==1
+
+
+def test_reported_capture_only_proposal_rejected():
+    p=c.Proposal({k:3 for k in c.METRICS});p.read_metrics()
+    rejected=p.propose('Record baseline session metrics',
+        'In next session record tool_calls, files_touched, artifacts_produced for baseline comparison',
+        'Enabling comparison of review velocity', ['tool_calls'], 'review_one_change')
+    assert rejected['accepted'] is False and 'already captures' in rejected['reason']
+    assert p.value is None
+    rejected=p.propose('Review a small diff','Inspect a diff before the next change',
+        'Review velocity improves', ['tool_calls'], 'review_one_change')
+    assert rejected['accepted'] is False and 'person' in rejected['reason']
