@@ -2,11 +2,17 @@
 import base64
 from datetime import datetime, timedelta, timezone
 import json
+import logging
 import math
 import os
 import re
 from urllib.request import Request, urlopen
 from uuid import UUID
+
+# SDK parsing warnings can contain tool arguments. Keep those out of cloud logs.
+_sdk_logger = logging.getLogger('strands')
+_sdk_logger.handlers = [logging.NullHandler()]
+_sdk_logger.propagate = False
 
 # Validate the packaged SDK (including native dependencies) at Lambda cold start.
 # Importing does not construct a provider or send an inference request.
