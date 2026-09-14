@@ -2,7 +2,7 @@
 
 This is the product path a stranger can complete without a walkthrough.
 
-Production: [agentgrinder.vercel.app](https://agentgrinder.vercel.app). Runtime `74b886d` was promoted on September 14; its assets and database migrations were checked, and GitHub sign-in was exercised. The two-builder persistence evidence below is from disposable test accounts, not independent users.
+Production: [agentgrinder.vercel.app](https://agentgrinder.vercel.app). Card-first runtime `32503cb` was promoted on September 14 as `dpl_EwR2czqZDHMZQJra9C9CgTvxeDmQ`; production bytes matched the reviewed candidate. Earlier in this release pass, database migrations, GitHub sign-in and a real hosted private TEST practice were exercised. The two-builder persistence evidence below is from disposable test accounts, not independent users.
 
 ## What to open
 
