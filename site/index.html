@@ -837,7 +837,7 @@ function coachNextPreview(r){
   const exp=parseCoachExperiment(r);
   if(!exp) return '';
   const own=ME&&ME.id===r.profile_id;
-  return `<div class="coach-next"><span class="meta">PROPOSED NEXT PRACTICE · REVIEW BEFORE USE</span><p>${esc(exp.instruction)}</p><a class="act" href="/?run=${r.id}&next=1#grind-experiment">${own?'Try this next':'View next practice'} →</a></div>`;
+  return `<div class="coach-next"><span class="meta">PROPOSED NEXT PRACTICE · REVIEW BEFORE USE</span><p>${esc(exp.instruction)}</p><a class="act" href="/?run=${r.id}&next=1#grind-experiment">${own&&r.measurement_revision?'Try this next':'Review next practice'} →</a></div>`;
 }
 function coachBlock(r){
   if(!r) return '';
@@ -1284,7 +1284,7 @@ async function mountCoachExperiment(run, slot){
     <p><strong>Look for:</strong> ${esc(exp.expected)}</p>
     ${exp.friction||exp.consequence?`<details><summary>Why this practice?</summary>${exp.friction?`<p>${esc(exp.friction)}</p>`:''}${exp.consequence?`<p class="hint">${esc(exp.consequence)}</p>`:''}</details>`:''}
     ${coachModeBanner(run)}
-    ${owner?`<details class="next-practice-form" ${new URLSearchParams(location.search).get('next')==='1'?'open':''}><summary>Try this next</summary><form id="run-experiment">${canFreeze?'':'<p>A measured revision is required before you can freeze this grind as a baseline.</p>'}
+    ${owner?`<details class="next-practice-form" ${new URLSearchParams(location.search).get('next')==='1'?'open':''}><summary>${canFreeze?'Try this next':'Prepare your next practice'}</summary><form id="run-experiment">${canFreeze?'':'<p>This older run has no measurement revision, so it cannot be frozen as a baseline. <a href="/?onboard">Capture a measured run</a>, then accept a practice from that new card.</p>'}
       <label>What will you do?<input name="title" required maxlength="160" value="${esc(exp.title||'')}"></label>
       <label>How, exactly?<textarea name="instruction" required maxlength="4000">${esc(exp.instruction)}</textarea></label>
       <label>What would change your mind?<textarea name="expected" required maxlength="2000">${esc(exp.expected)}</textarea></label>
