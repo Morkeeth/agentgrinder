@@ -95,4 +95,4 @@ def test_no_cursor_or_codex_field_is_invented_to_feed_the_coach(tmp_path):
             assert run[field] is None, f"{harness} invented {field} = {run[field]!r}"
         assert run["reach_reason"], f"{harness} prints a dash with no sentence behind it"
         # and the claim rule stays out of these parsers: see tests/test_claim_rule.py
-        assert "claims" not in run and "claims_verified" not in run
+        assert run.get("claims") is None and run.get("claims_verified") is None

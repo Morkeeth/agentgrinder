@@ -5,7 +5,7 @@ THREE MODES, AND THE MODE IS ALWAYS PRINTED (the shape is MAGNET's `agent_run.py
             `ScriptedLocalModel`. No network, no AWS credentials, no spend. The loop, the tool
             registry, the dispatch and the hook are genuine Strands machinery; the token
             generation is a deterministic policy, not a language model.
-  bedrock   the same loop with the Strands default provider (Amazon Bedrock): a language model
+  bedrock   the same loop with an explicit bounded Amazon Bedrock provider: a language model
             actually choosing the tools. Needs AWS credentials, costs money, and sends the claim
             lines and result snippets off the machine. Opt-in, and the command says so first.
   none      the five plain functions called in a fixed order, no Agent. The fallback.
