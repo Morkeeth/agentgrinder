@@ -845,7 +845,7 @@ function coachBlock(r){
   const plan=typeof GrinderContract==='object'&&GrinderContract.rejectPaths?GrinderContract.rejectPaths(r.coach_plan):r.coach_plan;
   const n=r.coach_tool_calls, pv=r.progress_verdict;
   if(!v&&!pv) return '';
-  const who=v?`<div class="grp">Coach interpretation · supplied with this run${n?` · verdict produced by <b>${esc(String(n))}</b> tool call${n==1?'':'s'}`:''}</div>`:'';
+  const who=v?`<div class="grp">Coach report · supplied with this run${n?` · verdict produced by <b>${esc(String(n))}</b> tool call${n==1?'':'s'}`:''}</div>`:'';
   const para=v?`<div class="para">${esc(String(v))}</div>`:'';
   const items=plan?String(plan).split('\n').filter(x=>x.trim()).map(x=>`<li>${esc(x)}</li>`).join(''):'';
   const ul=items?`<p class="meta">Proposed next steps · review before use</p><ul class="plan">${items}</ul>`:'';
