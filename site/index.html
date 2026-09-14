@@ -361,7 +361,7 @@ footer{max-width:1320px;margin:0 auto;padding:20px 24px 40px;color:var(--dim);fo
 .launch-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);margin:22px 0 18px}
 .launch-steps>div{padding:22px 24px 22px 0}.launch-steps h2{font-size:14px;font-weight:600;margin:0 0 8px}.launch-steps p{font-size:13px;color:var(--soft);margin:0;max-width:32ch}
 .shell.noside:not(.wide) .main{max-width:760px;width:100%;margin:0 auto}
-.run-learning{margin:20px 0;border:1px solid var(--rule)}.run-learning>summary,.profile-settings>summary{padding:14px 16px;cursor:pointer;font-size:14px}.profile-settings{margin:16px 0}.run-learning[open]>summary{border-bottom:1px solid var(--rule)}
+.coach-next{padding:16px;border-top:1px solid var(--rule)}.coach-next p{margin:8px 0 12px;font-size:14px}.next-practice-form>summary{cursor:pointer;font-weight:600;padding:10px 0}.run-learning{margin:20px 0;border:1px solid var(--rule)}.run-learning>summary,.profile-settings>summary{padding:14px 16px;cursor:pointer;font-size:14px}.profile-settings{margin:16px 0}.run-learning[open]>summary{border-bottom:1px solid var(--rule)}
 .feed-composer{margin:0 0 20px}.feed-composer>summary{display:inline-block;cursor:pointer}.feed-composer[open]>summary{margin-bottom:12px}
 .launch-more{display:flex;flex-wrap:wrap;gap:12px 24px;font-size:13px;color:var(--soft)}
 @media(max-width:800px){.launch-grid{grid-template-columns:1fr;gap:24px;padding-top:10px}.launch-grid .landing-intro h1{max-width:none;font-size:44px}.launch-steps{grid-template-columns:1fr}.launch-steps>div{padding:16px 0}.launch-steps>div+div{border-top:1px solid var(--rule-2)}.launch-steps p{max-width:none}.launch-card .stat{padding:14px 12px}.launch-card .foot{flex-wrap:wrap}.launch-card .hl .n{font-size:38px}}
@@ -833,16 +833,22 @@ function parseCoachExperiment(r){
   }
   return exp && typeof GrinderContract==='object' && GrinderContract.rejectPaths ? GrinderContract.rejectPaths(exp) : exp;
 }
+function coachNextPreview(r){
+  const exp=parseCoachExperiment(r);
+  if(!exp) return '';
+  const own=ME&&ME.id===r.profile_id;
+  return `<div class="coach-next"><span class="meta">PROPOSED NEXT PRACTICE · REVIEW BEFORE USE</span><p>${esc(exp.instruction)}</p><a class="act" href="/?run=${r.id}&next=1#grind-experiment">${own?'Try this next':'View next practice'} →</a></div>`;
+}
 function coachBlock(r){
   if(!r) return '';
   const v=typeof GrinderContract==='object'&&GrinderContract.rejectPaths?GrinderContract.rejectPaths(r.coach_verdict):r.coach_verdict;
   const plan=typeof GrinderContract==='object'&&GrinderContract.rejectPaths?GrinderContract.rejectPaths(r.coach_plan):r.coach_plan;
   const n=r.coach_tool_calls, pv=r.progress_verdict;
   if(!v&&!pv) return '';
-  const who=v?`<div class="grp">the coach${n?` · verdict produced by <b>${esc(String(n))}</b> tool call${n==1?'':'s'}`:''}</div>`:'';
+  const who=v?`<div class="grp">Coach interpretation · supplied with this run${n?` · verdict produced by <b>${esc(String(n))}</b> tool call${n==1?'':'s'}`:''}</div>`:'';
   const para=v?`<div class="para">${esc(String(v))}</div>`:'';
   const items=plan?String(plan).split('\n').filter(x=>x.trim()).map(x=>`<li>${esc(x)}</li>`).join(''):'';
-  const ul=items?`<ul class="plan">${items}</ul>`:'';
+  const ul=items?`<p class="meta">Proposed next steps · review before use</p><ul class="plan">${items}</ul>`:'';
   const prog=pv?`<div class="rule-line"><b>${esc(String(pv))}</b> vs your last grind on this project</div>`:'';
   return coachModeBanner(r)+who+para+ul+prog;
 }
@@ -868,6 +874,7 @@ function runCard(r,acked,count,opts={}){ const att=runAttribution(r),h=att.handl
     <div class="run-signature">${GrinderContract.trace(r)}<span class="meta">${esc(r.trace_basis==='elapsed-agent-tool-calls'?'Agent tool requests · elapsed time':r.trace_basis==='elapsed'?'Session rhythm · elapsed time':r.trace_basis==='position'?'Session rhythm · event order':'Session rhythm · time basis unknown')}</span></div>
     <div class="run-key-facts"><div><span>Typed turns</span><strong>${r.prompts??'Unknown'}</strong></div><div><span>Artifacts</span><strong>${r.artifacts_produced??'Unknown'}</strong></div><div><span>Commits</span><strong>${r.commits??'Unknown'}</strong></div></div>
     ${r.rig_revision?`<p class="meta">Rig revision · ${esc(String(r.rig_revision).slice(0,12))}</p>`:''}
+    ${opts.showNext===false?'':coachNextPreview(r)}
     <details class="run-evidence"><summary>Measurements and coach report</summary>${vptHtml(r)}${fiveRow(r)}${coachBlock(r)}${routeMap(r.route)}<p class="meta">Session time: ${r.duration_s==null?'Unknown':fmtDur(dm)} · ${r.tool_calls??'Unknown'} tool calls</p></details>
     <div class="foot"><span class="meta">${r.tool_calls??'—'} tool calls${selfAck?' · your grind':''}</span>
       <span class="acts">${ackBtn}<a class="act" href="/?run=${r.id}#grind-thread">Discuss</a><a class="act" href="/?share=1&run=${r.id}">Share</a></span></div>
@@ -1271,19 +1278,18 @@ async function mountCoachExperiment(run, slot){
   if(!exp){ slot.innerHTML=''; return; }
   const owner=ME&&ME.id===run.profile_id;
   const canFreeze=owner&&run.measurement_revision;
-  slot.innerHTML=`<section class="panel reply-form"><p class="meta">NEXT EXPERIMENT</p>
-    <h2>${esc(exp.title||'One change for the next sitting')}</h2>
-    ${exp.friction?`<p>${esc(exp.friction)}</p>`:''}
-    ${exp.consequence?`<p class="hint">${esc(exp.consequence)}</p>`:''}
+  slot.innerHTML=`<section class="panel reply-form"><p class="meta">COACH PROPOSAL · REVIEW BEFORE USE</p>
+    <h2>One practice for your next run</h2>
     <p>${esc(exp.instruction)}</p>
     <p><strong>Look for:</strong> ${esc(exp.expected)}</p>
+    ${exp.friction||exp.consequence?`<details><summary>Why this practice?</summary>${exp.friction?`<p>${esc(exp.friction)}</p>`:''}${exp.consequence?`<p class="hint">${esc(exp.consequence)}</p>`:''}</details>`:''}
     ${coachModeBanner(run)}
-    ${owner?`<form id="run-experiment">${canFreeze?'':'<p>A measured revision is required before you can freeze this grind as a baseline.</p>'}
+    ${owner?`<details class="next-practice-form" ${new URLSearchParams(location.search).get('next')==='1'?'open':''}><summary>Try this next</summary><form id="run-experiment">${canFreeze?'':'<p>A measured revision is required before you can freeze this grind as a baseline.</p>'}
       <label>What will you do?<input name="title" required maxlength="160" value="${esc(exp.title||'')}"></label>
       <label>How, exactly?<textarea name="instruction" required maxlength="4000">${esc(exp.instruction)}</textarea></label>
       <label>What would change your mind?<textarea name="expected" required maxlength="2000">${esc(exp.expected)}</textarea></label>
       <p>Saves a private practice and freezes this grind as its baseline. A later sitting is compared only when the measurements mean the same thing.</p>
-      <button ${canFreeze?'':'disabled'}>Accept experiment and freeze baseline</button></form>`:'<p class="hint">The owner can freeze this as a private next practice. You can keep a public moment on your own baseline below.</p>'}</section>`;
+      <button ${canFreeze?'':'disabled'}>Accept experiment and freeze baseline</button></form></details>`:'<p class="hint">The owner can freeze this as a private next practice. You can keep a public moment on your own baseline below.</p>'}</section>`;
   const form=slot.querySelector('#run-experiment');
   if(!form) return;
   form.onsubmit=async e=>{
@@ -1320,8 +1326,8 @@ async function viewRun(id){
   const openAck=q.get('ack')==='1'&&ME&&!ad.mine.has(r.id)&&ME.id!==r.profile_id;
   frame(null,null);
   app.innerHTML=`<div class="head"><h2>A run</h2><span class="meta">${esc(r.visibility==='public'?'public':r.crew_shared?'Crew members':r.visibility==='private'||r.visibility==='anonymous'?'private':'link only')}</span></div>`
-    +runCard(r,ad.mine.has(r.id),ad.counts[r.id]||acks.length,{picker:openAck,suggested,selected:preselect})
-    +`<section id="grind-thread"></section><details class="run-learning"><summary>One practice for your next run</summary><section id="grind-experiment"></section><section id="grind-moments"></section></details><div class="head"><h2>ACKs</h2><span class="meta">${acks.length}</span></div><div class="panel">`+ackListHtml(acks)+`</div>`
+    +runCard(r,ad.mine.has(r.id),ad.counts[r.id]||acks.length,{picker:openAck,suggested,selected:preselect,showNext:false})
+    +`<section id="grind-experiment"></section><section id="grind-thread"></section><details class="run-learning"><summary>Moments worth sharing</summary><section id="grind-moments"></section></details><div class="head"><h2>ACKs</h2><span class="meta">${acks.length}</span></div><div class="panel">`+ackListHtml(acks)+`</div>`
     +`<div class="cta">${r.visibility==='public'||r.visibility==='link'?'<button id="run-copy-link">Copy run link</button>':''}<a class="act" href="/?share=1&run=${r.id}">Share card</a>
       <span class="hint"><a href="/?u=${encodeURIComponent((r.profiles||{}).github_handle||'')}">see the profile</a></span></div><section id="grind-feature"></section>`;
   if(ME?.id===r.profile_id){const compare=document.createElement('a');compare.href='/?progress&baseline='+r.id;compare.className='act';compare.textContent='Compare this run';app.querySelector('.cta').append(compare);}
