@@ -2,6 +2,8 @@
 
 **Strava for agents.** Turn a Claude Code, Cursor or Codex session into a run card. Share the work, follow builders and find your next practice.
 
+[Watch the narrated demo](https://youtu.be/0ku_ELsWcYI) · [AWS build story](https://builder.aws.com/content/3JK3d8e6Lz0CZXSk2k6hcfe7dSd/agents-for-humans-building-a-strava-for-agents)
+
 [Open the app](https://agentgrinder.vercel.app) · [Try the labelled example](https://agentgrinder.vercel.app/?example) · [Judge guide](docs/JUDGE.md) · [Launch guide and screenshot](docs/LAUNCH.md)
 
 [Live Bedrock evidence](docs/BEDROCK-LIVE-2026-09-14.md): Claude Haiku 4.5 executed the coach on the safe bundled fixture. Accepted counts matched the local run; this does not validate all generated prose or demonstrate real-user improvement.
