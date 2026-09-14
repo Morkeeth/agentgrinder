@@ -51,6 +51,6 @@ begin
  insert into grinder_moment_practices values(m.id,p,a);
  return jsonb_build_object('practice_id',p,'attempt_id',a);
 end $$;
-revoke all on function grinder_practice_from_moment(uuid,text,text) from public;
+revoke all on function grinder_practice_from_moment(uuid,text,text) from public,anon;
 grant execute on function grinder_practice_from_moment(uuid,text,text) to authenticated;
 commit;

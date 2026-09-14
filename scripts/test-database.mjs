@@ -30,6 +30,25 @@ insert into profiles(id,auth_uid) values('${userA}','${userA}'),('${userB}','${u
 insert into runs(title,id,profile_id,visibility) values('Fixture run','${runA}','${userA}','public');`);
 // Exercise the deploy transaction on the base schema before individual retries can mask ordering defects.
 await db.exec(execFileSync("python3", [new URL("./prepare-migration.py", import.meta.url).pathname], {encoding:"utf8"}));
+// Check fresh creation BEFORE replaying the blanket permission migration: replay can
+// hide direct grants inherited from Supabase's default function privileges.
+const authenticatedRpcs = [
+  'grinder_practice_from_moment(uuid,text,text)',
+  'grinder_adopt_moment(uuid,uuid,text,text)',
+  'grinder_review_attempt(uuid,uuid,boolean,text,text)',
+  'grinder_review_cycle(uuid,uuid,text,text)',
+];
+async function checkNewRpcPrivileges() {
+  for (const signature of authenticatedRpcs) {
+    const result = (await db.query("select has_function_privilege('anon',$1,'EXECUTE') anonymous, has_function_privilege('authenticated',$1,'EXECUTE') signed_in", [signature])).rows[0];
+    assert.equal(result.anonymous,false,`${signature}: anon must not inherit execution`);
+    assert.equal(result.signed_in,true,`${signature}: authenticated API must remain available`);
+  }
+  for (const role of ['anon','authenticated']) {
+    assert.equal((await db.query("select has_function_privilege($1,'grinder_sittings_comparable(jsonb,jsonb)','EXECUTE') allowed", [role])).rows[0].allowed,false,`${role}: internal comparison helper is not a client API`);
+  }
+}
+await checkNewRpcPrivileges();
 for (const file of (
   await readFile(new URL("./migration-order.txt", import.meta.url), "utf8")
 )
@@ -43,6 +62,7 @@ for (const file of (
   await db.exec(sql); // migrations must tolerate retries
 }
 await db.exec(execFileSync("python3", [new URL("./prepare-migration.py", import.meta.url).pathname], {encoding:"utf8"}));
+await checkNewRpcPrivileges();
 async function as(id) {
   await db.exec("reset role");
   await db.query("select set_config('request.jwt.claim.sub',$1,false)", [id]);

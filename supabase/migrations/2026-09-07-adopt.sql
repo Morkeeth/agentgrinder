@@ -47,6 +47,6 @@ begin
  values(p,who,a,m.id,m.run_id,m.measurement_revision,source.measurement_revision is distinct from m.measurement_revision);
  return jsonb_build_object('practice_id',p,'attempt_id',a);
 end $$;
-revoke all on function grinder_adopt_moment(uuid,uuid,text,text) from public;
+revoke all on function grinder_adopt_moment(uuid,uuid,text,text) from public,anon;
 grant execute on function grinder_adopt_moment(uuid,uuid,text,text) to authenticated;
 commit;

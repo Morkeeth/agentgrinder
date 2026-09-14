@@ -17,7 +17,7 @@ language sql immutable set search_path=public as $$
  false);
 $$;
 
-revoke all on function grinder_sittings_comparable(jsonb,jsonb) from public;
+revoke all on function grinder_sittings_comparable(jsonb,jsonb) from public,anon,authenticated;
 
 create or replace function grinder_review_attempt(attempt uuid,outcome_run uuid,was_tried boolean,choice text,reflection text) returns void
 language plpgsql security definer set search_path=public as $$
@@ -56,5 +56,5 @@ begin
  update grinder_experiment_cycles set outcome=observed,decision=choice,reflection=reflection_text,reviewed_at=now() where id=cycle;
 end $$;
 
-revoke all on function grinder_review_attempt(uuid,uuid,boolean,text,text),grinder_review_cycle(uuid,uuid,text,text) from public;
+revoke all on function grinder_review_attempt(uuid,uuid,boolean,text,text),grinder_review_cycle(uuid,uuid,text,text) from public,anon;
 grant execute on function grinder_review_attempt(uuid,uuid,boolean,text,text),grinder_review_cycle(uuid,uuid,text,text) to authenticated;
