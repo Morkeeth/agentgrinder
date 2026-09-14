@@ -2,18 +2,19 @@
 
 This is the product path a stranger can complete without a walkthrough.
 
-**Branch for this candidate work:** the isolated branch opened from `day/2026-09-11-grinder-ambition` (expected parent `be5704c`). Production `main` and the live site are not assumed to include it.
+Production: [agentgrinder.vercel.app](https://agentgrinder.vercel.app). Runtime `74b886d` was promoted on September 14; its assets and database migrations were checked, and GitHub sign-in was exercised. The two-builder persistence evidence below is from disposable test accounts, not independent users.
 
 ## What to open
 
-1. Hosted preview of this branch, if the coordinator attached one, **or**
-2. Local: from the repo root
+Open [the bundled example](https://agentgrinder.vercel.app/?example) on a phone-width window or desktop. No account or payment is needed.
+
+For a local copy, from the repo root:
 
 ```bash
 python3 -m http.server 8765 --directory site
 ```
 
-Then open `http://127.0.0.1:8765/?example` on a phone-width window and a desktop window.
+Then open `http://127.0.0.1:8765/?example`.
 
 Label: **BUNDLED EXAMPLE · public-safe fixture**. Not live users. Not a live language model.
 
@@ -29,9 +30,16 @@ The bundled example (`site/example.js`) is labelled onboarding only. Persistence
 6. **Persisted APIs (disposable, not production):**
 
 ```bash
+# From a clone of the public repository; Node 20+ and Python 3.12.
+npm ci
+python3.12 -m venv .venv
+.venv/bin/pip install -e ".[coach]" playwright
+.venv/bin/python -m playwright install chromium
 npm run test:journey
-python3 scripts/check-persisted-journey.py
+PATH="$PWD/.venv/bin:$PATH" .venv/bin/python scripts/check-persisted-journey.py
 ```
+
+Screenshots and the receipt are saved to a new temporary directory printed at startup. Set `GRINDER_JOURNEY_RECEIPTS` to choose your own output directory.
 
 Two authenticated TEST DATA contexts hit the real `grinder_start_attempt` / `grinder_review_attempt` / `grinder_adopt_moment` RPCs. Coach → accept/edit on the same card → freeze own baseline → later run and review → deliberate share → second builder adopts onto **their** baseline → their outcome → revocation leaves owned work. Different harnesses with claim counts do not get a green comparable badge.
 
@@ -55,4 +63,4 @@ Bring-your-own: `python3 -m agentgrinder grind` then `grind --push`. Import audi
 
 ## What this is not
 
-Hosted production acceptance. Independent real-world adoption. A Bedrock session unless you already have credentials and choose to spend. Private transcripts do not belong in Git or in the cloud preview. The disposable PGlite journey is TEST DATA, not live users.
+Independent real-world adoption or a hosted two-builder acceptance claim. A live Bedrock receipt remains pending. Private transcripts do not belong in Git or in the cloud preview. The disposable PGlite journey is TEST DATA, not live users.
