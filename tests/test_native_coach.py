@@ -17,6 +17,15 @@ def test_direct_mode_is_explicit():
     text=review_activity(run,'none')
     assert 'no agent or model' in text
     assert run['coach_numbers']['artifacts_produced'] is None
+    assert 'Claim verification is unavailable' in run['coach_verdict']
+    assert 'Coach interpretation (not validated by the numeric check)' in text
+
+
+def test_activity_summary_does_not_turn_unknowns_into_zero():
+    run={'harness':'Codex','turns_typed':None,'tool_calls':None}
+    review_activity(run,'none')
+    assert 'unknown human turns and unknown tool calls' in run['coach_verdict']
+    assert '0 human turns' not in run['coach_verdict']
 
 
 def test_private_practice_cannot_escape_through_coach_prose():

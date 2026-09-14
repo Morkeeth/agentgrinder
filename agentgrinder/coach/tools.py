@@ -325,7 +325,10 @@ def attach(ctx: CoachContext, mode_label: str) -> dict:
         run["coach_plan"] = None
         run["coach_numbers"] = None
         return run
-    run["coach_verdict"] = v["paragraph"]
+    # An accepted numeric verdict does not certify the model's explanation.
+    # Keep that explanation in the local report; only measured prose enters cards.
+    from .summary import evidence_summary
+    run["coach_verdict"] = evidence_summary(v["numbers"])
     run["coach_plan"] = "\n".join(v["plan"])
     run["coach_numbers"] = v["numbers"]
     from .experiment import from_context, public_experiment, public_text
