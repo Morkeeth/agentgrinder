@@ -54,7 +54,9 @@ def review_activity(run, mode='local'):
             kwargs['model']=ScriptedLocalModel(policy=policy)
             label='Strands loop · local scripted activity coach'
         elif mode=='bedrock':
-            label='Strands loop · Bedrock activity coach'
+            from .bedrock import create_model, model_label
+            kwargs['model']=create_model()
+            label=model_label()+' · activity-only review'
         else:raise ValueError('Unknown coaching mode')
         @tool
         def read_activity_tool() -> dict:

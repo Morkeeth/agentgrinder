@@ -311,3 +311,5 @@ Everything else in this repository was written inside the period. The Strands Ag
 dependency, not copied code.
 
 MIT. See `LICENSE`.
+
+See [Bedrock in the product coaching path](docs/BEDROCK-PRODUCT-PATH.md) for model configuration, per-run request limits and the recorded refusal/acceptance outcome.
