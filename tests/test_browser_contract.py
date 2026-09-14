@@ -67,3 +67,32 @@ if(JSON.stringify(ids)!=='["valid"]') throw new Error('wrong eligible outcomes: 
 if(outcomeRuns({...attempt,created_at:null},runs).length) throw new Error('attempt without server chronology accepted');
 """
     subprocess.run(["node", "-e", script, str(module)], check=True)
+
+
+def test_comparison_rejects_unknown_metrics_and_honours_review():
+    module = Path(__file__).resolve().parents[1] / "site/run-contract.js"
+    script = r"""
+const {sittingsComparable}=require(process.argv[1]);
+const a={harness:'Codex',trace_basis:'elapsed',turns_typed:4,claims_verified:0};
+for(const review of [{decision:'incomparable'}, {tried:false}]) {
+ if(sittingsComparable(a,a,review).ok) throw Error('review was overridden');
+}
+for(const b of [
+ {...a,claims_verified:null}, {...a,turns_typed:null}, {...a,turns_typed:0},
+ {...a,claims_verified:NaN}, {...a,headline_metric_id:'unknown'},
+]) if(sittingsComparable(b,b).ok) throw Error('missing/invalid measurements compared');
+if(!sittingsComparable(a,a,{decision:'keep',tried:true}).ok) throw Error('measured zero is valid');
+const artifacts={...a,claims_verified:null,artifacts_produced:0};
+if(!sittingsComparable(artifacts,artifacts).ok) throw Error('artifact fallback is valid');
+// Exercise the shipped rendering call, not just the helper: an incomparable review stays so.
+const fs=require('fs'), vm=require('vm'), path=require('path');
+const context={window:{},GrinderContract:require(process.argv[1])};
+vm.createContext(context);
+const src=fs.readFileSync(path.join(path.dirname(process.argv[1]),'practices.js'),'utf8');
+vm.runInContext(src.replace('async function detail(id) {','window.renderComparison = comparison; async function detail(id) {'),context);
+context.window.GrinderPractices({});
+const html=context.window.renderComparison({baseline:a,outcome:a,decision:'incomparable',tried:true});
+if(html.includes('Comparable under the same measurements')) throw Error('UI overrides decision');
+if(!html.includes('participant marked')) throw Error('UI missing decision reason');
+"""
+    subprocess.run(["node", "-e", script, str(module)], check=True)

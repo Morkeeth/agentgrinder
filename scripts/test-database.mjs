@@ -624,13 +624,14 @@ await denied('select * from grinder_comparisons');
 await denied("select grinder_save_comparison($1,$2,'Anonymous',true,gen_random_uuid())",[earlierProgress,laterProgress]);
 await as(progressOwner);
 const practiceOutcome=(await db.query("insert into runs(profile_id,title,visibility,harness,schema_version,measurement_revision,trace_basis,started_at,prompts) values($1,'Practice outcome fixture','private','Codex',1,$2,'elapsed',now(),2) returning id",[progressOwner,'1'.repeat(64)])).rows[0].id;
-await db.query("select grinder_review_attempt($1,$2,true,'keep','Controlled fixture: named check was tried')",[nextPractice.attempt_id,practiceOutcome]);
-assert.equal((await db.query('select decision from grinder_practice_attempts where id=$1',[nextPractice.attempt_id])).rows[0].decision,'keep');
+await db.query("select grinder_review_attempt($1,$2,true,'incomparable','Controlled fixture: named check was tried')",[nextPractice.attempt_id,practiceOutcome]);
+assert.equal((await db.query('select decision from grinder_practice_attempts where id=$1',[nextPractice.attempt_id])).rows[0].decision,'incomparable');
 await db.query('delete from runs where id in ($1,$2)',[earlierProgress,laterProgress]);
 const retainedProgress=(await db.query('select * from grinder_comparisons where id=$1',[savedProgress])).rows[0];
 assert.equal(retainedProgress.earlier_run,null);
 assert.equal(retainedProgress.before_run.turns_typed,3);
 assert.equal(retainedProgress.after_run.turns_typed,4);
+// These legacy fixtures omit headline evidence, so reviews above remain incomparable.
 // Authored moment -> exact visible evidence -> frozen private practice -> later review.
 await as(progressOwner);
 const momentRun=(await db.query("insert into runs(profile_id,title,visibility,harness,schema_version,measurement_revision,trace_basis,started_at,prompts) values($1,'TEST DATA moment grind','private','Codex',1,$2,'elapsed',now()-interval '2 days',3) returning id",[progressOwner,'a'.repeat(64)])).rows[0].id;
@@ -658,8 +659,8 @@ const staleMoment=(await db.query(insertMoment,momentFields)).rows[0].id;
 await db.query('update runs set measurement_revision=$2 where id=$1',[momentRun,'b'.repeat(64)]);
 await denied("select grinder_practice_from_moment($1,'TEST DATA action','TEST DATA expectation')",[staleMoment]);
 const momentLater=(await db.query("insert into runs(profile_id,title,visibility,harness,schema_version,measurement_revision,trace_basis,started_at,prompts) values($1,'TEST DATA later grind','private','Codex',1,$2,'elapsed',now(),2) returning id",[progressOwner,'c'.repeat(64)])).rows[0].id;
-await db.query("select grinder_review_attempt($1,$2,true,'keep','TEST DATA local check was used; no causal inference')",[momentPractice.attempt_id,momentLater]);
-assert.equal((await db.query('select decision from grinder_practice_attempts where id=$1',[momentPractice.attempt_id])).rows[0].decision,'keep');
+await db.query("select grinder_review_attempt($1,$2,true,'incomparable','TEST DATA local check was used; no causal inference')",[momentPractice.attempt_id,momentLater]);
+assert.equal((await db.query('select decision from grinder_practice_attempts where id=$1',[momentPractice.attempt_id])).rows[0].decision,'incomparable');
 await db.query('delete from grinder_run_moments where id=$1',[moment]);
 assert.equal((await db.query('select * from runs where id=$1',[momentRun])).rows.length,1);
 assert.equal((await db.query('select * from grinder_practice_attempts where id=$1',[momentPractice.attempt_id])).rows.length,1);
@@ -719,9 +720,9 @@ assert.equal((await db.query('select source_measurement_stale from grinder_adopt
 // the stranger returns with a later session of their own. Their own two runs, no cross-account numbers.
 await as(userB);
 const strangerLater=(await db.query("insert into runs(profile_id,title,visibility,harness,schema_version,measurement_revision,trace_basis,started_at,prompts) values($1,'TEST DATA stranger later grind','private','Codex',1,$2,'elapsed',now(),3) returning id",[userB,'8'.repeat(64)])).rows[0].id;
-await db.query("select grinder_review_attempt($1,$2,true,'keep','TEST DATA tried the check first; one observation, no causal claim')",[kept.attempt_id,strangerLater]);
+await db.query("select grinder_review_attempt($1,$2,true,'incomparable','TEST DATA tried the check first; one observation, no causal claim')",[kept.attempt_id,strangerLater]);
 const reviewed=(await db.query('select * from grinder_practice_attempts where id=$1',[kept.attempt_id])).rows[0];
-assert.equal(reviewed.decision,'keep');
+assert.equal(reviewed.decision,'incomparable');
 assert.equal(reviewed.outcome.measurement_revision,'8'.repeat(64));
 // the author narrows the audience afterwards: the source stops resolving, the stranger's own work survives.
 await as(progressOwner);await db.query("update runs set visibility='private' where id=$1",[sharedRun]);
@@ -820,6 +821,24 @@ assert.equal(
 console.log(
   "Comparable sittings: keep denied across harness and trace_basis even with claim counts; same measurements still keep.",
 );
+
+// A matching harness and clock alone cannot turn absent measurements into evidence.
+const metricAttempt = (await db.query("select grinder_start_attempt($1,$2,false) id", [cmpPractice, cmpBase])).rows[0].id;
+const unknownLater = (await db.query(
+  "insert into runs(profile_id,title,visibility,harness,schema_version,measurement_revision,trace_basis,started_at,prompts,claims,claims_verified,artifacts_produced) values($1,'TEST DATA unknown later','private','Codex',1,$2,'elapsed',now(),3,null,null,null) returning id",
+  [userA, "9".repeat(64)],
+)).rows[0].id;
+await denied("select grinder_review_attempt($1,$2,true,'keep','Unknown is not comparable')", [metricAttempt, unknownLater]);
+await db.query("select grinder_review_attempt($1,$2,true,'incomparable','Unknown stays unknown')", [metricAttempt, unknownLater]);
+await db.exec('reset role'); // Exercise the internal pure helper as migration owner.
+const measured = {harness:'Codex',trace_basis:'elapsed',turns_typed:4,claims_verified:0};
+for (const missing of [{...measured,claims_verified:null}, {...measured,turns_typed:0}, {...measured,turns_typed:null}]) {
+  assert.equal((await db.query('select grinder_sittings_comparable($1::jsonb,$2::jsonb) ok', [JSON.stringify(missing),JSON.stringify(missing)])).rows[0].ok,false);
+}
+for (const valid of [measured,{...measured,claims_verified:null,artifacts_produced:0}]) {
+  assert.equal((await db.query('select grinder_sittings_comparable($1::jsonb,$2::jsonb) ok', [JSON.stringify(valid),JSON.stringify(valid)])).rows[0].ok,true);
+}
+console.log('Missing headline evidence denied; measured zero and artifact fallback accepted.');
 
 await db.close();
 console.log(

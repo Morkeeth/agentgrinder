@@ -1,5 +1,23 @@
 -- 2026-09-13 · keep/change/drop requires the same harness AND time basis.
--- Additive: replaces review functions only. Coordinator applies; not run against production here.
+-- Additive: installs an internal comparison helper and replaces review functions.
+-- Coordinator applies; not run against production here.
+
+-- Snapshots use the existing claim-availability rule to identify the headline.
+-- Unknown values and zero denominators cannot support a comparable review.
+create or replace function grinder_sittings_comparable(before_run jsonb, after_run jsonb) returns boolean
+language sql immutable set search_path=public as $$
+ select coalesce(
+   nullif(before_run->>'harness','') = nullif(after_run->>'harness','')
+   and nullif(before_run->>'trace_basis','') = nullif(after_run->>'trace_basis','')
+   and (before_run->>'claims_verified' is null) = (after_run->>'claims_verified' is null)
+   and coalesce((before_run->>'claims_verified')::numeric, (before_run->>'artifacts_produced')::numeric) >= 0
+   and coalesce((after_run->>'claims_verified')::numeric, (after_run->>'artifacts_produced')::numeric) >= 0
+   and (before_run->>'turns_typed')::numeric > 0
+   and (after_run->>'turns_typed')::numeric > 0,
+ false);
+$$;
+
+revoke all on function grinder_sittings_comparable(jsonb,jsonb) from public;
 
 create or replace function grinder_review_attempt(attempt uuid,outcome_run uuid,was_tried boolean,choice text,reflection text) returns void
 language plpgsql security definer set search_path=public as $$
@@ -14,16 +32,7 @@ begin
   if observed->>'measurement_revision'=original.baseline->>'measurement_revision' then raise exception 'Choose a new run for the outcome'; end if;
   if observed->>'started_at' is null or (observed->>'started_at')::timestamptz>now() or (observed->>'started_at')::timestamptz<original.created_at then raise exception 'The outcome session must start after the attempt'; end if;
  end if;
- if (
-      not was_tried
-      or observed is null
-      or observed->>'harness' is null
-      or original.baseline->>'harness' is null
-      or observed->>'harness' is distinct from original.baseline->>'harness'
-      or observed->>'trace_basis' is null
-      or original.baseline->>'trace_basis' is null
-      or observed->>'trace_basis' is distinct from original.baseline->>'trace_basis'
-    ) and choice<>'incomparable' then
+ if (not was_tried or not grinder_sittings_comparable(original.baseline, observed)) and choice<>'incomparable' then
   raise exception 'Missing or different evidence needs an incomparable outcome';
  end if;
  update grinder_practice_attempts set outcome=observed,tried=was_tried,decision=choice,note=reflection,reviewed_at=now() where id=attempt;
@@ -41,15 +50,7 @@ begin
   observed=grinder_run_snapshot(outcome_run);
   if observed->>'started_at' is null or (observed->>'started_at')::timestamptz>now() or observed->>'measurement_revision'=attempt.baseline->>'measurement_revision' or (observed->>'started_at')::timestamptz<attempt.created_at then raise exception 'Choose a new session after the cycle began'; end if;
  end if;
- if (
-      observed is null
-      or observed->>'harness' is null
-      or attempt.baseline->>'harness' is null
-      or observed->>'harness' is distinct from attempt.baseline->>'harness'
-      or observed->>'trace_basis' is null
-      or attempt.baseline->>'trace_basis' is null
-      or observed->>'trace_basis' is distinct from attempt.baseline->>'trace_basis'
-    ) and choice<>'incomparable' then
+ if not grinder_sittings_comparable(attempt.baseline, observed) and choice<>'incomparable' then
   raise exception 'Different or missing evidence needs an incomparable outcome';
  end if;
  update grinder_experiment_cycles set outcome=observed,decision=choice,reflection=reflection_text,reviewed_at=now() where id=cycle;

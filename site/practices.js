@@ -158,7 +158,7 @@ window.GrinderPractices = function ({ client: db, me, app, frame, status }) {
       : "<p>No observed outcome recorded yet. A score alone is not the payoff.</p>";
     const verdict =
       typeof GrinderContract === "object" && GrinderContract.sittingsComparable
-        ? GrinderContract.sittingsComparable(before, after)
+        ? GrinderContract.sittingsComparable(attempt.baseline, attempt.outcome, attempt)
         : {
             ok: false,
             why: "Comparison rules could not load. Read these as two separate sittings.",

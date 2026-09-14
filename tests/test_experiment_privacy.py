@@ -115,3 +115,13 @@ def test_export_and_cards_replace_path_tokens_and_drop_local_keys():
     assert exported["coach_mode"].startswith("deterministic")
     assert "test_draft_renders" in named["instruction"]
     assert public_text(HOME) == "[file]"
+
+
+def test_file_claim_requests_inspection_not_execution():
+    exp = select_experiment(
+        claims=[{"id": 1, "turn": 1, "line": "Done, terms.md is complete."}],
+        checks=[{"claim_id": 1, "verified": False}],
+        artifacts=[], exists=[], gits=[], turns_typed=1, commits=0,
+    )
+    assert "check that terms.md exists and inspect its contents" in exp["instruction"]
+    assert "run terms.md" not in exp["instruction"]

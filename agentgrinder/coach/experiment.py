@@ -137,6 +137,8 @@ def select_experiment(
             + (f", {n_results} tool result(s) in that turn" if n_results is not None else "")
             + ", no matching evidence snippet."
         )
+        target = c["targets"][0]
+        action = f"run {target}" if target.startswith("test_") else f"check that {target} exists and inspect its contents"
         return _pack(
             kind="unverified-named-claim",
             claim_id=c["id"],
@@ -148,9 +150,9 @@ def select_experiment(
                 "The card cannot treat that claim as verified. A later sitting that looks "
                 "shorter or busier is not proof the named check ran."
             ),
-            title=f"Run {c['targets'][0]} in the same turn as the claim",
+            title=f"{action[0].upper() + action[1:]} in the same turn as the claim",
             instruction=(
-                f"In the same human turn as the completion claim, run {c['targets'][0]} and "
+                f"In the same human turn as the completion claim, {action} and "
                 "keep its result in that turn before saying it passed. Do not claim a deploy "
                 "or extra file in the same sentence unless that turn also holds its evidence."
             ),

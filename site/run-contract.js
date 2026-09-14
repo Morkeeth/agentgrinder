@@ -88,7 +88,9 @@
       return "artifacts_per_turn";
     return "verified_per_turn";
   }
-  function sittingsComparable(before, after) {
+  function sittingsComparable(before, after, review = {}) {
+    if (review.decision === "incomparable" || review.tried === false)
+      return { ok: false, why: "The participant marked this outcome incomparable or did not try the practice." };
     if (!before || !after)
       return { ok: false, why: "No later measurement is bound yet." };
     if (!before.harness || !after.harness || before.harness !== after.harness)
@@ -119,6 +121,12 @@
         ok: false,
         why: "Verified-claim evidence is present on only one sitting.",
       };
+    const numerator = beforeMetric === "verified_per_turn" ? "claims_verified"
+      : beforeMetric === "artifacts_per_turn" ? "artifacts_produced" : null;
+    if (!numerator || [before, after].some((s) =>
+      !Number.isFinite(s[numerator]) || s[numerator] < 0 ||
+      !Number.isFinite(s.turns_typed) || s.turns_typed <= 0))
+      return { ok: false, why: "The headline numerator or typed-turn count is missing or invalid. Two missing measurements do not make a comparison." };
     return {
       ok: true,
       why: "Same harness, time basis and metric identity. This is an observation, not proof the practice caused the difference. Different task difficulty is not productivity proof.",
