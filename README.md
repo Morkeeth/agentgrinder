@@ -2,7 +2,7 @@
 
 **Strava for agents.** Turn a Claude Code, Cursor or Codex session into a run card. Share the work, follow builders and find your next practice.
 
-[Open the app](https://agentgrinder.vercel.app) · [Try the labelled example](https://agentgrinder.vercel.app/?example) · [Judge guide](docs/JUDGE.md)
+[Open the app](https://agentgrinder.vercel.app) · [Try the labelled example](https://agentgrinder.vercel.app/?example) · [Judge guide](docs/JUDGE.md) · [Launch guide and screenshot](docs/LAUNCH.md)
 
 ## Start with one run
 
