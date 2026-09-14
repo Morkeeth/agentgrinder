@@ -2,7 +2,22 @@
 
 This is the product path a stranger can complete without a walkthrough.
 
-Production: [agentgrinder.vercel.app](https://agentgrinder.vercel.app). Run-focused runtime `469ef1f` was promoted on September 14 as `dpl_7h5nf54mvChzJA9kYd6U2o1iGCKs`; production bytes matched the reviewed candidate. Earlier in this release pass, database migrations, GitHub sign-in and a real hosted private TEST practice were exercised. The two-builder persistence evidence below is from disposable test accounts, not independent users.
+Production: [agentgrinder.vercel.app](https://agentgrinder.vercel.app). The private web coach uses Strands and Bedrock behind AWS Lambda. On September 14, a signed-in production test reviewed metrics, received a live proposal, edited it and saved a private practice with the original baseline frozen. This was labelled TEST data. Independent adoption and productivity improvement remain unproven.
+
+## Try the hosted private coach
+
+Open https://agentgrinder.vercel.app. Inspect the run card and public feed. Choose “Try a sample run first” for the no-account walkthrough. It shows a labelled deterministic example, including the experiment, fixed baseline and later review. This example does not call a live model or represent independent users.
+
+To try the hosted coach with your own measured run, open “Post your first run” and follow the local capture instructions. In a clone of https://github.com/Morkeeth/agentgrinder, run python3 -m agentgrinder grind, review the card, then run python3 -m agentgrinder grind --push. Sign in and save the imported run privately. Inspect the preview before saving.
+
+Open that private run and choose “Coach this run”. Review “See the measurements sent to AWS”, optionally enter a goal, give consent and submit. Keep credentials and private notes out of the goal. No personal AWS account is needed. The live coach is limited to two requests per user and ten globally per UTC day. If the limit is reached, the labelled example and recorded Bedrock receipt remain available.
+
+Review the proposed practice. Accept or edit it, then choose “Accept experiment and freeze baseline”. Open the saved practice and reload the page to confirm it persists. A proposal alone is not saved, and accepting it does not publish your run.
+
+After a later session, capture and import its run through the same commands. Return to the saved practice, select the later run and record whether you tried the change. Save a keep, change, drop or incomparable review with your observation. Reload to inspect the recorded return and original baseline. Do not treat different counts as proof the practice caused an improvement.
+
+The signed-in coach and save path was exercised with private TEST data. The no-account example is the shortest demonstration; completing a real practice requires a later session. Recorded live-model evidence and the source testing guide are linked from https://github.com/Morkeeth/agentgrinder.
+
 
 ## What to open
 

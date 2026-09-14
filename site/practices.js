@@ -56,7 +56,7 @@ window.GrinderPractices = function ({ client: db, me, app, frame, status }) {
       ? data(
           db
             .from("runs")
-            .select("id,title,started_at,measurement_revision")
+            .select("id,title,started_at,measurement_revision,harness,prompts,claims_verified,artifacts_produced,trace_basis")
             .eq("profile_id", me().id)
             .not("measurement_revision", "is", null)
             .order("created_at", { ascending: false })
@@ -219,6 +219,7 @@ window.GrinderPractices = function ({ client: db, me, app, frame, status }) {
           .limit(100),
       );
       const runs = await ownRuns();
+      const hasOpenAttempt = attempts.some(a => a.owner_id === me()?.id && !a.reviewed_at);
       // Provenance for a practice kept from someone else's grind moment. Readable only by
       // the person who kept it. The source builder's counts are deliberately not rendered:
       // two numbers side by side would assert a relationship nobody verified.
@@ -249,13 +250,13 @@ window.GrinderPractices = function ({ client: db, me, app, frame, status }) {
         `<article class="card"><small>${esc(p.visibility)} · ${esc(p.harness || "Any harness")}</small><h2>${esc(p.title)}</h2><p>${esc(p.task_context)}</p><h3>Try this</h3><p>${esc(p.instruction)}</p><p>Expected: ${esc(p.expected)}</p><small>A saved version. An outcome is an observation, not proof that this practice caused it.</small></article>` +
         keptHtml +
         (me()
-          ? `<form id="start-attempt" class="panel reply-form"><h3>Start with a baseline</h3><label>Your earlier grind<select name="baseline" required>${options(runs, "title")}</select></label><label><input name="shared" type="checkbox"> Share my baseline counts, outcome counts and reflection with everyone who can read this practice</label><button ${runs.length ? "" : "disabled"}>Start attempt</button>${runs.length ? "" : "<p>Import a grind with a measurement revision first.</p>"}</form>`
+          ? `${hasOpenAttempt ? '<details class="panel"><summary>Start a separate attempt with another baseline</summary>' : ''}<form id="start-attempt" class="panel reply-form"><h3>Start with a baseline</h3><label>Your earlier grind<select name="baseline" required>${runOptions(runs)}</select></label><label><input name="shared" type="checkbox"> Share my baseline counts, outcome counts and reflection with everyone who can read this practice</label><button ${runs.length ? "" : "disabled"}>Start attempt</button>${runs.length ? "" : "<p>Import a grind with a measurement revision first.</p>"}</form>${hasOpenAttempt ? '</details>' : ''}`
           : "") +
         "<h3>Attempts and decisions</h3>" +
         attempts
           .map(
             (a) =>
-              `<article class="card" id="attempt-${a.id}"><small>${a.visibility === "private" ? "Only you" : "Shared with practice readers"}</small><h3>${esc(a.decision || "In progress")}</h3>${returnBrief(a, runs)}${comparison(a)}<p>${esc(a.note || "")}</p>${me()?.id === a.owner_id && a.reviewed_at ? `<button type="button" class="ghost" id="share-return-${a.id}">Share my outcome</button><div class="return-export" id="return-export-${a.id}"></div>` : ""}${me()?.id === a.owner_id && !a.reviewed_at ? `<form id="review-${a.id}" class="reply-form"><label>Did you try the practice?<select name="tried"><option value="true">Yes</option><option value="false">No</option></select></label><label>Session after you started this attempt<select name="run"><option value="">No measured outcome (keep unknown)</option>${runOptions(eligibleOutcomeRuns(a, runs))}</select></label><p class="hint">Only measured sessions from this attempt onward and not in the future are offered. Choose no outcome when the change was not measured.</p><label>Your decision<select name="decision"><option value="incomparable">Incomparable / missing evidence</option><option value="keep">Keep</option><option value="change">Change</option><option value="drop">Drop</option></select></label><label>What happened?<textarea name="note" maxlength="4000"></textarea></label><p>This review is fixed once saved. Start another attempt for the next cycle.</p><button>Save review</button></form>` : ""}</article>`,
+              `<article class="card" id="attempt-${a.id}"><small>${a.visibility === "private" ? "Only you" : "Shared with practice readers"}</small><h3>${esc(a.decision || "In progress")}</h3>${returnBrief(a, runs)}${comparison(a)}<p>${esc(a.note || "")}</p>${me()?.id === a.owner_id && a.reviewed_at ? `<button type="button" class="ghost" id="share-return-${a.id}">Share my outcome</button><div class="return-export" id="return-export-${a.id}"></div>` : ""}${me()?.id === a.owner_id && !a.reviewed_at ? `<form id="review-${a.id}" class="reply-form"><label>Did you try the practice?<select name="tried"><option value="true">Yes</option><option value="false">No</option></select></label><label>Session after you started this attempt<select name="run"><option value="">No measured outcome (keep unknown)</option>${runOptions(eligibleOutcomeRuns(a, runs))}</select></label><p class="hint">Only measured sessions from this attempt onward and not in the future are offered. Choose no outcome when the change was not measured.</p><p class="review-evidence hint" role="status"></p><label>Your decision<select name="decision"><option value="incomparable">Incomparable / missing evidence</option><option value="keep">Keep: try it again</option><option value="change">Change: adjust the practice</option><option value="drop">Drop: stop using it</option></select></label><label>What happened?<textarea name="note" maxlength="4000" placeholder="What did you observe in the work? What would you repeat or change?"></textarea></label><p>This review is fixed once saved. Start another attempt for the next cycle.</p><button>Save review</button></form>` : ""}</article>`,
           )
           .join("") +
         (attempts.length
@@ -279,7 +280,24 @@ window.GrinderPractices = function ({ client: db, me, app, frame, status }) {
             slot: $("return-export-" + a.id), status});
         };
       }
-      for (const a of attempts)
+      for (const a of attempts) {
+        const form = $("review-" + a.id);
+        if (form) {
+          const updateEvidence = () => {
+            const selected = eligibleOutcomeRuns(a, runs).find(r => r.id === form.elements.run.value);
+            const snapshot = selected ? {...selected, turns_typed: selected.prompts} : null;
+            const verdict = GrinderContract.sittingsComparable(a.baseline, snapshot, {tried: form.elements.tried.value === "true"});
+            form.querySelector(".review-evidence").textContent = verdict.ok
+              ? "You can compare these recorded measurements. Choose your decision and describe what you observed; the counts do not prove the practice helped."
+              : verdict.why + " Save as incomparable, or leave this attempt open and return after another run.";
+            for (const option of form.elements.decision.options)
+              if (option.value !== "incomparable") option.disabled = !verdict.ok;
+            if (!verdict.ok) form.elements.decision.value = "incomparable";
+          };
+          form.elements.run.onchange = updateEvidence;
+          form.elements.tried.onchange = updateEvidence;
+          updateEvidence();
+        }
         bind("review-" + a.id, async (f) => {
           const v = f.elements;
           await data(
@@ -293,6 +311,7 @@ window.GrinderPractices = function ({ client: db, me, app, frame, status }) {
           );
           await detail(id);
         });
+      }
     } catch (e) {
       $("practice-body").textContent = "This practice could not load.";
       fail(e);

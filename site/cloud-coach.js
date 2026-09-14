@@ -51,7 +51,7 @@
         if (!slot.isConnected) return;
         const summary = document.createElement('p'); summary.textContent = result.coach_verdict; target.append(summary);
         const proposed = document.createElement('div'); target.append(proposed);
-        await mountExperiment({...run,coach_verdict:result.coach_verdict,coach_mode:result.coach_mode+' · metrics-only',coach_tool_calls:result.coach_tool_calls,coach_experiment:result.coach_experiment}, proposed);
+        await mountExperiment({...run,coach_verdict:result.coach_verdict,coach_mode:result.coach_mode,coach_tool_calls:result.coach_tool_calls,coach_experiment:result.coach_experiment}, proposed);
         status.textContent = 'Review this proposal below. Nothing has been saved yet.';
       } catch (error) {
         status.textContent = error.name === 'AbortError' ? 'The request timed out. No proposal was saved. The AWS request may still finish.' : error.message;

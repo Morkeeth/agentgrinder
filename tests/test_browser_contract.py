@@ -96,3 +96,51 @@ if(html.includes('Comparable under the same measurements')) throw Error('UI over
 if(!html.includes('participant marked')) throw Error('UI missing decision reason');
 """
     subprocess.run(["node", "-e", script, str(module)], check=True)
+
+
+def test_coach_redaction_preserves_sentence_punctuation():
+    module = Path(__file__).resolve().parents[1] / "site/run-contract.js"
+    script = r'''
+const assert=require('assert');
+const {rejectPaths}=require(process.argv[1]);
+const cases=[
+ ['Inspect the change (diff or test/output) before continuing.', 'Inspect the change (diff or [file]) before continuing.'],
+ ['Check "/Users/casey/private.txt", then continue.', 'Check "[file]", then continue.'],
+ ['Review (~/private/notes.md).', 'Review ([file]).'],
+ ['Read C:\\Users\\casey\\private.txt; inspect the result.', 'Read [file]; inspect the result.'],
+ ['Check src/private.ts: then review.', 'Check [file]: then review.'],
+];
+for(const [input,expected] of cases){
+ const out=rejectPaths({instruction:input}).instruction;
+ assert.equal(out,expected);
+ assert.equal(rejectPaths(out),out);
+ assert(!/casey|private|test\/output/.test(out));
+}
+'''
+    subprocess.run(["node", "-e", script, str(module)], check=True)
+
+
+def test_live_coach_banner_does_not_repeat_mode_or_scope():
+    index = Path(__file__).resolve().parents[1] / "site/index.html"
+    script = r'''
+const assert=require('assert'),fs=require('fs'),vm=require('vm');
+const src=fs.readFileSync(process.argv[1],'utf8');
+const context={esc:x=>String(x)};vm.createContext(context);
+vm.runInContext(src.slice(src.indexOf('function coachModeKind('),src.indexOf('function parseCoachExperiment(')),context);
+for(const mode of [
+ 'Live Amazon Bedrock · Claude Haiku 4.5 · metrics-only proposal',
+ 'Live model · Live Amazon Bedrock · Claude Haiku 4.5 · metrics-only proposal · metrics-only',
+]){
+ const html=context.coachModeBanner({coach_mode:mode});
+ assert.equal((html.match(/Live model/g)||[]).length,1);
+ assert.equal((html.match(/metrics-only/gi)||[]).length,1);
+ assert(html.includes('Amazon Bedrock · Claude Haiku 4.5'));
+ assert(html.includes('no transcript or file checks'));
+ assert(!html.includes('Claim lines left'));
+}
+const transcript=context.coachModeBanner({coach_mode:'strands agent loop · live Amazon Bedrock · Claude Haiku 4.5'});
+assert(transcript.includes('Claim lines left this machine'));
+const local=context.coachModeBanner({coach_mode:'local scripted model'});
+assert(local.includes('not autonomous reasoning')&&!local.includes('Live model'));
+'''
+    subprocess.run(["node", "-e", script, str(index)], check=True)

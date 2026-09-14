@@ -165,6 +165,14 @@ def main():
             page.wait_for_url("**/?practice=*", timeout=20000)
             page.get_by_text("Your baseline is saved", exact=False).wait_for()
             practice_id = page.url.split("practice=")[-1].split("&")[0].split("#")[0]
+            assert page.locator("select[name='decision'] option[value='keep']").evaluate("option => option.disabled")
+            assert "leave this attempt open" in page.locator(".review-evidence").inner_text()
+            assert not page.locator("#start-attempt").is_visible()
+            unlike = insert_run(disposable, {
+                "profile_id": info["casey"], "title": "TEST DATA different harness later sitting",
+                "harness": "Cursor", "measurement_revision": "d" * 64,
+                "trace_basis": "elapsed", "prompts": 3, "claims": 2, "claims_verified": 2,
+            })
             later = insert_run(
                 disposable,
                 {
@@ -179,7 +187,16 @@ def main():
                 },
             )
             page.goto(base + "/?practice=" + practice_id, wait_until="domcontentloaded")
+            page.get_by_label("Session after you started this attempt").select_option(unlike)
+            assert page.locator("select[name='decision'] option[value='keep']").evaluate("option => option.disabled")
+            assert "Harness differs" in page.locator(".review-evidence").inner_text()
             page.get_by_label("Session after you started this attempt").select_option(later)
+            assert not page.locator("select[name='decision'] option[value='keep']").evaluate("option => option.disabled")
+            page.get_by_label("Your decision").select_option("keep")
+            page.get_by_label("Did you try the practice?").select_option("false")
+            assert page.get_by_label("Your decision").input_value() == "incomparable"
+            assert page.locator("select[name='decision'] option[value='keep']").evaluate("option => option.disabled")
+            page.get_by_label("Did you try the practice?").select_option("true")
             page.get_by_label("Your decision").select_option("keep")
             page.get_by_label("What happened?").fill(
                 "TEST DATA named check now has same-turn evidence. One observation, not proof of cause."
