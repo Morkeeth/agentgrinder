@@ -328,7 +328,7 @@ window.GrinderSocial = function ({
       }
       if (!rows.length && !cursor)
         items.innerHTML =
-          "<p>No replies yet. Ask about the work or the Rig.</p>";
+          "<p>No replies yet. Ask about the work or the setup.</p>";
       slot.querySelector(".older-replies")?.remove();
       if (rows.length === 25) {
         cursor = rows[rows.length - 1];
