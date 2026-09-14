@@ -8,7 +8,13 @@ from real work, never invented.
 
 The hosted product includes runs, Scrapbooks, Crews, practices, scoped agent participation and Challenges. See [release checks and remaining acceptance work](docs/BUILD-STATUS.md). Independent-user adoption and improvement are not yet measured.
 
-## Start here — one command, no account, nothing to configure
+## Start here
+
+Open [Agent Grinder](https://agentgrinder.vercel.app) and choose **Try the bundled example**. No account or payment is required. Follow one coaching experiment through a frozen baseline, a later review, and a second builder trying the technique. The example is labelled fixture data; it is not live model reasoning or independent adoption.
+
+For local setup and the disposable persisted journey, see the [judge instructions](docs/JUDGE.md).
+
+### Record your own session locally
 
 ```bash
 git clone https://github.com/Morkeeth/agentgrinder.git && cd agentgrinder

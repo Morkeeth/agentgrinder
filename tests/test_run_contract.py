@@ -32,3 +32,27 @@ def test_reexport_preserves_frozen_references():
     original={'schema_version':1,'turns_typed':2,'measurement_revision':'a'*64,'baseline_revision':'b'*64}
     assert export_run(original)['measurement_revision']==original['measurement_revision']
     assert export_run(original)['baseline_revision']==original['baseline_revision']
+
+
+def test_claude_grind_exports_measured_trace_basis_and_revision(tmp_path):
+    """Exercise the front door with a real capture, not a hand-authored export row."""
+    import json
+    import os
+    from pathlib import Path
+    import subprocess
+    import sys
+    root = Path(__file__).resolve().parents[1]
+    env = {**os.environ, 'AGENTGRINDER_SERIES': str(tmp_path / 'series.db')}
+    result = subprocess.run(
+        [sys.executable, '-m', 'agentgrinder', 'grind', 'samples/sample_session.jsonl',
+         '--harness', 'claude', '--no-rank', '--json'],
+        cwd=root, env=env, check=True, capture_output=True, text=True,
+    )
+    run = json.loads(result.stdout)
+    exported = export_run(run)
+    assert exported['trace_basis'] == 'elapsed-agent-tool-calls'
+    assert len(exported['measurement_revision']) == 64
+    # The sample contains four tool requests at 20, 60, 320 and 360 seconds.
+    # The reader divides its 610-second sitting into 90 elapsed-time buckets.
+    assert [i for i, n in enumerate(exported['rhythm']) if n] == [2, 8, 47, 53]
+    assert sum(exported['rhythm']) == exported['tool_calls'] == 4

@@ -8,6 +8,7 @@ import base64
 import json
 import os
 import threading
+import tempfile
 import urllib.request
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -16,8 +17,9 @@ from subprocess import PIPE, Popen
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = Path(os.environ.get("GRINDER_JOURNEY_RECEIPTS", "/opt/cursor/artifacts"))
+OUT = Path(os.environ["GRINDER_JOURNEY_RECEIPTS"]) if os.environ.get("GRINDER_JOURNEY_RECEIPTS") else Path(tempfile.mkdtemp(prefix="grinder-journey-"))
 OUT.mkdir(parents=True, exist_ok=True)
+print(f"Journey receipts: {OUT}", flush=True)
 HOST = "kqxasvolwtrczusjhlli.supabase.co"
 
 
