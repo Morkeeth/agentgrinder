@@ -1,0 +1,122 @@
+{
+  "started_at": "2026-09-14T13:30:35.014506+00:00",
+  "finished_at": "2026-09-14T13:30:49.794258+00:00",
+  "revision": "5828f39ec4cfeaa63c1cc53e3acdc92589a2ca1a",
+  "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+  "region": "us-east-1",
+  "fixture": "samples/sample_session.jsonl",
+  "label": "LIVE MODEL ON BUNDLED TEST DATA \u00b7 not independent adoption",
+  "model_calls": 7,
+  "request_limits": {
+    "calls": 8,
+    "serialized_bytes_per_call": 30000,
+    "max_output_tokens_per_call": 2048
+  },
+  "tool_order": [
+    "read_run",
+    "check_claim",
+    "check_claim",
+    "verify_artifact",
+    "verify_artifact",
+    "git_evidence",
+    "git_evidence",
+    "write_verdict",
+    "write_verdict"
+  ],
+  "dispatch": [
+    {
+      "tool": "read_run",
+      "status": "success",
+      "duration_ms": 1,
+      "at": "2026-09-14T15:30:36+02:00",
+      "source": "strands AfterToolCallEvent"
+    },
+    {
+      "tool": "check_claim",
+      "status": "success",
+      "duration_ms": 2,
+      "at": "2026-09-14T15:30:37+02:00",
+      "source": "strands AfterToolCallEvent"
+    },
+    {
+      "tool": "check_claim",
+      "status": "success",
+      "duration_ms": 1,
+      "at": "2026-09-14T15:30:37+02:00",
+      "source": "strands AfterToolCallEvent"
+    },
+    {
+      "tool": "verify_artifact",
+      "status": "success",
+      "duration_ms": 2,
+      "at": "2026-09-14T15:30:38+02:00",
+      "source": "strands AfterToolCallEvent"
+    },
+    {
+      "tool": "verify_artifact",
+      "status": "success",
+      "duration_ms": 1,
+      "at": "2026-09-14T15:30:38+02:00",
+      "source": "strands AfterToolCallEvent"
+    },
+    {
+      "tool": "git_evidence",
+      "status": "success",
+      "duration_ms": 2,
+      "at": "2026-09-14T15:30:39+02:00",
+      "source": "strands AfterToolCallEvent"
+    },
+    {
+      "tool": "git_evidence",
+      "status": "success",
+      "duration_ms": 1,
+      "at": "2026-09-14T15:30:39+02:00",
+      "source": "strands AfterToolCallEvent"
+    },
+    {
+      "tool": "write_verdict",
+      "status": "success",
+      "duration_ms": 2,
+      "at": "2026-09-14T15:30:45+02:00",
+      "source": "strands AfterToolCallEvent"
+    },
+    {
+      "tool": "write_verdict",
+      "status": "success",
+      "duration_ms": 0,
+      "at": "2026-09-14T15:30:47+02:00",
+      "source": "strands AfterToolCallEvent"
+    }
+  ],
+  "verdict": {
+    "numbers": {
+      "turns_typed": 3,
+      "claims": 2,
+      "claims_verified": 1,
+      "artifacts_produced": 1,
+      "commits": 0
+    },
+    "verified_per_turn": 0.67,
+    "paragraph": "The agent made two claims in this 10-minute sitting: the first, that 4 tests passed, verified against matching test output in turn 1. The second claim about draft.md deployment and test_draft_renders passing has no evidence in turn 2. One artifact exists outside the working repository and was not modified during the window; the other artifact does not exist. No commits landed in this sitting, and git could not assess the artifacts because both are in a different repository from where the sitting worked.",
+    "plan": [
+      "Friction: claim_id 2 has no evidence in its turn (check_claim returned null). Does the agent have access to test output from the other repository, or did the tool call silently fail?",
+      "Consequence: without evidence of draft.md deployment or test passage, we cannot credit work claims across repository boundaries.",
+      "Experiment: add explicit tool output capture for cross-repo verification in the next sitting, or narrow claims to only the working repository.",
+      "Look for: matching token output from test_draft_renders in turn 2, or a git commit in the working repo that references the other repo change."
+    ],
+    "matches_card": true,
+    "unverified_claims": [
+      2
+    ],
+    "missing_artifacts": [
+      2
+    ]
+  },
+  "usage": {
+    "inputTokens": 17123,
+    "outputTokens": 1550,
+    "totalTokens": 18673
+  },
+  "numbers_match_local": true,
+  "cost_note": "Token usage is measured; invoice cost is not yet available. No billing total is claimed."
+}

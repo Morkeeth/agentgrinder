@@ -1,0 +1,33 @@
+GRIND COACH  [MODE: strands agent loop · local scripted model (no network, no spend)]
+
+  sitting              agentgrinder · 2026-08-20T12:00 -> 12:10
+  tools dispatched     8  (by the Strands event loop; hook logged 8)
+    read_run           x1
+    check_claim        x2
+    verify_artifact    x2
+    git_evidence       x2
+    write_verdict      x1
+
+  verdict
+    typed turns        3   (cost)
+    claims             1 verified of 2
+    artifacts          1 on disk of 2 written
+    commits            0
+    verified per turn  0.67
+    card agrees        yes
+
+  1 of 2 claims had evidence in their own turn. 1 of 2 files the run wrote exist on disk, 0 of them in a commit. 0 commits during the sitting, over 3 typed turns.
+
+  next session
+    - Friction: Claim 2 named draft.md, test_draft_renders as done, but check_claim found no matching evidence in that claim's own turn.
+    - Consequence: The card cannot treat that claim as verified. A later sitting that looks shorter or busier is not proof the named check ran.
+    - Experiment: In the same human turn as the completion claim, check that draft.md exists and inspect its contents and keep its result in that turn before saying it passed. Do not claim a deploy or extra file in the same sentence unless that turn also holds its evidence.
+    - Look for: check_claim on the named target returns verified, with draft.md in the evidence snippet. Missing evidence stays unknown, not zero.
+
+  agent said           Verdict written. Every number in it came back from a tool in this run: read_run for the counts, check_claim per claim, verify_artifact and git_evidence per file. I did not invent a number.
+
+  NOTE: the agent loop, tool registry, dispatch and hook above are real Strands.
+        The model is a local scripted policy, not an LLM: it reads the run, checks
+        every claim and file, and writes the verdict from the tool results. For a
+        model that genuinely chooses the tools: agentgrinder coach RUN --model bedrock
+        (needs AWS credentials, costs money, sends claim lines off the machine).
