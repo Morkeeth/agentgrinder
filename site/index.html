@@ -346,7 +346,13 @@ footer{max-width:1320px;margin:0 auto;padding:20px 24px 40px;color:var(--dim);fo
   .row{flex-wrap:wrap}
   .share-frame{height:auto;min-height:630px}
 }
-.landing-intro{padding:28px 0 20px}.landing-intro h1{font-size:clamp(32px,6vw,52px);line-height:1.05;letter-spacing:-1.6px;max-width:13ch;margin:16px 0}.landing-intro>p:not(.meta){font-size:17px;line-height:1.5;max-width:40ch}.landing-intro .cta{margin-top:22px}
+.landing-intro{padding:28px 0 20px}.landing-intro h1{font-size:clamp(32px,6vw,52px);line-height:1.05;letter-spacing:-1.6px;max-width:18ch;margin:16px 0}.landing-intro>p:not(.meta){font-size:17px;line-height:1.5;max-width:46ch}.landing-intro .cta{margin-top:22px}
+.mode-banner{display:block;padding:10px 14px;border:1px solid var(--rule);font-size:13px;margin:0 0 14px;background:var(--box)}
+.mode-banner.demo{border-left:3px solid var(--ink)}
+.mode-banner.live{border-left:3px solid var(--blue);background:var(--blue-wash)}
+.experiment-card{padding:16px;border-top:1px solid var(--rule)}
+.experiment-card h2{font-size:18px;line-height:1.3;margin:6px 0 10px}
+@media(max-width:700px){.landing-intro h1{max-width:none}}
 </style><link rel="stylesheet" href="/social.css"></head>
 <body>
 <div class="bar"><div class="bar-in">
@@ -359,6 +365,7 @@ footer{max-width:1320px;margin:0 auto;padding:20px 24px 40px;color:var(--dim);fo
     <details id="account-menu" class="account-menu">
       <summary aria-haspopup="menu">Account</summary>
       <div class="account-panel" role="menu">
+        <a href="/?example" role="menuitem">Try the example</a>
         <a href="/?onboard" role="menuitem">Get started</a>
         <a href="/?onboard=agent" role="menuitem">For agents</a>
         <a href="/?agents" role="menuitem" data-auth="1" hidden>Your agents</a>
@@ -396,6 +403,7 @@ footer{max-width:1320px;margin:0 auto;padding:20px 24px 40px;color:var(--dim);fo
 <script src="/progress.js"></script>
 <script src="/sharing.js"></script>
 <script src="/moments.js"></script>
+<script src="/example.js"></script>
 <script src="/forum.js"></script>
 <script>
 const SB_URL="https://kqxasvolwtrczusjhlli.supabase.co";
@@ -475,12 +483,26 @@ function communityTabs(active){
 async function viewCommunity(){
   setPrimarySection('community');
   frame(railHtml('community'), sidePanels([]));
-  $('app').innerHTML=`${communityTabs('hub')}<div class="head"><h1>Community</h1><span class="meta">Forum, Crews and Challenges — same destinations, one door</span></div>
+  $('app').innerHTML=`${communityTabs('hub')}<div class="head"><h1>Community</h1><span class="meta">Techniques you can try, then attempts and outcomes</span></div>
+    <p>Start from a useful practice, keep it on your own baseline, and share an observed outcome. ACKs and Scrapbooks still live on the people who earned them.</p>
+    <div id="community-techniques"><p class="hint">Loading public techniques…</p></div>
     <div class="community-grid">
       <a href="/?forum"><strong>Forum</strong><p class="meta">Discover runs and replies</p></a>
       <a href="/?crews"><strong>Crews</strong><p class="meta">Grind with people you trust</p></a>
       <a href="/?challenges"><strong>Challenges</strong><p class="meta">Time-bound events and Rigs</p></a>
     </div>`;
+  try{
+    const rows=await sb.from('grinder_practice_versions').select('id,title,instruction,expected,harness,visibility,created_at').eq('visibility','public').order('created_at',{ascending:false}).limit(8);
+    const list=rows.data||[];
+    const slot=$('community-techniques');
+    if(!slot) return;
+    slot.innerHTML=list.length
+      ? `<div class="head"><h2>Techniques to try</h2><span class="meta">${list.length} public</span></div>`+list.map(p=>`<article class="card"><small>${esc(p.harness||'Any harness')}</small><h3><a href="/?practice=${p.id}">${esc(p.title)}</a></h3><p>${esc(p.instruction)}</p><p class="hint">Expected: ${esc(p.expected)}</p><a class="act" href="/?practice=${p.id}">Try this on your own baseline</a></article>`).join('')
+      : `<p class="hint">No public techniques on this deployment yet. The <a href="/?example">bundled example</a> shows the path without inventing users.</p>`;
+  }catch(_){
+    const slot=$('community-techniques');
+    if(slot) slot.innerHTML='<p class="hint">Public techniques are unavailable on this deployment. Forum, Crews and Challenges below still work.</p>';
+  }
 }
 function sidePanels(runs,opts){
   opts=opts||{};
@@ -772,16 +794,46 @@ function routeMap(route){ if(!route||!route.length) return '';
 // THE COACH'S VERDICT on the hosted card. Null-safe: a run posted before the coach columns
 // existed (or without --coach) has no verdict and draws nothing here; the five row above already
 // shows a dash for each number the database does not hold.
+function coachModeKind(label){
+  const s=String(label||'');
+  if(/bedrock/i.test(s) && !/scripted|deterministic|local|fallback/i.test(s)) return 'live';
+  if(/scripted|deterministic|local|no agent|fallback|demo/i.test(s)) return 'demo';
+  return s?'unknown':'';
+}
+function coachModeBanner(r){
+  const label=r.coach_mode||'';
+  const kind=coachModeKind(label);
+  if(!label && !kind) return '';
+  if(kind==='live') return `<p class="mode-banner live">Live model · ${esc(label)}. Claim lines left this machine.</p>`;
+  if(kind==='demo') return `<p class="mode-banner demo">${esc(label)} · not autonomous reasoning.</p>`;
+  return `<p class="mode-banner">${esc(label)}</p>`;
+}
+function parseCoachExperiment(r){
+  let exp=null;
+  if(r.coach_experiment && r.coach_experiment.instruction) exp=r.coach_experiment;
+  else {
+    const lines=String(r.coach_plan||'').split('\n').map(x=>x.trim()).filter(Boolean);
+    const grab=p=>{const row=lines.find(l=>l.toLowerCase().startsWith(p));return row?row.slice(p.length).trim():'';};
+    const friction=grab('friction:');
+    const instruction=grab('experiment:')||lines[0]||'';
+    const expected=grab('look for:');
+    if(instruction) exp={title:instruction.slice(0,160), instruction, expected:expected||'Record what you observed. Unknown stays unknown.', friction, consequence:grab('consequence:'), evidence:''};
+  }
+  return exp && typeof GrinderContract==='object' && GrinderContract.rejectPaths ? GrinderContract.rejectPaths(exp) : exp;
+}
 function coachBlock(r){
   if(!r) return '';
-  const v=r.coach_verdict, plan=r.coach_plan, n=r.coach_tool_calls, pv=r.progress_verdict;
+  const v=typeof GrinderContract==='object'&&GrinderContract.rejectPaths?GrinderContract.rejectPaths(r.coach_verdict):r.coach_verdict;
+  const plan=typeof GrinderContract==='object'&&GrinderContract.rejectPaths?GrinderContract.rejectPaths(r.coach_plan):r.coach_plan;
+  const n=r.coach_tool_calls, pv=r.progress_verdict;
   if(!v&&!pv) return '';
   const who=v?`<div class="grp">the coach${n?` · verdict produced by <b>${esc(String(n))}</b> tool call${n==1?'':'s'}`:''}</div>`:'';
   const para=v?`<div class="para">${esc(String(v))}</div>`:'';
   const items=plan?String(plan).split('\n').filter(x=>x.trim()).map(x=>`<li>${esc(x)}</li>`).join(''):'';
   const ul=items?`<ul class="plan">${items}</ul>`:'';
   const prog=pv?`<div class="rule-line"><b>${esc(String(pv))}</b> vs your last grind on this project</div>`:'';
-  return who+para+ul+prog; }
+  return coachModeBanner(r)+who+para+ul+prog;
+}
 
 
 function runCard(r,acked,count,opts={}){ const att=runAttribution(r),h=att.handle;
@@ -1020,7 +1072,8 @@ async function viewOnboard(){
       ${ME?`<button id="ob-push">Show my runs</button>`:`<button disabled>Sign in first</button>`}
       <button class="ghost" id="ob-skip">Skip, browse the feed</button>
     </div></div>`;
-  app.innerHTML=`<div class="head"><h2>Welcome to Agent Grinder</h2><span class="meta">record → share → improve</span></div>
+  app.innerHTML=`<div class="head"><h2>Welcome to Agent Grinder</h2><span class="meta">I tried this. Show me what changed.</span></div>
+      <p class="hint">Want the path with no account first? <a href="/?example">Try the bundled example</a>. Sign-in is only to keep your own runs.</p>
       ${stepBar(n,done)}${step1}${step2}${step3}${step4}`;
   wireCopy();
   const oa=$('ob-auth'); if(oa) oa.addEventListener('click',()=>$('auth').click());
@@ -1076,6 +1129,7 @@ function featuredCard(r){
     <div class="runtop">${avatar(att.handle,{rhythm:r.rhythm,ghost:att.ghost})}
       <div class="who"><span>${esc(att.ghost?'Ghost grinder':att.name)}</span><small>${att.ghost?'metrics only':'@'+esc(att.handle)}${when?' · '+esc(when):''} · public, no account needed</small></div>
       <span class="state" title="A client-supplied coach report; not independent server verification">Coach report</span></div>
+    ${coachModeBanner(r)}
     <div class="title">${esc(r.title||'A run')}</div>
     <div class="sub">${esc(r.harness||'agent')}${r.project?' · '+esc(r.project):''}${dm?' · '+fmtDur(dm):''}</div>
     ${curve(r.rhythm)}
@@ -1131,12 +1185,12 @@ const INSTALL_CMD="git clone https://github.com/Morkeeth/agentgrinder && cd agen
 const COACH_CMD='python3.12 -m venv .venv && .venv/bin/pip install -e ".[coach]" && .venv/bin/agentgrinder grind --coach';
 function uploadBlock(){
   return `<div class="up">
-    <div class="up-top"><span class="t">Record a run</span><span class="meta">no account needed</span></div>
+    <div class="up-top"><span class="t">Bring your own sitting</span><span class="meta">private by default · no account to capture</span></div>
     <div class="cmd"><span class="c">${INSTALL_CMD}</span><button class="act" id="cp1">Copy</button></div>
     <div class="cmd"><span class="c plain">Reads the newest session on your machine, prints the card. No install, no key: it runs on the python macOS already ships.</span></div>
     <div class="up-top" style="margin-top:2px"><span class="t">Then have the coach check it</span><span class="meta">needs Python 3.10 or newer</span></div>
     <div class="cmd"><span class="c">${COACH_CMD}</span></div>
-    <div class="up-foot">Posting is a second command and your click. Nothing uploads until then.</div>
+    <div class="up-foot">Capture stays on your machine. Import starts private. You review counts and any coach notes before an audience other than you can read them. Evidence availability is on the card: a dash names what was not measured.</div>
   </div>`;
 }
 
@@ -1175,12 +1229,19 @@ function wireCopy(){
 
 
 function landingHTML(r){
-  return `<section class="landing-intro"><p class="meta">STRAVA FOR YOUR AGENT RUNS</p><h1>Good work deserves a run.</h1><p>Capture a session. Flex what you built. Learn what makes your next run better.</p><div class="cta"><button onclick="location.href='/?onboard'">Record my first run</button><a href="/?explore">Explore the runs</a></div></section>
-  <div class="head"><h2>One real run</h2><span class="meta">a builder, an agent, and the work</span></div>
+  return `<section class="landing-intro"><p class="meta">I TRIED THIS. SHOW ME WHAT CHANGED.</p>
+    <h1>One sitting. One experiment. Show what changed.</h1>
+    <p>Understand a real session, try one useful next experiment, and share a discovery another builder can run. Counts alone are not the payoff.</p>
+    <div class="cta"><button onclick="location.href='/?example'">Try the bundled example</button>
+      <a href="/?onboard">Bring your own run · stays private</a></div>
+    <p class="hint">The example is labelled fixture data. No account. A live model is a separate, opt-in path on your machine.</p></section>
+  <article class="card"><div class="pad"><p class="meta">DETERMINISTIC DEMO · NOT A LIVE MODEL</p>
+    <h2>A coach finds one friction, then one experiment.</h2>
+    <p>The bundled sitting claimed <code>test_draft_renders</code> passed without evidence in that turn. The start button above opens that labelled fixture: watch the recorded tools, freeze a baseline, return, and keep a technique another builder can try.</p></div></article>
+  ${uploadBlock()}
+  <div class="head"><h2>A public grind</h2><span class="meta">a builder, an agent, and the work · no account needed</span></div>
   ${r?featuredCard(r):`<div class="card"><div class="empty">Loading the public example run.</div></div>`}
-  <section class="panel"><div class="pad"><h2>Your history. Your Rig. Your Crew.</h2><p>Your Scrapbook is your run history. Your Rig is the setup behind it. A Crew is the group you build with. Give an ACK to recognise a specific contribution, then try a shared practice on your next run.</p><div class="cta"><button onclick="location.href='/?onboard'">Get started</button><button class="ghost" onclick="document.getElementById('auth').click()">Sign in</button></div></div></section>
-  <details class="panel"><summary class="pad">Capture runs from Cursor, Claude Code or Codex</summary>${uploadBlock()}</details>
-  <p class="hint">Runs start private. You choose what to share. <a href="/methodology">How the measurements work</a> · <a href="/privacy">Privacy</a></p>`;
+  <p class="hint">Runs start private. You choose what to share. <a href="/methodology">How the measurements work</a> · <a href="/privacy">Privacy</a> · <a href="/?explore">Explore public runs</a></p>`;
 }
 
 async function viewLanding(){
@@ -1200,6 +1261,46 @@ async function viewLanding(){
 }
 
 
+async function mountCoachExperiment(run, slot){
+  if(!slot) return;
+  const exp=parseCoachExperiment(run);
+  if(!exp){ slot.innerHTML=''; return; }
+  const owner=ME&&ME.id===run.profile_id;
+  const canFreeze=owner&&run.measurement_revision;
+  slot.innerHTML=`<section class="panel reply-form"><p class="meta">NEXT EXPERIMENT</p>
+    <h2>${esc(exp.title||'One change for the next sitting')}</h2>
+    ${exp.friction?`<p>${esc(exp.friction)}</p>`:''}
+    ${exp.consequence?`<p class="hint">${esc(exp.consequence)}</p>`:''}
+    <p>${esc(exp.instruction)}</p>
+    <p><strong>Look for:</strong> ${esc(exp.expected)}</p>
+    ${coachModeBanner(run)}
+    ${owner?`<form id="run-experiment">${canFreeze?'':'<p>A measured revision is required before you can freeze this grind as a baseline.</p>'}
+      <label>What will you do?<input name="title" required maxlength="160" value="${esc(exp.title||'')}"></label>
+      <label>How, exactly?<textarea name="instruction" required maxlength="4000">${esc(exp.instruction)}</textarea></label>
+      <label>What would change your mind?<textarea name="expected" required maxlength="2000">${esc(exp.expected)}</textarea></label>
+      <p>Saves a private practice and freezes this grind as its baseline. A later sitting is compared only when the measurements mean the same thing.</p>
+      <button ${canFreeze?'':'disabled'}>Accept experiment and freeze baseline</button></form>`:'<p class="hint">The owner can freeze this as a private next practice. You can keep a public moment on your own baseline below.</p>'}</section>`;
+  const form=slot.querySelector('#run-experiment');
+  if(!form) return;
+  form.onsubmit=async e=>{
+    e.preventDefault();
+    if(!ME||!canFreeze) return;
+    const button=form.querySelector('button'); button.disabled=true;
+    try{
+      const f=form.elements;
+      const {data,error}=await sb.from('grinder_practice_versions').insert({
+        owner_id:ME.id, source_run:run.id, title:f.title.value, task_context:'Coach experiment on this grind',
+        instruction:f.instruction.value, expected:f.expected.value, harness:run.harness||null, visibility:'private'
+      }).select('id');
+      if(error) throw error;
+      const id=data[0].id;
+      const started=await sb.rpc('grinder_start_attempt',{practice:id, baseline_run:run.id, share:false});
+      if(started.error) throw started.error;
+      location.href='/?practice='+id;
+    }catch(err){ status(GrinderContract.message(err),true); button.disabled=false; }
+  };
+}
+
 async function viewRun(id){
   const app=$('app');
   const q=new URLSearchParams(location.search);
@@ -1216,7 +1317,7 @@ async function viewRun(id){
   frame(railHtml(null,[r]), sidePanels([r]));
   app.innerHTML=`<div class="head"><h2>A run</h2><span class="meta">${esc(r.visibility==='public'?'public':r.crew_shared?'Crew members':r.visibility==='private'||r.visibility==='anonymous'?'private':'link only')}</span></div>`
     +runCard(r,ad.mine.has(r.id),ad.counts[r.id]||acks.length,{picker:openAck,suggested,selected:preselect})
-    +`<section id="grind-moments"></section><div class="head"><h2>ACKs</h2><span class="meta">${acks.length}</span></div><div class="panel">`+ackListHtml(acks)+`</div>`
+    +`<section id="grind-experiment"></section><section id="grind-moments"></section><div class="head"><h2>ACKs</h2><span class="meta">${acks.length}</span></div><div class="panel">`+ackListHtml(acks)+`</div>`
     +`<div class="cta">${r.visibility==='public'||r.visibility==='link'?'<button id="run-copy-link">Copy run link</button>':''}<a class="act" href="/?share=1&run=${r.id}">Share card</a>
       <a class="act" href="/?share=1&run=${r.id}&roast=1">Roast card</a>
       <span class="hint"><a href="/?u=${encodeURIComponent((r.profiles||{}).github_handle||'')}">see the profile</a></span></div><section id="grind-crew-share"></section><section id="grind-thread"></section>`;
@@ -1225,6 +1326,7 @@ async function viewRun(id){
   if(ME?.id===r.profile_id){const controls=document.createElement('div');controls.className='panel reply-form';controls.innerHTML='<label>Who can read this run<select id="run-audience"><option value="private">Only me</option><option value="public">Public</option><option value="link">Anyone with the link</option></select></label><button id="run-save-audience">Save audience</button><button id="run-delete" class="ghost">Delete run</button>';app.append(controls);$('run-audience').value=r.visibility==='anonymous'?'private':r.visibility;$('run-save-audience').onclick=async()=>{const {error}=await sb.from('runs').update({visibility:$('run-audience').value}).eq('id',r.id);if(error){status(error.message,true);return}await viewRun(r.id)};$('run-delete').onclick=async()=>{if(!confirm('Delete this run and its discussion? Submitted Challenge results stay in event history.'))return;const {error}=await sb.from('runs').delete().eq('id',r.id);if(error){status(error.message,true);return}history.replaceState(null,'','/');viewMe()};}
   wireKudos(); if(openAck){ const card=$('card-'+id); if(card) wireAckPicker(card,r,preselect); }
   if(q.get('ack')) history.replaceState(null,'',`/?run=${id}`);
+  await mountCoachExperiment(r, $('grind-experiment'));
   await GrinderMoments.mount({run:r,slot:$('grind-moments'),client:sb,me:()=>ME,status});
   await social.thread(id,$('grind-thread'));
   await social.askControl(r,$('grind-thread'));
@@ -1391,6 +1493,11 @@ function importRun(){
   let run; try{ run=JSON.parse(atob(decodeURIComponent(m[1]))); }catch(_){ return false; }
   try{ GrinderContract.validate(run); }
   catch(error){ frame(null,null); $('app').innerHTML='<div class="card"><h2>This grind could not be imported</h2><p>'+esc(error.message)+'</p></div>'; return true; }
+  if(typeof GrinderContract==='object' && GrinderContract.rejectPaths){
+    run.coach_verdict=GrinderContract.rejectPaths(run.coach_verdict);
+    run.coach_plan=GrinderContract.rejectPaths(run.coach_plan);
+    run.coach_experiment=GrinderContract.rejectPaths(run.coach_experiment);
+  }
   const app=$('app');
   const rows=[['harness',run.harness],['project',run.project],['prompts (cost)',run.turns_typed],
     ['minutes',run.duration_s?Math.round(run.duration_s/60):null],['tool calls',run.tool_calls],
@@ -1399,6 +1506,7 @@ function importRun(){
     ['artifacts produced',run.artifacts_produced],
     ['reach',run.reach==null?null:(run.reach?'yes':'no')],
     ['coach verdict',run.coach_verdict?String(run.coach_verdict):null],
+    ['coach mode',run.coach_mode],
     ['coach tool calls',run.coach_tool_calls],
     ['vs your last grind',run.progress_verdict],
     ['measurement reference',run.measurement_revision],
@@ -1448,6 +1556,7 @@ function importRun(){
     const coach={claims:run.claims??null,claims_verified:run.claims_verified??null,artifacts_produced:run.artifacts_produced??null,
       reach:run.reach??null,
       coach_verdict:run.coach_verdict??null,coach_plan:run.coach_plan??null,coach_tool_calls:run.coach_tool_calls??null,
+      coach_mode:run.coach_mode??null,
       progress_verdict:run.progress_verdict??null};
     if(run.schema_version===1) Object.assign(coach,{schema_version:1,trace_basis:run.trace_basis||null,route:run.route||null,
       measurement_revision:run.measurement_revision??null,baseline_revision:run.baseline_revision??null,
@@ -1559,8 +1668,12 @@ const forum=GrinderForum({client:sb,app:()=>document.getElementById('app'),frame
 async function route(){ authErrorFromUrl();
   restoreImport();
   if(importRun()) return;
-  if(ME){try{const pending=sessionStorage.getItem('ag_social_return');if(pending&&/^\?(mine|forum|progress|comparison|join|crew|crews|following|inbox|agents|agent|rigs|rigversion|practices|practice|experiments|experiment|challenges|challenge|community|run|u)(=|$)/.test(pending)){history.replaceState(null,'','/'+pending);sessionStorage.removeItem('ag_social_return');}}catch(_){}}
+  if(ME){try{const pending=sessionStorage.getItem('ag_social_return');if(pending&&/^\?(mine|forum|progress|comparison|join|crew|crews|following|inbox|agents|agent|rigs|rigversion|practices|practice|experiments|experiment|challenges|challenge|community|run|u|example)(=|$)/.test(pending)){history.replaceState(null,'','/'+pending);sessionStorage.removeItem('ag_social_return');}}catch(_){}}
   const q=new URLSearchParams(location.search);
+  if(q.has('example')){
+    if(q.get('example')==='share') return GrinderExample.viewShare();
+    return GrinderExample.view();
+  }
   if(q.has('community'))return viewCommunity();
   if(q.has('forum')){setPrimarySection('community');return forum.index();}
   if(q.has('mine')){setPrimarySection('mine');return progress.history();}

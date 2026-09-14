@@ -149,9 +149,10 @@ def _practice_block(run: dict) -> str:
 def _verdict_block(run: dict) -> str:
     """The coach's verdict and the series line. Null-safe: a run with neither draws nothing,
     a run with one draws that one. Every sentence here was written from tool results or from
-    the local series, never from the transcript's prose."""
-    v = run.get("coach_verdict")
-    plan = run.get("coach_plan")
+    the local series, never from the transcript's prose. Paths never leave this block."""
+    from .coach.experiment import public_text
+    v = public_text(run.get("coach_verdict"))
+    plan = public_text(run.get("coach_plan"))
     n = run.get("coach_tool_calls")
     prog = run.get("progress") or {}
     line = run.get("progress_line") or ""

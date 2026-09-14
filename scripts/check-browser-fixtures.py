@@ -12,19 +12,27 @@ setup=r'''
 window.calls=[];
 const owner='10000000-0000-0000-0000-000000000001', practice='20000000-0000-0000-0000-000000000001';
 const tables={grinder_practice_versions:[{id:practice,owner_id:owner,title:'Check the changed behavior',task_context:'Small bug fixes',instruction:'Run the named test before claiming it passed.',expected:'A specific result tied to the change.',visibility:'public',harness:'Codex'}],
-grinder_practice_attempts:[{id:'30000000-0000-0000-0000-000000000001',owner_id:'different-person',practice_id:practice,visibility:'shared',baseline:{measurement_revision:'a'.repeat(64),turns_typed:8,claims_verified:2,artifacts_produced:3,duration_s:600},outcome:{measurement_revision:'b'.repeat(64),turns_typed:6,claims_verified:1,artifacts_produced:2,duration_s:700},decision:'change',note:'The task changed too; this does not isolate the effect.',reviewed_at:'2026-09-04T10:00:00Z'}],
+grinder_practice_attempts:[
+  {id:'30000000-0000-0000-0000-000000000001',owner_id:'different-person',practice_id:practice,visibility:'shared',baseline:{measurement_revision:'a'.repeat(64),turns_typed:8,claims_verified:2,artifacts_produced:3,duration_s:600,harness:'Codex',trace_basis:'elapsed'},outcome:{measurement_revision:'b'.repeat(64),turns_typed:6,claims_verified:1,artifacts_produced:2,duration_s:700,harness:'Codex',trace_basis:'elapsed'},decision:'change',note:'The task changed too; this does not isolate the effect.',reviewed_at:'2026-09-04T10:00:00Z'},
+  {id:'30000000-0000-0000-0000-000000000002',owner_id:'different-person',practice_id:practice,visibility:'shared',baseline:{measurement_revision:'c'.repeat(64),turns_typed:8,claims_verified:2,artifacts_produced:3,duration_s:600,harness:'Claude Code',trace_basis:'elapsed'},outcome:{measurement_revision:'d'.repeat(64),turns_typed:6,claims_verified:3,artifacts_produced:2,duration_s:700,harness:'Cursor',trace_basis:'elapsed'},decision:'incomparable',note:'Different harnesses. Claim counts are present on both sittings and still do not compare.',reviewed_at:'2026-09-05T10:00:00Z'}
+],
 runs:[{id:'40000000-0000-0000-0000-000000000001',profile_id:owner,title:'Fixture baseline',measurement_revision:'c'.repeat(64)}],grinder_memberships:[]};
 const client={from(name){let filters=[],verb='read',payload;const q={select(){return q},eq(k,v){filters.push(r=>r[k]===v);return q},in(k,values){filters.push(r=>values.includes(r[k]));return q},not(){return q},order(){return q},limit(){return q},insert(v){verb='insert';payload=v;return q},then(resolve,reject){let rows=tables[name]||[];if(verb==='insert'){payload={id:'50000000-0000-0000-0000-000000000001',...payload};rows.push(payload);tables[name]=rows;window.calls.push({name,payload});return Promise.resolve({data:[payload]}).then(resolve,reject)}return Promise.resolve({data:rows.filter(r=>filters.every(f=>f(r)))}).then(resolve,reject)}};return q},async rpc(name,payload){window.calls.push({name,payload});return {data:'60000000-0000-0000-0000-000000000001'}}};
 window.fixture=GrinderPractices({client,me:()=>({id:owner}),app:()=>document.getElementById('app'),frame:()=>{},status:(text)=>document.getElementById('status').textContent=text});
 '''
 with sync_playwright() as p:
-    browser=p.chromium.launch(executable_path=os.environ.get('BRAVE_BINARY','/Applications/Brave Browser.app/Contents/MacOS/Brave Browser'),headless=True)
+    launch=dict(headless=True, args=["--no-sandbox"])
+    binary=os.environ.get("BRAVE_BINARY") or os.environ.get("CHROME_BIN")
+    if binary:
+        launch["executable_path"]=binary
+    browser=p.chromium.launch(**launch)
     page=browser.new_page(viewport={'width':390,'height':844})
     failures=[]
     page.on('pageerror',lambda e:failures.append(str(e)))
     style=(ROOT/'site/design.css').read_text()+re.search(r'<style>(.*?)</style>',(ROOT/'site/index.html').read_text(),re.S).group(1)+(ROOT/'site/social.css').read_text()
     page.set_content('<style>'+style+'</style><div style="padding:12px;background:#fff3bb">UI TEST FIXTURE — no live users or results</div><div id="status"></div><main id="app"></main>')
     page.add_script_tag(content=(ROOT/'site/run-contract.js').read_text())
+    page.add_script_tag(content=(ROOT/'site/practice-eligibility.js').read_text())
     page.add_script_tag(content=(ROOT/'site/practices.js').read_text())
     page.add_script_tag(content=setup)
     page.evaluate('fixture.index()')
@@ -35,7 +43,11 @@ with sync_playwright() as p:
     page.get_by_role('button',name='Find practices',exact=True).click()
     page.get_by_text('No matching practices yet.',exact=True).wait_for()
     page.evaluate("fixture.detail('20000000-0000-0000-0000-000000000001')")
-    page.get_by_text('Frozen baseline',exact=True).wait_for()
+    page.get_by_text('Frozen baseline',exact=True).first.wait_for()
+    assert page.get_by_role('heading', name='Comparable under the same measurements').count()==1
+    assert page.get_by_role('heading', name='Read these as two separate sittings').count()==1
+    assert 'Harness differs' in page.content() or 'not the same measurement' in page.content()
+    page.screenshot(path='/tmp/grinder-comparable-badge-phone.png', full_page=True)
     assert page.get_by_text('change',exact=True).count()==1
     page.get_by_label('Share my baseline counts',exact=False).check()
     page.get_by_role('button',name='Start attempt',exact=True).click()
@@ -131,6 +143,7 @@ with sync_playwright() as p:
     refresh=html[html.index('async function refreshAuth(){'):html.index('// The publish payload')]
     profile.add_script_tag(content=r"""
       const $=id=>document.getElementById(id),esc=s=>String(s),status=(text)=>$('status').textContent=text;
+      function syncAuthNav(){}
       let ME=null;window.createdProfiles=0;window.existingProfile={id:'profile-fixture',auth_uid:'auth-fixture',github_handle:'chosen-handle',name:'Chosen name'};
       const sb={auth:{async getSession(){return {data:{session:{user:{id:'auth-fixture',user_metadata:{user_name:'provider-handle'}}}}}}},
         from(){const q={select(){return q},eq(){return q},async maybeSingle(){return {data:window.existingProfile,error:null}},insert(row){window.createdProfiles++;window.existingProfile={id:'profile-fixture',...row};return q},async single(){return {data:window.existingProfile,error:null}}};return q}};

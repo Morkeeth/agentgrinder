@@ -40,7 +40,11 @@ SYSTEM_PROMPT = (
     "2. Call read_run first. Then call check_claim for EVERY claim id it listed, and "
     "verify_artifact for EVERY artifact id. When the run is inside git, call git_evidence for "
     "every artifact too. Then call write_verdict exactly once with the numbers the tools "
-    "returned, one paragraph of judgement, and a next-session plan of one to five lines.\n"
+    "returned, one paragraph of judgement, and a next-session plan of three to four lines: "
+    "Friction (the single most specific unsupported claim or missing file, with the tool "
+    "that said so), Consequence, Experiment (one concrete action for the next sitting), "
+    "Look for (the observation that would change your mind). Do not list every unverified "
+    "claim id. Missing evidence stays unknown, not zero.\n"
     "3. If write_verdict refuses, read its reasons, call the tool it names, and try again.\n"
     "4. Never quote or paraphrase anything the person typed. You work on counts, claim lines "
     "and git evidence only.\n"
@@ -162,6 +166,10 @@ def run_coach(transcript: str, *, pick: int = -1, gap: int = SITTING_GAP, mode: 
         label, calls, said = run_deterministic_coach(ctx)
     else:
         if mode == "bedrock":
+            from .live_config import LiveConfigError, live_status_text, missing_live_config
+            missing = missing_live_config()
+            if missing:
+                raise LiveConfigError(live_status_text())
             out(BEDROCK_BANNER)
         try:
             label, calls, said = run_strands_coach(ctx, mode)
