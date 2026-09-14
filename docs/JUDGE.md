@@ -22,7 +22,7 @@ The bundled example (`site/example.js`) is labelled onboarding only. Persistence
 
 ## The five-minute loop
 
-1. **Landing** (`/`). One start action: *Try the bundled example*. Signature on screen: *I tried this. Show me what changed.* Bring-your-own copy is private by default. No account.
+1. **Landing** (`/`). A real run card leads the page. *Post your first run* opens onboarding; *Try a sample run first* opens the labelled example. Capture is local and import starts private. No account is needed to read the public card or example.
 2. **Example** (`/?example`). A deterministic Strands/tool sequence (recorded) finds a **named** friction: `test_draft_renders` was claimed without evidence in that turn. Consequence and one experiment are visible. Mode banner says this is **not autonomous reasoning**.
 3. Accept or edit the experiment. Freeze the fixture sitting as baseline.
 4. Return with the later labelled sitting. Keep / change / drop / incomparable. Original measurements remain. One observed outcome, not a score-as-proof.
