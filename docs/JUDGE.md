@@ -2,7 +2,7 @@
 
 This is the product path a stranger can complete without a walkthrough.
 
-Production: [agentgrinder.vercel.app](https://agentgrinder.vercel.app). Card-first runtime `32503cb` was promoted on September 14 as `dpl_EwR2czqZDHMZQJra9C9CgTvxeDmQ`; production bytes matched the reviewed candidate. Earlier in this release pass, database migrations, GitHub sign-in and a real hosted private TEST practice were exercised. The two-builder persistence evidence below is from disposable test accounts, not independent users.
+Production: [agentgrinder.vercel.app](https://agentgrinder.vercel.app). Run-focused runtime `469ef1f` was promoted on September 14 as `dpl_7h5nf54mvChzJA9kYd6U2o1iGCKs`; production bytes matched the reviewed candidate. Earlier in this release pass, database migrations, GitHub sign-in and a real hosted private TEST practice were exercised. The two-builder persistence evidence below is from disposable test accounts, not independent users.
 
 ## What to open
 
@@ -59,7 +59,7 @@ Bring-your-own: `python3 -m agentgrinder grind` then `grind --push`. Import audi
 - A stranger gets the promised value without an explanation.
 - Demo and live modes cannot be confused.
 - A second builder's attempt sits on **their** freeze, and revocation language is on the return.
-- Community (`/?community`) leads with techniques to try, then Forum / Crews / Challenges. Empty public lists stay empty — no fake adoption.
+- Feed → run → discussion is the main public path. Saved practices open under “One practice for your next run”. Existing Community, Crew and challenge routes are outside launch navigation.
 
 ## What this is not
 
