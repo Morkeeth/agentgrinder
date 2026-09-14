@@ -19,7 +19,7 @@ from datetime import datetime
 
 from .authorship import CATEGORIES, COMMAND
 from . import privacy
-from .metrics import HEADLINE_TIP, headline_of
+from .metrics import ARTIFACTS_PER_TURN_TIP, HEADLINE_TIP, headline_of
 from .render import _five_row
 from .soloroute import render_route_svg, render_phone_svg, _esc, span_minutes
 
@@ -149,9 +149,10 @@ def _practice_block(run: dict) -> str:
 def _verdict_block(run: dict) -> str:
     """The coach's verdict and the series line. Null-safe: a run with neither draws nothing,
     a run with one draws that one. Every sentence here was written from tool results or from
-    the local series, never from the transcript's prose."""
-    v = run.get("coach_verdict")
-    plan = run.get("coach_plan")
+    the local series, never from the transcript's prose. Paths never leave this block."""
+    from .coach.experiment import public_text
+    v = public_text(run.get("coach_verdict"))
+    plan = public_text(run.get("coach_plan"))
     n = run.get("coach_tool_calls")
     prog = run.get("progress") or {}
     line = run.get("progress_line") or ""
@@ -205,6 +206,7 @@ def render_solo_card(run: dict, title: str | None = None, ranks: dict | None = N
     h_title, callout = headline(run)
     h_title = title or h_title
     hl = headline_of(run)          # verified per turn, or a dash that names what is missing
+    tip = ARTIFACTS_PER_TURN_TIP if hl.metric_id == "artifacts_per_turn" else HEADLINE_TIP
     five = _five_row(hl.five)
     pace = (run["duration_s"] / run["turns_typed"]) if run["turns_typed"] else None
     per_prompt = (run["tool_calls"] / run["turns_typed"]) if run["turns_typed"] else None
@@ -467,9 +469,9 @@ def render_solo_card(run: dict, title: str | None = None, ranks: dict | None = N
     {f'<div class="callout">{callout}</div>' if callout else ''}
     {prog}
 
-    <div class="hl" title="{_esc(HEADLINE_TIP)} · {_esc(hl.formula)}">
+    <div class="hl" title="{_esc(tip)} · {_esc(hl.formula)}">
       <div class="n">{hl.text}</div>
-      <div class="lbl">verified per turn<span class="f">{_esc(hl.formula)}</span></div>
+      <div class="lbl">{_esc(hl.label)}<span class="f">{_esc(hl.formula)}</span></div>
     </div>
     <div class="fiverow">{five}</div>
     {_verdict_block(run)}

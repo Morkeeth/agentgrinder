@@ -85,6 +85,19 @@ def _ratio(num: int | None, den: int | None) -> float | None:
     return num / den
 
 
+HEADLINE_TIP = ("verified per turn = (verified claims + artifacts produced) ÷ typed turns. "
+                "Local: the calibrated claims.py rule (precision 0.63, recall 0.66 held out) plus "
+                "Edit/Write paths on disk. A rate, not a count: a count of claims moves with how "
+                "much the agent talks, see /methodology")
+
+ARTIFACTS_PER_TURN_TIP = ("artifacts per turn = artifacts produced ÷ typed turns. Used only when "
+                          "claim evidence cannot be measured on this harness. It is not verified "
+                          "per turn; do not compare it to a verified-per-turn reading as the same metric.")
+
+METRIC_VERIFIED_PER_TURN = "verified_per_turn"
+METRIC_ARTIFACTS_PER_TURN = "artifacts_per_turn"
+
+
 @dataclass
 class Cell:
     """One of the five run numbers: the printed value, and where it comes from."""
@@ -121,12 +134,9 @@ class Activity:
     headline: str = "—"                        # e.g. "0.21"
     headline_val: float | None = None
     headline_formula: str = ""                 # "(6 verified + 4 artifacts) ÷ 47 typed turns"
+    headline_label: str = "verified per turn"
+    headline_metric_id: str = METRIC_VERIFIED_PER_TURN
     five: list = field(default_factory=list)   # five Cell rows, in the metric spec's order
-
-HEADLINE_TIP = ("verified per turn = (verified claims + artifacts produced) ÷ typed turns. "
-                "Local: the calibrated claims.py rule (precision 0.63, recall 0.66 held out) plus "
-                "Edit/Write paths on disk. A rate, not a count: a count of claims moves with how "
-                "much the agent talks, see /methodology")
 
 
 @dataclass
@@ -137,6 +147,8 @@ class Headline:
     value: float | None
     formula: str               # "(6 verified + 4 artifacts) ÷ 47 typed turns" / "needs …"
     five: list                 # five Cell rows, in the metric spec's order
+    metric_id: str = METRIC_VERIFIED_PER_TURN
+    label: str = "verified per turn"
 
 
 def five_cells(run: dict) -> list[Cell]:
@@ -149,16 +161,30 @@ def five_cells(run: dict) -> list[Cell]:
     reach = run.get("reach")
     share = _ratio(verified, claims)   # None when no claims were made
     corr = _ratio(corrections, turns)
+    caps = run.get("capabilities") or {}
 
     def _n(v):
         return "—" if v is None else str(v)
 
+    if share is not None:
+        verified_cell = f"{verified}/{claims} · {share:.0%}"
+        verified_src = SOURCES["verified_share"]
+    elif verified is not None and claims is not None:
+        verified_cell = f"{verified}/{claims}"
+        verified_src = SOURCES["verified_share"]
+    elif claims is not None and caps.get("claim_evidence") is False:
+        # Claims counted from assistant prose; same-turn tool stdout is not in this harness's
+        # transcript, so the evidence half stays unmeasured (baseline), never a fabricated 0.
+        verified_cell = f"—/{claims}"
+        verified_src = ("claims counted from assistant text; same-turn tool stdout is not in this "
+                        "harness transcript, so verified share cannot be measured here today")
+    else:
+        verified_cell = "—"
+        verified_src = SOURCES["verified_share"]
+
     return [
         Cell("typed turns", _n(turns), SOURCES["typed_turns"], cost=True),
-        Cell("verified claims",
-             f"{verified}/{claims} · {share:.0%}" if share is not None else
-             (f"{verified}/{claims}" if verified is not None and claims is not None else "—"),
-             SOURCES["verified_share"]),
+        Cell("verified claims", verified_cell, verified_src),
         Cell("correction rate", f"{corr:.0%}" if corr is not None else "—", SOURCES["correction_rate"]),
         Cell("produced ÷ promised", f"{_n(produced)} ÷ {_n(promised)}", SOURCES["produced_over_promised"]),
         # the reach dash carries the sentence the probe wrote for THIS run ("no commit landed
@@ -169,29 +195,55 @@ def five_cells(run: dict) -> list[Cell]:
 
 
 def headline_of(run: dict) -> Headline:
-    """Verified per turn from a run dict, or a dash that says which part is missing."""
+    """Headline number for a run: verified-per-turn when both inputs exist.
+
+    When claim evidence cannot be measured (`capabilities.claim_evidence` is False and
+    `claims_verified` is None), the headline is **artifacts per turn** — a different metric
+    identity. Never label that number "verified per turn".
+    """
     turns = run.get("turns_typed")
     verified = run.get("claims_verified")
     produced = run.get("artifacts_produced")
     vpt = verified_per_turn(verified, produced, turns)
     if vpt is not None:
-        text = f"{vpt:.2f}"
-        formula = f"({verified} verified + {produced} artifacts) ÷ {turns} typed turns"
-    else:
-        text = "—"
-        missing = [k for k, v in (("verified claims", verified), ("artifacts produced", produced),
-                                  ("typed turns", turns)) if v is None]
-        formula = "needs " + ", ".join(missing) if missing else "no typed turns"
-    return Headline(text=text, value=vpt, formula=formula, five=five_cells(run))
+        return Headline(
+            text=f"{vpt:.2f}", value=vpt,
+            formula=f"({verified} verified + {produced} artifacts) ÷ {turns} typed turns",
+            five=five_cells(run),
+            metric_id=METRIC_VERIFIED_PER_TURN, label="verified per turn")
+    caps = run.get("capabilities") or {}
+    if (caps.get("claim_evidence") is False and produced is not None and turns
+            and verified is None):
+        apt = produced / turns
+        return Headline(
+            text=f"{apt:.2f}", value=apt,
+            formula=f"{produced} artifacts ÷ {turns} typed turns",
+            five=five_cells(run),
+            metric_id=METRIC_ARTIFACTS_PER_TURN, label="artifacts per turn")
+    missing = [k for k, v in (("verified claims", verified), ("artifacts produced", produced),
+                              ("typed turns", turns)) if v is None]
+    return Headline(
+        text="—", value=None,
+        formula="needs " + ", ".join(missing) if missing else "no typed turns",
+        five=five_cells(run),
+        metric_id=METRIC_VERIFIED_PER_TURN, label="verified per turn")
+
+def _public_coach_text(value: str) -> str:
+    """HTML cards are an export destination. Paths stay off them; local CLI text is separate."""
+    from .coach.experiment import public_text
+    return public_text(value) or ""
 
 
 def build_activity(run: dict) -> Activity:
     turns = run.get("turns_typed")
-    dur = run.get("duration_s")
     tools = run.get("tool_calls")
     files = run.get("files_touched")
     commits = run.get("commits")
     rhythm = run.get("rhythm") or []
+    caps = run.get("capabilities") or {}
+    # Refuse elapsed/rate displays when the harness says the trace is not a timed clock.
+    timed = caps.get("timed_trace", True) is not False and run.get("duration_s") is not None
+    dur = run.get("duration_s") if timed else None
 
     pace_sec = (dur / turns) if (dur and turns) else None
     pph = (turns / (dur / 3600)) if (dur and turns) else None
@@ -205,6 +257,14 @@ def build_activity(run: dict) -> Activity:
         date_str = started or "—"
 
     hl = headline_of(run)
+    moving = _fmt_dur(dur) if timed else "—"
+    pace = _fmt_pace(pace_sec) if timed else "—"
+    cadence = f"{pph:.1f}/h" if pph else ("—" if not timed else "—")
+    if not timed:
+        # Tooltip-facing copy lives on the card cost group via dash + trace_basis.
+        moving = "—"
+        pace = "—"
+        cadence = "—"
 
     return Activity(
         athlete=run.get("athlete", "athlete"),
@@ -213,21 +273,23 @@ def build_activity(run: dict) -> Activity:
         project=run.get("project", "—"),
         date_str=date_str,
         distance=f"{turns} prompts" if turns is not None else "—",
-        moving_time=_fmt_dur(dur),
-        pace=_fmt_pace(pace_sec),
+        moving_time=moving,
+        pace=pace,
         effort=f"{tools} tool calls" if tools is not None else "—",
         segments=f"{files} files" if files is not None else "—",
         commits=str(commits) if commits is not None else "—",
-        prompts_per_hour=f"{pph:.1f}/h" if pph else "—",
+        prompts_per_hour=cadence,
         focus_pb=focus_pb,
         rhythm=[int(x) for x in rhythm],
-        coach_verdict=run.get("coach_verdict") or "",
-        coach_plan="\n".join(x for x in [run.get("coach_plan"),run.get("private_coach_plan")] if x),
+        coach_verdict=_public_coach_text(run.get("coach_verdict") or ""),
+        coach_plan=_public_coach_text("\n".join(x for x in [run.get("coach_plan"), run.get("private_coach_plan")] if x)),
         coach_mode=run.get("coach_mode") or "",
         trace=run.get("trace") or [],
         trace_basis=run.get("trace_basis") or "",
         headline=hl.text,
         headline_val=hl.value,
         headline_formula=hl.formula,
+        headline_label=hl.label,
+        headline_metric_id=hl.metric_id,
         five=hl.five,
     )

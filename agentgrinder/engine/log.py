@@ -13,8 +13,8 @@ import json
 import sqlite3
 from datetime import datetime, timezone
 
-from ..metrics import verified_per_turn
 from ..claims import EVIDENCE_VERSION, rule_fingerprint
+
 
 DEFAULT_PATH = os.path.expanduser("~/.agentgrinder/series.db")
 
@@ -87,14 +87,18 @@ def record_run(conn: sqlite3.Connection, run: dict, command: str = "agentgrinder
     started = run.get("started")
     if not started:
         raise ValueError("a reading needs the sitting's start time")
-    value = verified_per_turn(run.get("claims_verified"), run.get("artifacts_produced"), run.get("turns_typed"))
+    from ..metrics import headline_of
+    hl = headline_of(run)
+    value = hl.value
     row = dict(project=project, started=started, recorded_at=_now(),
                turns_typed=run.get("turns_typed"), claims=run.get("claims"),
                claims_verified=run.get("claims_verified"), artifacts_produced=run.get("artifacts_produced"),
                commits=run.get("commits"), value=value, command=command,
                rule_version=run.get("rule_version", rule_fingerprint() + ":" + EVIDENCE_VERSION),
                parser_version=run.get("parser_version", "0.1.0"),
-               input_digest=run.get("input_digest"), project_identity=run.get("project_identity"))
+               input_digest=run.get("input_digest"), project_identity=run.get("project_identity"),
+               capabilities=run.get("capabilities"),
+               metric_id=hl.metric_id, metric_label=hl.label)
     revision = _save_revision(conn, row)
     conn.execute("INSERT OR IGNORE INTO readings (project, started, recorded_at, turns_typed, claims, claims_verified, "
                  "artifacts_produced, commits, value, command, revision_id) VALUES (?,?,?,?,?,?,?,?,?,?,?)",

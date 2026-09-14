@@ -3,7 +3,7 @@ doc: hack
 project: AGENT GRINDER — where you post your real runs
 phase: BUILD
 event: CANDIDATE — Agents for Humans (Devpost, Sun 14 Sep 2026, $40K)
-ruling: EYES 1 Sep — Grinder is the product; MAGNET submits Sep 14
+ruling: OSCAR 3 Sep OPTION C — Grinder is the product and Sep-14 entry; MAGNET is its disclosed engine library
 canonical: docs/AGENT-GRINDER-PRD.md · docs/AGENT-GRINDER-BRANDBOOK.md
 last-touched: 2026-09-02 (Fable)
 ---
@@ -12,7 +12,7 @@ last-touched: 2026-09-02 (Fable)
 
 ## STATE 2026-09-02 (Fable, probed)
 - `Morkeeth/agentgrinder` PUBLIC (HTTP 200), main, 0 unpushed. Live agentgrinder.vercel.app. STRANGER-PASS done (`docs/STRANGER-PASS.md`). `aistrava` (no remote, 82 commits) is the history; this repo is the seed. **Ruling 6 (clean seed → new remote) is executed.**
-- Ruling of record (EYES 1 Sep): Grinder is the PRODUCT; MAGNET is the Sep-14 entry.
+- Ruling of record (OSCAR 3 Sep OPTION C): Grinder is the product and Sep-14 entry. MAGNET is its disclosed Strands/engine library, not another product or submission.
 - **Metric finding (METRICS-AGENTIC-ENGINEERING-2026-09-02, an internal spec not in this repo):** the PRD maps Strava Distance → human prompts. Prompts are a COST (the denominator), not an achievement. A card that headlines "47 prompts" celebrates the METR failure. Rule needed: **distance = verified output; prompts = cost.** The card's five numbers: typed turns · verified-claims share · correction rate · produced ÷ promised · reach. Headline = verified-per-turn.
 - PRD gate lines: buyer = none at v0 (consumer face of MAGNET's data); recurring number = runs shared per week by non-authors; incumbent test = GitHub could ship "session wrapped" in a sprint, the wedge is cross-harness authorship + the honest verified term; day-two user = a builder who wants to post a real run; vision = the social layer for AI-native work.
 
@@ -62,7 +62,7 @@ On-ramp reuses Transcripto's authorship signal (typed turns only), never raw `ty
 
 **Slice 5 (stranger pass):** `docs/STRANGER-PASS.md` PASS — cold `demo` + `pitch-demo.sh` exit 0 with sample fallback when no `~/.claude`. Fix: `scripts/pitch-demo.sh` detects empty machine, uses `samples/sample_run.json` for vibe/roast/grind/share.
 
-**Next slice:** Oscar rules Strands Agents SDK eligibility (`docs/MOONSHOT-MEMO-2026-09-02.md` OPEN Q #1) — blocking for Devpost submit. Then ≥1 non-Oscar stranger cold-read.
+**Next slice:** ≥1 non-Oscar stranger cold-read. The current entry and engine relationship is fixed by OSCAR 3 Sep OPTION C; do not revive the stale 1 Sep split.
 
 **Shipped this wave:** `docs/MOONSHOT-MEMO-2026-09-02.md` · `docs/STRANGER-PASS.md` · `docs/DEVPOST-READY.md` · `docs/FILM-SCOUT-COMMANDS.md` · `docs/OSCAR-CLICK-LIST-2026-09-02.md` · pitch-demo cold-path fix.
 

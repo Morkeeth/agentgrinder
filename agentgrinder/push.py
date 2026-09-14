@@ -6,6 +6,7 @@ import json
 import os
 import urllib.parse
 from .contract import public_revision, validate_run
+from .coach.experiment import public_experiment, public_text
 
 DEFAULT_URL = os.environ.get("AGENTGRINDER_URL", "https://agentgrinder.vercel.app")
 
@@ -34,9 +35,11 @@ def export_run(run: dict) -> dict:
         "reach_reason": run.get("reach_reason"),
         # the coach's verdict (agentgrinder/coach): a paragraph, a plan, and the hook's call count.
         # Counts and sentences the coach wrote from tool results; no prompt text, no paths.
-        "coach_verdict": run.get("coach_verdict"),
-        "coach_plan": run.get("coach_plan"),
+        "coach_verdict": public_text(run.get("coach_verdict")),
+        "coach_plan": public_text(run.get("coach_plan")),
         "coach_tool_calls": run.get("coach_tool_calls"),
+        "coach_mode": run.get("coach_mode"),
+        "coach_experiment": public_experiment(run.get("coach_experiment")),
         # this grind vs your previous grind on the same project (agentgrinder/engine)
         "progress_verdict": (run.get("progress") or {}).get("verdict"),
         "progress_delta": (run.get("progress") or {}).get("delta"),

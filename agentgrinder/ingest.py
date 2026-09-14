@@ -278,14 +278,17 @@ def latest_cursor_session() -> str | None:
     return max(files, key=os.path.getmtime) if files else None
 
 def parse_cursor_session(path: str, athlete: str = "you", records=None) -> dict:
+    from .claims import claims_in
     typed = 0
     tool_calls = 0
     commits = 0
+    claim_count = 0
     stamps = []
     files: set[str] = set()
     written: set[str] = set()
     edits: list[str] = []      # ordered, for the route
     first_prompt = None
+    best_prompt = None
     ts_re = _re.compile(r"<timestamp>(.*?)</timestamp>")
     uq_re = _re.compile(r"<user_query>(.*?)</user_query>", _re.S)
     from .native_sittings import records as read_records
@@ -298,11 +301,20 @@ def parse_cursor_session(path: str, athlete: str = "you", records=None) -> dict:
             m = ts_re.search(text)
             if m:
                 stamps.append(m.group(1))
+            q = uq_re.search(text)
+            prompt = (q.group(1).strip() if q else text.strip())
             if first_prompt is None:
-                q = uq_re.search(text)
-                first_prompt = (q.group(1).strip() if q else text.strip())
+                first_prompt = prompt
+            # Prefer a longer, assignment-shaped prompt over a two-word kickoff for the card title.
+            if best_prompt is None or len(prompt) > len(best_prompt):
+                best_prompt = prompt
         elif role == "assistant":
             tool_calls += _cursor_tool_blocks(msg)
+            # Count claim lines from assistant prose. Do NOT feed ClaimTracker verification:
+            # Cursor agent-transcripts retain tool_use blocks but not tool stdout, so a
+            # verified=0 would look measured while evidence was never available to check.
+            if text.strip():
+                claim_count += len(claims_in(text))
             # THE TRACE. Until 4 Sep 2026 this branch counted tool blocks and threw the rest
             # away, so every Cursor card printed a dash for files touched, commits and
             # artifacts, and reach printed "this harness does not name the repository". All
@@ -321,13 +333,18 @@ def parse_cursor_session(path: str, athlete: str = "you", records=None) -> dict:
                         commits += 1
     if not typed:
         raise ValueError(f"no typed <user_query> turns in {path}")
-
     # duration from first/last embedded timestamp (best-effort), else None
     dur = None
     from .native_sittings import cursor_time
     pts = [p for p in (cursor_time('<timestamp>'+s+'</timestamp>') for s in stamps) if p]
     if len(pts) >= 2:
-        dur = int((max(pts) - min(pts)).total_seconds())
+        # Wall-clock stamps exist on typed turns, but the Cursor grind trace is ordered by
+        # turn position, not elapsed time (capabilities.timed_trace=False). Publishing
+        # duration/pace/cadence from the same stamps while the route says spacing is not
+        # elapsed time is a false measured-rate claim. Refuse elapsed rates here.
+        dur = None
+    else:
+        dur = None
 
     # rhythm: bucket typed turns by position (24 buckets) — shape without needing per-turn time
     buckets = min(24, max(1, typed))
@@ -336,7 +353,10 @@ def parse_cursor_session(path: str, athlete: str = "you", records=None) -> dict:
         rhythm[min(buckets - 1, i * buckets // typed)] += 1
 
     proj = project_label(os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(path)))))
-    title = (first_prompt[:60] + "…") if first_prompt and len(first_prompt) > 60 else (first_prompt or f"{proj} session")
+    # Safe public title: project + harness sitting — not a raw user_query excerpt.
+    # The longest typed prompt stays local-only for the author; share/card defaults never paste it.
+    private_title_prompt = best_prompt or first_prompt
+    title = f"{proj} · Cursor sitting" if proj else "Cursor sitting"
 
     # THE REPOSITORY, from the files the session actually wrote. Cursor never states a cwd, so the
     # root is the git work tree enclosing the most-edited path. A session that wrote nothing, or
@@ -370,7 +390,7 @@ def parse_cursor_session(path: str, athlete: str = "you", records=None) -> dict:
     route = [_region_of(fp, repo_root) for fp in edits]
     return {
         "athlete": athlete, "title": title, "harness": "Cursor", "project": proj,
-        "parser_version": "cursor-sittings-2026-09-05" if records is not None else "cursor-timezone-2026-09-05",
+        "parser_version": "cursor-claims-count-2026-09-11" if records is not None else "cursor-claims-count-2026-09-11",
         "project_identity": project_identity(repo_root or os.path.dirname(os.path.dirname(os.path.dirname(path)))),
         "started": (min(pts).isoformat() if pts else None),
         "trace_basis": "typed-turn order; spacing is not elapsed time; sessions split on human-turn gaps, not measured idle",
@@ -379,12 +399,15 @@ def parse_cursor_session(path: str, athlete: str = "you", records=None) -> dict:
         "files_touched": len(files) if files else None,
         "commits": commits if edits or commits else None,
         "rhythm": rhythm,
+        "claims": claim_count,
+        "claims_verified": None,  # tool stdout absent from Cursor agent-transcripts
         "artifacts_produced": artifacts_produced,
         "artifacts_promised": None,   # no harness records what a run said it would deliver
         "corrections": None,          # the inverse class, not built
         "reach": reach_value, "reach_reason": reach_reason,
         "route": _route_indices(route),      # integers only, safe to publish
         "route_legend": _dedupe(route),      # region names, LOCAL only, never pushed
+        "private_title_prompt": private_title_prompt,  # LOCAL only — never a share default
     }
 
 

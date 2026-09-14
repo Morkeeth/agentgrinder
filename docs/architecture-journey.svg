@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 640" role="img" aria-labelledby="title desc">
+  <title id="title">Agent Grinder — focused user journey</title>
+  <desc id="desc">A stranger tries a labelled bundled example, a Strands coach names one friction and one experiment, the builder freezes a baseline and returns, then another builder keeps the technique on their own grind. Local capture stays private. Live Bedrock is opt-in and never fabricated.</desc>
+  <style>
+    text { font-family: "IBM Plex Sans", system-ui, sans-serif; fill: #0a0a0a; }
+    .muted { fill: #6f6f6b; }
+    .label { font-size: 11px; letter-spacing: 0.08em; fill: #6f6f6b; }
+    .h { font-size: 15px; font-weight: 600; }
+    .p { font-size: 12px; fill: #3a3a38; }
+    .box { fill: #fff; stroke: #e3e3df; }
+    .accent { fill: #f2f5ff; stroke: #0047ff; }
+  </style>
+  <rect width="980" height="640" fill="#f7f7f5"/>
+  <text x="32" y="36" class="label">AGENT GRINDER</text>
+  <text x="32" y="62" class="h" font-size="22">I tried this. Show me what changed.</text>
+  <text x="32" y="84" class="p">Local capture never uploads by itself. Hosted sharing is an explicit click. Demo coach vs live model.</text>
+
+  <rect class="accent" x="32" y="108" width="176" height="112" rx="2"/>
+  <text x="44" y="128" class="label">1 · STRANGER</text>
+  <text x="44" y="150" class="h">Open the app</text>
+  <text x="44" y="170" class="p">One start: bundled</text>
+  <text x="44" y="186" class="p">example, no signup.</text>
+  <text x="44" y="202" class="p">BYO stays private.</text>
+
+  <rect class="box" x="220" y="108" width="176" height="112" rx="2"/>
+  <text x="232" y="128" class="label">2 · COACH</text>
+  <text x="232" y="150" class="h">Five tools</text>
+  <text x="232" y="170" class="p">One friction with</text>
+  <text x="232" y="186" class="p">source evidence.</text>
+  <text x="232" y="202" class="p">One experiment.</text>
+
+  <rect class="box" x="408" y="108" width="176" height="112" rx="2"/>
+  <text x="420" y="128" class="label">3 · PRACTICE</text>
+  <text x="420" y="150" class="h">Freeze · return</text>
+  <text x="420" y="170" class="p">Keep / change / drop</text>
+  <text x="420" y="186" class="p">/ incomparable.</text>
+  <text x="420" y="202" class="p">Original counts stay.</text>
+
+  <rect class="box" x="596" y="108" width="176" height="112" rx="2"/>
+  <text x="608" y="128" class="label">4 · SHARE</text>
+  <text x="608" y="150" class="h">A moment</text>
+  <text x="608" y="170" class="p">Review what leaves.</text>
+  <text x="608" y="186" class="p">Second builder keeps</text>
+  <text x="608" y="202" class="p">it on THEIR grind.</text>
+
+  <rect class="box" x="784" y="108" width="164" height="112" rx="2"/>
+  <text x="796" y="128" class="label">5 · RETURN</text>
+  <text x="796" y="150" class="h">Next action</text>
+  <text x="796" y="170" class="p">Pending practice,</text>
+  <text x="796" y="186" class="p">community techniques,</text>
+  <text x="796" y="202" class="p">owned recognition.</text>
+
+  <polygon points="208,164 220,164 220,158 232,170 220,182 220,176 208,176" fill="#0047ff"/>
+  <polygon points="396,164 408,164 408,158 420,170 408,182 408,176 396,176" fill="#0047ff"/>
+  <polygon points="584,164 596,164 596,158 608,170 596,182 596,176 584,176" fill="#0047ff"/>
+  <polygon points="772,164 784,164 784,158 796,170 784,182 784,176 772,176" fill="#0047ff"/>
+
+  <rect class="box" x="32" y="248" width="448" height="168" rx="2"/>
+  <text x="48" y="272" class="label">ON YOUR MACHINE</text>
+  <text x="48" y="296" class="h">CLI · MCP · local series</text>
+  <text x="48" y="318" class="p">grind reads Claude Code / Cursor / Codex transcripts.</text>
+  <text x="48" y="336" class="p">Coach: local scripted Strands loop (default) or Bedrock (opt-in).</text>
+  <text x="48" y="354" class="p">Missing Bedrock config is printed exactly. No fake live run.</text>
+  <text x="48" y="372" class="p">Practices freeze a measurement revision. Return view is local.</text>
+  <text x="48" y="390" class="p">Prompts, absolute paths and code never enter a tool result.</text>
+
+  <rect class="accent" x="500" y="248" width="448" height="168" rx="2"/>
+  <text x="516" y="272" class="label">HOSTED · ONLY WHAT YOU PUBLISH</text>
+  <text x="516" y="296" class="h">Vercel app · Supabase RLS</text>
+  <text x="516" y="318" class="p">Import preview defaults to private. You choose audience.</text>
+  <text x="516" y="336" class="p">Moments inherit run audience. Adoption uses the reader's grind.</text>
+  <text x="516" y="354" class="p">Revocation hides source excerpt; owned baselines stay.</text>
+  <text x="516" y="372" class="p">Public techniques lead to attempts — never invented users.</text>
+  <text x="516" y="390" class="p">coach_mode distinguishes demo vs live on the card.</text>
+
+  <rect class="box" x="32" y="440" width="916" height="168" rx="2"/>
+  <text x="48" y="464" class="label">HONEST BOUNDARIES</text>
+  <text x="48" y="488" class="p">The bundled example is fixture data generated from samples/sample_session.jsonl with the real tools.</text>
+  <text x="48" y="506" class="p">A later sitting with a different task is incomparable. Artifact counts are not productivity proof.</text>
+  <text x="48" y="524" class="p">Keep / change / drop / incomparable are the builder's observation, not a causal score.</text>
+  <text x="48" y="542" class="p">Live Amazon Bedrock needs strands-agents, AWS_REGION, and credentials on the builder's machine.</text>
+  <text x="48" y="560" class="p">This diagram is the product path. Production DDL is applied by the coordinator, not this change.</text>
+  <text x="48" y="586" class="muted" font-size="11">Files: site/example.js · agentgrinder/coach/experiment.py · agentgrinder/coach/live_config.py · site/index.html</text>
+</svg>

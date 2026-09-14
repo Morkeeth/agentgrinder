@@ -21,7 +21,10 @@ window.GrinderPractices = function ({ client: db, me, app, frame, status }) {
   function start(title) {
     frame(null, null);
     app().innerHTML =
-      '<nav class="social-nav"><a href="/?practices">Practices</a><a href="/?crews">Crews</a><a href="/?rigs">Rigs</a><a href="/?challenges">Challenges</a></nav><div class="head"><h2>' +
+      (typeof myRunsTabs === "function"
+        ? myRunsTabs("practices")
+        : '<nav class="social-nav"><a href="/?practices">Practices</a><a href="/?mine">My runs</a><a href="/?progress">Progress</a></nav>') +
+      '<div class="head"><h2>' +
       esc(title) +
       '</h2></div><div id="practice-body" aria-live="polite">Loading…</div>';
   }
@@ -41,11 +44,11 @@ window.GrinderPractices = function ({ client: db, me, app, frame, status }) {
       }
     };
   }
-  const options = (rows, key) =>
+  const options = (rows, key, label = (r) => r[key] || r.id.slice(0, 8)) =>
     rows
       .map(
         (r) =>
-          `<option value="${r.id}">${esc(r[key] || r.id.slice(0, 8))}</option>`,
+          `<option value="${r.id}">${esc(label(r))}</option>`,
       )
       .join("");
   async function ownRuns() {
@@ -53,7 +56,7 @@ window.GrinderPractices = function ({ client: db, me, app, frame, status }) {
       ? data(
           db
             .from("runs")
-            .select("id,title")
+            .select("id,title,started_at,measurement_revision")
             .eq("profile_id", me().id)
             .not("measurement_revision", "is", null)
             .order("created_at", { ascending: false })
@@ -61,6 +64,15 @@ window.GrinderPractices = function ({ client: db, me, app, frame, status }) {
         )
       : [];
   }
+  const runLabel = (r) => {
+    const when = r.started_at && Number.isFinite(Date.parse(r.started_at))
+      ? ` · ${new Date(r.started_at).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}`
+      : " · session time unknown";
+    return `${r.title || "Untitled run"}${when}`;
+  };
+  const runOptions = (rows) => options(rows, "title", runLabel);
+  const eligibleOutcomeRuns = (attempt, runs) =>
+    GrinderPracticeEligibility.outcomeRuns(attempt, runs);
   async function index() {
     start("A practice worth trying");
     try {
@@ -141,7 +153,24 @@ window.GrinderPractices = function ({ client: db, me, app, frame, status }) {
     const before = attempt.baseline || {},
       after = attempt.outcome || {};
     const val = (x) => (x === null || x === undefined ? "Unknown" : esc(x));
+    const observed = attempt.note
+      ? `<p><strong>Observed outcome:</strong> ${esc(attempt.note)}</p>`
+      : "<p>No observed outcome recorded yet. A score alone is not the payoff.</p>";
+    const verdict =
+      typeof GrinderContract === "object" && GrinderContract.sittingsComparable
+        ? GrinderContract.sittingsComparable(attempt.baseline, attempt.outcome, attempt)
+        : {
+            ok: false,
+            why: "Comparison rules could not load. Read these as two separate sittings.",
+          };
+    const comparable = !!attempt.outcome && verdict.ok;
     return (
+      '<div class="comparison-status"><h2>' +
+      (comparable ? "Comparable under the same measurements" : "Read these as two separate sittings") +
+      "</h2><p>" +
+      esc(verdict.why) +
+      "</p></div>" +
+      observed +
       '<div class="comparison"><div>' +
       GrinderContract.trace(before) +
       "</div><div>" +
@@ -159,6 +188,14 @@ window.GrinderPractices = function ({ client: db, me, app, frame, status }) {
         .join("") +
       "</div>"
     );
+  }
+  function returnBrief(attempt, runs) {
+    const baseline = attempt.baseline || {};
+    const baselineTime = baseline.started_at && Number.isFinite(Date.parse(baseline.started_at))
+      ? new Date(baseline.started_at).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })
+      : "session time unknown";
+    const later = eligibleOutcomeRuns(attempt, runs);
+    return `<section class="return-brief panel"><p class="meta">RETURN REVIEW</p><h3>${attempt.reviewed_at ? "This return is recorded" : "Your baseline is saved"}</h3><p>${attempt.reviewed_at ? "This attempt is fixed. Start another attempt for the next cycle." : "Come back after a later run. Choose that session below and record what changed; if the evidence is missing or unlike the baseline, keep the result incomparable."}</p><p><strong>Baseline:</strong> ${esc(baselineTime)} · ${esc(baseline.harness || "Harness unknown")}</p>${later.length || attempt.reviewed_at ? "" : "<p class=\"hint\">No later measured session is available yet. The outcome can stay unknown until you return.</p>"}</section>`;
   }
   async function detail(id) {
     start("Try, then tell us");
@@ -182,8 +219,35 @@ window.GrinderPractices = function ({ client: db, me, app, frame, status }) {
           .limit(100),
       );
       const runs = await ownRuns();
+      // Provenance for a practice kept from someone else's grind moment. Readable only by
+      // the person who kept it. The source builder's counts are deliberately not rendered:
+      // two numbers side by side would assert a relationship nobody verified.
+      let kept = null;
+      if (me())
+        try {
+          kept = (
+            await data(
+              db
+                .from("grinder_adopted_moments")
+                .select(
+                  "moment_id,source_run,source_measurement_revision,source_measurement_stale,moment:grinder_run_moments(id,title)",
+                )
+                .eq("practice_id", id),
+            )
+          )[0] || null;
+        } catch (e) {
+          kept = null;
+        }
+      const keptHtml = kept
+        ? `<section class="panel kept-from"><p class="meta">KEPT FROM ANOTHER BUILDER’S GRIND MOMENT</p>${
+            kept.moment
+              ? `<p><a href="/?run=${encodeURIComponent(kept.source_run)}&moment=${encodeURIComponent(kept.moment_id)}">${esc(kept.moment.title)}</a> · read their evidence and the limit they wrote.</p>`
+              : "<p>That grind is no longer readable to you. Your practice, your frozen baseline and your review stay exactly as they are.</p>"
+          }<p><small>Source measurement <code>${esc(String(kept.source_measurement_revision || "").slice(0, 12))}</code>${kept.source_measurement_stale ? " · that grind has been measured again since this moment was written" : ""}</small></p><p>Their counts are not shown here. The comparison below is your own baseline against your own later session, and it does not establish that this practice caused the difference.</p></section>`
+        : "";
       $("practice-body").innerHTML =
         `<article class="card"><small>${esc(p.visibility)} · ${esc(p.harness || "Any harness")}</small><h2>${esc(p.title)}</h2><p>${esc(p.task_context)}</p><h3>Try this</h3><p>${esc(p.instruction)}</p><p>Expected: ${esc(p.expected)}</p><small>A saved version. An outcome is an observation, not proof that this practice caused it.</small></article>` +
+        keptHtml +
         (me()
           ? `<form id="start-attempt" class="panel reply-form"><h3>Start with a baseline</h3><label>Your earlier grind<select name="baseline" required>${options(runs, "title")}</select></label><label><input name="shared" type="checkbox"> Share my baseline counts, outcome counts and reflection with everyone who can read this practice</label><button ${runs.length ? "" : "disabled"}>Start attempt</button>${runs.length ? "" : "<p>Import a grind with a measurement revision first.</p>"}</form>`
           : "") +
@@ -191,7 +255,7 @@ window.GrinderPractices = function ({ client: db, me, app, frame, status }) {
         attempts
           .map(
             (a) =>
-              `<article class="card" id="attempt-${a.id}"><small>${a.visibility === "private" ? "Only you" : "Shared with practice readers"}</small><h3>${esc(a.decision || "In progress")}</h3>${comparison(a)}<p>${esc(a.note || "")}</p>${me()?.id === a.owner_id && !a.reviewed_at ? `<form id="review-${a.id}" class="reply-form"><label>Did you try the practice?<select name="tried"><option value="true">Yes</option><option value="false">No</option></select></label><label>New session<select name="run"><option value="">No measured outcome</option>${options(runs, "title")}</select></label><label>Your decision<select name="decision"><option value="incomparable">Incomparable / missing evidence</option><option value="keep">Keep</option><option value="change">Change</option><option value="drop">Drop</option></select></label><label>What happened?<textarea name="note" maxlength="4000"></textarea></label><p>This review is fixed once saved. Start another attempt for the next cycle.</p><button>Save review</button></form>` : ""}</article>`,
+              `<article class="card" id="attempt-${a.id}"><small>${a.visibility === "private" ? "Only you" : "Shared with practice readers"}</small><h3>${esc(a.decision || "In progress")}</h3>${returnBrief(a, runs)}${comparison(a)}<p>${esc(a.note || "")}</p>${me()?.id === a.owner_id && a.reviewed_at ? `<button type="button" class="ghost" id="share-return-${a.id}">Share my outcome</button><div class="return-export" id="return-export-${a.id}"></div>` : ""}${me()?.id === a.owner_id && !a.reviewed_at ? `<form id="review-${a.id}" class="reply-form"><label>Did you try the practice?<select name="tried"><option value="true">Yes</option><option value="false">No</option></select></label><label>Session after you started this attempt<select name="run"><option value="">No measured outcome (keep unknown)</option>${runOptions(eligibleOutcomeRuns(a, runs))}</select></label><p class="hint">Only measured sessions from this attempt onward and not in the future are offered. Choose no outcome when the change was not measured.</p><label>Your decision<select name="decision"><option value="incomparable">Incomparable / missing evidence</option><option value="keep">Keep</option><option value="change">Change</option><option value="drop">Drop</option></select></label><label>What happened?<textarea name="note" maxlength="4000"></textarea></label><p>This review is fixed once saved. Start another attempt for the next cycle.</p><button>Save review</button></form>` : ""}</article>`,
           )
           .join("") +
         (attempts.length
@@ -207,6 +271,14 @@ window.GrinderPractices = function ({ client: db, me, app, frame, status }) {
         );
         await detail(id);
       });
+      for (const a of attempts) {
+        const share = $("share-return-" + a.id);
+        if (share) share.onclick = () => {
+          app().querySelectorAll(".return-export").forEach(slot => { slot.innerHTML = ""; });
+          GrinderSharing.mountReview({attempt: a, viewerId: me()?.id,
+            slot: $("return-export-" + a.id), status});
+        };
+      }
       for (const a of attempts)
         bind("review-" + a.id, async (f) => {
           const v = f.elements;

@@ -93,7 +93,7 @@ def _render(run: dict, out: Path, open_it: bool) -> None:
     # terminal summary (Oscar reads the terminal too)
     print(f"\n  {a.athlete} · {a.title}")
     print(f"  {a.harness} · {a.project} · {a.date_str}")
-    print(f"\n  VERIFIED PER TURN  {a.headline}    {a.headline_formula}")
+    print(f"\n  {a.headline_label.upper()}  {a.headline}    {a.headline_formula}")
     print("  " + " · ".join(f"{c.label} {c.value}" + (" (cost)" if c.cost else "") for c in a.five))
     print(f"\n  cost: {a.distance} | {a.moving_time} | {a.pace}")
     print(f"  effort {a.effort} · {a.segments} · {a.commits} commits · {a.prompts_per_hour}"
@@ -116,6 +116,14 @@ def main(argv=None) -> int:
     add_capture_parser(sub)
     from .rig_config import add_parser as add_rig_parser
     add_rig_parser(sub)
+    rv = sub.add_parser("return-view",
+                        help="after a later run: show practice, comparable change, unknowns, next practice")
+    rv.add_argument("--practice", required=True, help="practice.json from practice accept")
+    rv.add_argument("--before", required=True, help="earlier run JSON")
+    rv.add_argument("--after", required=True, help="later run JSON")
+    rv.add_argument("--review", default=None, help="optional practice review JSON")
+    rv.add_argument("-o", "--out", default="return-view.html")
+    rv.add_argument("--no-open", action="store_true")
     d = sub.add_parser("demo", help="render the bundled sample run")
     d.add_argument("--no-open", action="store_true")
     c = sub.add_parser("card", help="render a run JSON to a card")
@@ -167,6 +175,8 @@ def main(argv=None) -> int:
     co.add_argument("--athlete", default="you")
     co.add_argument("--json", dest="as_json", action="store_true",
                     help="print the run with the verdict attached, as JSON (counts only, no prompt text)")
+    co.add_argument("--live-status", action="store_true",
+                    help="print whether Amazon Bedrock live coaching is configured; never prints credentials")
     pd = sub.add_parser("predict", help="write down what your next grind on a project will do, before it happens")
     pd.add_argument("text", help="the prediction, in your words, e.g. 'ships 2 files, every claim verified'")
     pd.add_argument("--project", default=None, help="project name (default: the git repository of the current directory)")
@@ -268,6 +278,16 @@ def main(argv=None) -> int:
     if args.cmd == "practice":
         from .practices import run_cli
         return run_cli(args)
+    if args.cmd == "return-view":
+        from .return_view import write_return_view
+        model = write_return_view(args.practice, args.before, args.after, args.out, args.review)
+        print(f"  return view -> {args.out}")
+        print(f"  practice: {model['practice'].get('title','')[:80]}")
+        print(f"  comparable: {model['metric']['comparable']} "
+              f"({model['metric']['before_id']} → {model['metric']['after_id']})")
+        if not args.no_open:
+            webbrowser.open(Path(args.out).resolve().as_uri())
+        return 0
     if args.cmd == "agent":
         from .agent_api import run_cli
         return run_cli(args)
@@ -744,7 +764,8 @@ def _grind(args) -> int:
         run["input_digest"] = source_digest
         record_and_attach(run)
     if args.as_json:
-        print(json.dumps(run, indent=2)); return 0
+        from .coach.experiment import public_run_view
+        print(json.dumps(public_run_view(run), indent=2)); return 0
 
     ranks = None
     if not args.no_rank:
@@ -835,7 +856,8 @@ def _native_grind(run, args, path, source_digest):
         except Exception as error:
             print('Activity coach failed: '+str(error),file=sys.stderr);return 1
     if args.as_json:
-        print(json.dumps(run,indent=2));return 0
+        from .coach.experiment import public_run_view
+        print(json.dumps(public_run_view(run), indent=2)); return 0
     _render(run,Path(args.out),False)
     print('  '+run.get('trace_basis','Trace timing unavailable'))
     if coach_text:print(coach_text)
@@ -866,13 +888,23 @@ def _run_coach_into(run: dict, path: str, pick: int, gap_s: int, mode: str, athl
     except ImportError as e:
         print(coach_install_hint() + f"  ({e})\n")
         return None
-    for k in ("coach_mode", "coach_tool_calls", "coach_verdict", "coach_plan", "coach_numbers"):
+    except Exception as e:
+        from .coach.live_config import LiveConfigError
+        if isinstance(e, LiveConfigError):
+            print(str(e)); return None
+        raise
+    for k in ("coach_mode", "coach_tool_calls", "coach_verdict", "coach_plan",
+              "coach_numbers", "coach_experiment"):
         run[k] = ctx.run.get(k)
     return text
 
 
 def _coach(args) -> int:
     """`agentgrinder coach` : the verdict, on its own, for one sitting."""
+    from .coach.live_config import LiveConfigError, live_status_text, missing_live_config
+    if getattr(args, "live_status", False):
+        print(live_status_text())
+        return 0 if not missing_live_config() else 2
     from .solo import latest_grind
     if args.session and not Path(args.session).exists():
         print(f"no such transcript: {args.session}"); return 1
@@ -895,13 +927,16 @@ def _coach(args) -> int:
         print(coach_install_hint() + f"  ({e})\n"); return 1
     try:
         ctx, text = run_coach(path, pick=pick, gap=args.gap * 60, mode=args.model, athlete=args.athlete)
+    except LiveConfigError as e:
+        print(str(e)); return 2
     except ValueError as e:
         print(f"  {e}"); return 1
     except ImportError as e:
         print(coach_install_hint() + f"  ({e})\n")
         return 1
     if args.as_json:
-        print(json.dumps(ctx.run, indent=2, default=str)); return 0
+        from .coach.experiment import public_run_view
+        print(json.dumps(public_run_view(ctx.run), indent=2, default=str)); return 0
     print()
     print(text)
     print()

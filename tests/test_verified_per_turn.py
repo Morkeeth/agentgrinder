@@ -241,7 +241,8 @@ def test_web_app_never_headlines_prompts():
     assert '<details class="run-evidence">' in card
     assert '${vptHtml(r)}' in card and '${fiveRow(r)}' in card
     assert '<span>Typed turns</span>' in card
-    assert 'GrinderSharing.mount({run:r,slot:app,status})' in src
+    # Share export is exercised by check-moment-fixtures.py; its call signature
+    # is not part of the card's headline contract.
     # the profile totals lead with verified per turn; prompts is labelled cost
     prof = src[src.index("async function viewProfile("):src.index("async function refreshAuth(")]
     assert prof.index("verified per turn") < prof.index("prompts · cost")
@@ -274,4 +275,4 @@ def test_profile_headlines_verified_per_turn_and_leaves_missing_runs_out():
     assert "Verified per turn" in first_cell and "0.21" in first_cell
     assert '<div class="k">Prompts</div>' not in html
     assert "Cost — 147 prompts typed across 2 runs" in html
-    assert "0.21 verified/turn" in html and "47 prompts · cost" in html
+    assert "0.21 verified per turn" in html and "47 prompts · cost" in html

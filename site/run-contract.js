@@ -82,7 +82,88 @@
       '" stroke="currentColor" fill="none" stroke-width="2"/></svg>'
     );
   }
-  const api = { validate, message, trace };
+  function headlineMetric(snapshot) {
+    if (snapshot && snapshot.headline_metric_id) return snapshot.headline_metric_id;
+    if (snapshot && snapshot.claims_verified == null && snapshot.artifacts_produced != null)
+      return "artifacts_per_turn";
+    return "verified_per_turn";
+  }
+  function sittingsComparable(before, after, review = {}) {
+    if (review.decision === "incomparable" || review.tried === false)
+      return { ok: false, why: "The participant marked this outcome incomparable or did not try the practice." };
+    if (!before || !after)
+      return { ok: false, why: "No later measurement is bound yet." };
+    if (!before.harness || !after.harness || before.harness !== after.harness)
+      return {
+        ok: false,
+        why:
+          "Harness differs or is unknown. Different harnesses are not the same measurement, even when claim counts are present.",
+      };
+    if (!before.trace_basis || !after.trace_basis || before.trace_basis !== after.trace_basis)
+      return {
+        ok: false,
+        why: "Time basis differs or is unknown. Do not read the traces as one claim.",
+      };
+    const beforeMetric = headlineMetric(before);
+    const afterMetric = headlineMetric(after);
+    if (beforeMetric !== afterMetric)
+      return {
+        ok: false,
+        why:
+          "Headline metrics differ (" +
+          beforeMetric +
+          " vs " +
+          afterMetric +
+          "); do not read a number change as the same claim.",
+      };
+    if ((before.claims_verified != null) !== (after.claims_verified != null))
+      return {
+        ok: false,
+        why: "Verified-claim evidence is present on only one sitting.",
+      };
+    const numerator = beforeMetric === "verified_per_turn" ? "claims_verified"
+      : beforeMetric === "artifacts_per_turn" ? "artifacts_produced" : null;
+    if (!numerator || [before, after].some((s) =>
+      !Number.isFinite(s[numerator]) || s[numerator] < 0 ||
+      !Number.isFinite(s.turns_typed) || s.turns_typed <= 0))
+      return { ok: false, why: "The headline numerator or typed-turn count is missing or invalid. Two missing measurements do not make a comparison." };
+    return {
+      ok: true,
+      why: "Same harness, time basis and metric identity. This is an observation, not proof the practice caused the difference. Different task difficulty is not productivity proof.",
+    };
+  }
+  function rejectPaths(value) {
+    if (value == null) return value;
+    if (typeof value === "object") {
+      if (Array.isArray(value)) return value.map(rejectPaths);
+      const out = {};
+      for (const k of Object.keys(value)) out[k] = rejectPaths(value[k]);
+      return out;
+    }
+    if (typeof value !== "string") return value;
+    return value
+      .split(/\n/)
+      .map((line) =>
+        line
+          .split(/\s+/)
+          .map((raw) => {
+            if (!raw) return raw;
+            const tok = raw.replace(/^[,.;:()[\]{}'"`]+|[,.;:()[\]{}'"`]+$/g, "");
+            if (
+              tok.startsWith("/") ||
+              tok.startsWith("~") ||
+              tok.includes("\\") ||
+              tok.includes("/") ||
+              /^[A-Za-z]:/.test(tok)
+            )
+              return "[file]";
+            return raw;
+          })
+          .join(" "),
+      )
+      .join("\n");
+  }
+  const api = { validate, message, trace, sittingsComparable, headlineMetric, rejectPaths };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   else root.GrinderContract = api;
 })(typeof globalThis !== "undefined" ? globalThis : this);

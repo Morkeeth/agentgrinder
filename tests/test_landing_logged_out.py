@@ -27,9 +27,12 @@ def test_landing_shows_a_run_without_sign_in_before_capture_details():
     assert "function landingHTML(r)" in HTML
     body = HTML[HTML.index("function landingHTML(r)"):]
     body = body[:body.index("\nasync function viewLanding()")]
-    # The real example remains available without authentication.
-    assert body.index("featuredCard(r)") < body.index("Get started")
-    assert body.index("featuredCard(r)") < body.index("uploadBlock()")
+    # Bundled example is the start. Featured public grind remains readable without auth.
+    assert "/?example" in body
+    assert "Try the bundled example" in body
+    assert body.index("/?example") < body.index("uploadBlock()")
+    assert "featuredCard(r)" in body
+    assert "Get started" not in body or body.index("/?example") < body.index("Get started")
 
 
 def test_the_card_carries_the_verdict_its_numbers_and_the_tool_call_count():
@@ -83,9 +86,9 @@ def test_the_landing_promises_nothing_that_needs_an_account():
     body = body[:body.index("\nasync function viewLanding()")]
     assert 'href="/?explore"' in body
     assert "Runs start private" in body
-    # every link out of the landing is a page that renders without a session
+    # every location.href out of the landing is a page that renders without a session
     for href in re.findall(r"location\.href='([^']+)'", body):
-        assert href in ("/?onboard", "/?explore"), href
+        assert href in ("/?onboard", "/?explore", "/?example"), href
 
 
 def test_the_clone_command_is_a_real_public_url_not_a_placeholder():

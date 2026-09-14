@@ -1,0 +1,254 @@
+{
+  "label": "BUNDLED EXAMPLE \u00b7 public-safe fixture",
+  "fixture": true,
+  "source": "samples/sample_session.jsonl",
+  "mode": "deterministic fallback \u00b7 no agent, no model (5 tools called in sequence)",
+  "mode_kind": "demo",
+  "not": "A scripted tool sequence. Not autonomous reasoning. Not a live language model.",
+  "run": {
+    "id": "example-baseline",
+    "title": "Bundled fixture sitting",
+    "harness": "Claude Code",
+    "project": "bundled-example",
+    "visibility": "private",
+    "started": "2026-08-20T10:00:00+00:00",
+    "duration_s": 610,
+    "turns_typed": 3,
+    "prompts": 3,
+    "tool_calls": 4,
+    "files_touched": 2,
+    "commits": 0,
+    "claims": 2,
+    "claims_verified": 1,
+    "artifacts_produced": 1,
+    "rhythm": [
+      2,
+      4,
+      3,
+      1,
+      0,
+      2,
+      1
+    ],
+    "trace_basis": "typed-turn order",
+    "measurement_revision": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "coach_mode": "deterministic fallback \u00b7 no agent, no model (5 tools called in sequence)",
+    "coach_tool_calls": 8,
+    "coach_verdict": "1 of 2 claims had evidence in their own turn. 1 of 2 files the run wrote exist on disk, 1 of them in a commit. 0 commits during the sitting, over 3 typed turns.",
+    "coach_plan": "Friction: Claim 2 named test_draft_renders, draft.md as done, but check_claim found no matching evidence in that claim's own turn.\nConsequence: The card cannot treat that claim as verified. A later sitting that looks shorter or busier is not proof the named check ran.\nExperiment: In the same human turn as the completion claim, run test_draft_renders and keep its result in that turn before saying it passed. Do not claim a deploy or extra file in the same sentence unless that turn also holds its evidence.\nLook for: check_claim on the named target returns verified, with test_draft_renders in the evidence snippet. Missing evidence stays unknown, not zero.",
+    "coach_experiment": {
+      "kind": "unverified-named-claim",
+      "claim_id": 2,
+      "friction": "Claim 2 named test_draft_renders, draft.md as done, but check_claim found no matching evidence in that claim's own turn.",
+      "consequence": "The card cannot treat that claim as verified. A later sitting that looks shorter or busier is not proof the named check ran.",
+      "title": "Run test_draft_renders in the same turn as the claim",
+      "instruction": "In the same human turn as the completion claim, run test_draft_renders and keep its result in that turn before saying it passed. Do not claim a deploy or extra file in the same sentence unless that turn also holds its evidence.",
+      "expected": "check_claim on the named target returns verified, with test_draft_renders in the evidence snippet. Missing evidence stays unknown, not zero.",
+      "evidence": "check_claim on claim 2 (turn 2): verified=false, 2 tool result(s) in that turn, no matching evidence snippet.",
+      "plan": [
+        "Friction: Claim 2 named test_draft_renders, draft.md as done, but check_claim found no matching evidence in that claim's own turn.",
+        "Consequence: The card cannot treat that claim as verified. A later sitting that looks shorter or busier is not proof the named check ran.",
+        "Experiment: In the same human turn as the completion claim, run test_draft_renders and keep its result in that turn before saying it passed. Do not claim a deploy or extra file in the same sentence unless that turn also holds its evidence.",
+        "Look for: check_claim on the named target returns verified, with test_draft_renders in the evidence snippet. Missing evidence stays unknown, not zero."
+      ]
+    }
+  },
+  "tools": [
+    {
+      "name": "read_run",
+      "result": {
+        "project": "workspace",
+        "harness": "Claude Code",
+        "window": {
+          "started": "2026-08-20T10:00:00+00:00",
+          "ended": "2026-08-20T10:10:10+00:00",
+          "wall_s": 610
+        },
+        "turns_typed": 3,
+        "tool_calls": 4,
+        "files_edited": 2,
+        "files_read": 0,
+        "commits": 0,
+        "in_git": true,
+        "claims": [
+          {
+            "id": 1,
+            "turn": 1,
+            "line": "The suite passes: 4 passed."
+          },
+          {
+            "id": 2,
+            "turn": 2,
+            "line": "Done. draft.md is deployed and test_draft_renders passes."
+          }
+        ],
+        "results_per_turn": {
+          "1": 2,
+          "2": 2
+        },
+        "artifacts": [
+          {
+            "id": 1,
+            "label": "samples/fixture-project/notes.md",
+            "where": "in_repo"
+          },
+          {
+            "id": 2,
+            "label": "samples/fixture-project/draft.md",
+            "where": "in_repo"
+          }
+        ]
+      }
+    },
+    {
+      "name": "check_claim",
+      "input": {
+        "claim_id": 1
+      },
+      "result": {
+        "claim_id": 1,
+        "turn": 1,
+        "verified": true,
+        "matched": "generic success token",
+        "evidence": ".... 4 passed in 0.09s"
+      }
+    },
+    {
+      "name": "check_claim",
+      "input": {
+        "claim_id": 2
+      },
+      "result": {
+        "claim_id": 2,
+        "turn": 2,
+        "verified": false,
+        "matched": null,
+        "evidence": null,
+        "results_in_turn": 2
+      }
+    },
+    {
+      "name": "verify_artifact",
+      "input": {
+        "artifact_id": 1
+      },
+      "result": {
+        "artifact_id": 1,
+        "label": "samples/fixture-project/notes.md",
+        "exists": true,
+        "size": 314,
+        "modified": "2026-09-13T01:01:01+00:00",
+        "modified_in_window": false
+      }
+    },
+    {
+      "name": "git_evidence",
+      "input": {
+        "artifact_id": 1
+      },
+      "result": {
+        "artifact_id": 1,
+        "label": "samples/fixture-project/notes.md",
+        "asked": true,
+        "ignored": false,
+        "in_window": [],
+        "committed_later": "2026-09-03T14:10:22+00:00"
+      }
+    },
+    {
+      "name": "verify_artifact",
+      "input": {
+        "artifact_id": 2
+      },
+      "result": {
+        "artifact_id": 2,
+        "label": "samples/fixture-project/draft.md",
+        "exists": false
+      }
+    },
+    {
+      "name": "git_evidence",
+      "input": {
+        "artifact_id": 2
+      },
+      "result": {
+        "artifact_id": 2,
+        "label": "samples/fixture-project/draft.md",
+        "asked": true,
+        "ignored": false,
+        "in_window": [],
+        "committed_later": null
+      }
+    }
+  ],
+  "later": {
+    "id": "example-later",
+    "title": "Bundled fixture \u00b7 later sitting after the named check",
+    "harness": "Claude Code",
+    "project": "bundled-example",
+    "visibility": "private",
+    "started": "2026-08-20T12:00:00+00:00",
+    "duration_s": 900,
+    "turns_typed": 3,
+    "prompts": 3,
+    "tool_calls": 8,
+    "files_touched": 2,
+    "commits": 0,
+    "claims": 2,
+    "claims_verified": 2,
+    "artifacts_produced": 1,
+    "rhythm": [
+      1,
+      2,
+      2,
+      3,
+      1
+    ],
+    "trace_basis": "typed-turn order",
+    "measurement_revision": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "observed": "The named test now has same-turn evidence. This is one observation, not proof the practice caused a better score. Commits stay 0; missing files stay missing."
+  },
+  "reader": {
+    "id": "example-reader-baseline",
+    "title": "Second builder fixture · their own earlier grind",
+    "harness": "Claude Code",
+    "visibility": "private",
+    "started": "2026-08-19T09:00:00+00:00",
+    "turns_typed": 5,
+    "prompts": 5,
+    "commits": 1,
+    "claims": 2,
+    "claims_verified": 1,
+    "artifacts_produced": 2,
+    "rhythm": [1, 1, 3, 2],
+    "trace_basis": "typed-turn order",
+    "measurement_revision": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  },
+  "readerLater": {
+    "id": "example-reader-later",
+    "title": "Second builder fixture · their own later attempt",
+    "harness": "Claude Code",
+    "visibility": "private",
+    "started": "2026-08-21T09:00:00+00:00",
+    "turns_typed": 4,
+    "prompts": 4,
+    "commits": 1,
+    "claims": 2,
+    "claims_verified": 2,
+    "artifacts_produced": 2,
+    "rhythm": [2, 2, 1, 2],
+    "trace_basis": "typed-turn order",
+    "measurement_revision": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "observed": "They ran the named check in the same turn. Their own two sittings, not the author's counts. Not proof of cause."
+  },
+  "live": {
+    "provider": "Amazon Bedrock",
+    "note": "Live model coaching runs on your machine. This site never holds AWS credentials and will not start a live run from the browser.",
+    "needs": [
+      {"id": "strands-agents", "need": "Python 3.10+ venv with pip install -e \".[coach]\""},
+      {"id": "aws-region", "need": "AWS_REGION or AWS_DEFAULT_REGION set to a Bedrock-enabled region"},
+      {"id": "aws-credentials", "need": "AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY, or AWS_PROFILE, or ~/.aws/credentials. Values are never printed."}
+    ],
+    "command": "python3.12 -m venv .venv && .venv/bin/pip install -e \".[coach]\" && .venv/bin/agentgrinder coach --live-status"
+  }
+}

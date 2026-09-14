@@ -49,6 +49,17 @@ def test_export_run_carries_the_coach_and_progress_fields_and_drops_nulls():
     out = export_run(run)
     assert out["coach_verdict"] == "v" and out["coach_plan"] == "a\nb" and out["coach_tool_calls"] == 8
     assert out["progress_verdict"] == "helped" and out["progress_delta"] == 0.5
+    leaked = export_run({
+        "turns_typed": 3,
+        "coach_verdict": "Missing /Users/casey/Documents/notes/secret-plan.md",
+        "coach_plan": "Recreate ~/private/keys.env",
+        "coach_experiment": {"instruction": "Open C:\\Users\\casey\\secret.py"},
+        "coach_experiment_local": {"instruction": "Open /Users/casey/Documents/notes/secret-plan.md"},
+    })
+    blob = str(leaked)
+    assert "Users/casey" not in blob and "secret-plan.md" not in blob
+    assert "~/" not in blob and "C:\\Users" not in blob
+    assert "coach_experiment_local" not in leaked
     bare = export_run(dict(project="p", turns_typed=3))
     assert "coach_verdict" not in bare and "progress_verdict" not in bare
 
@@ -56,7 +67,7 @@ def test_export_run_carries_the_coach_and_progress_fields_and_drops_nulls():
 def test_site_reads_writes_and_renders_the_coach_fields_null_safe():
     html = open(os.path.join(REPO, "site", "index.html"), encoding="utf-8").read()
     for col in ("claims", "claims_verified", "artifacts_produced", "coach_verdict", "coach_plan",
-                "coach_tool_calls", "progress_verdict"):
+                "coach_tool_calls", "coach_mode", "progress_verdict"):
         assert f"{col}:run.{col}??null" in html, col          # the insert carries it
     assert "function coachBlock(r)" in html and "${coachBlock(r)}" in html
     assert "if(!v&&!pv) return '';" in html                    # null-safe: no verdict, no block
