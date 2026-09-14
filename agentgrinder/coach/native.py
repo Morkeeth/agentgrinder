@@ -81,9 +81,10 @@ def review_activity(run, mode='local'):
     verdict=state['verdict']
     from .experiment import activity_experiment, public_experiment, public_text
     exp = activity_experiment(run)
+    from .summary import evidence_summary
     run.update(
         coach_mode=label,
-        coach_verdict=public_text(verdict['paragraph']),
+        coach_verdict=evidence_summary(verdict['numbers'], activity_only=True),
         coach_plan=public_text('\n'.join(verdict['plan'])),
         coach_numbers=verdict['numbers'],
         coach_tool_calls=len(ctx.dispatch),
@@ -92,4 +93,6 @@ def review_activity(run, mode='local'):
     )
     if run.get('practice_context'):
         run['private_coach_plan']='Review your accepted practice: '+run['practice_context'][0]['title']
-    return label+'\n'+verdict['paragraph']+'\n'+'\n'.join('- '+p for p in verdict['plan'])
+    return (label+'\n'+run['coach_verdict']+'\nCoach interpretation (not validated by the numeric check):\n'
+            +verdict['paragraph']+'\nProposed next steps (review before use):\n'
+            +'\n'.join('- '+p for p in verdict['plan']))

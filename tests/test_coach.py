@@ -106,7 +106,7 @@ def test_local_mode_report_says_what_it_is_and_is_not(tmp_path):
     assert "not an LLM" in text
     assert "DEGRADED" not in text
     assert ctx.run["coach_tool_calls"] == 6
-    assert ctx.run["coach_verdict"].startswith("1 of 2 claims had evidence")
+    assert ctx.run["coach_verdict"].startswith("1 of 2 claims had matching evidence")
     assert ctx.run["coach_plan"].startswith("Friction:")
     assert "Experiment:" in ctx.run["coach_plan"]
     assert "Look for:" in ctx.run["coach_plan"]
@@ -116,6 +116,32 @@ def test_local_mode_report_says_what_it_is_and_is_not(tmp_path):
     assert ctx.run["coach_numbers"]["claims_verified"] == 1
     # the report carries no typed prompt and no absolute path
     assert "please fix it" not in text and str(tmp_path) not in text
+
+
+def test_accepted_numbers_do_not_export_an_invented_explanation(tmp_path):
+    from agentgrinder.coach.policy import coach_policy
+    from agentgrinder.coach.tools import attach
+    from agentgrinder.push import export_run
+
+    invented = "Files came from another repository and productivity doubled."
+
+    def misleading(history):
+        step = coach_policy(history)
+        if step and step[0] == "write_verdict":
+            step[1]["paragraph"] = invented
+        return step
+
+    path, _, _ = _sitting(tmp_path)
+    ctx = CoachContext(path)
+    agent = create_coach(ctx, model=ScriptedLocalModel(policy=misleading))
+    agent("review it")
+    assert ctx.verdict is not None  # All supplied numeric arguments were correct.
+    assert ctx.verdict["paragraph"] == invented
+    attach(ctx, "Strands loop · local scripted model")
+    exported = export_run(ctx.run)
+    assert invented not in str(exported)
+    assert "1 of 2 claims had matching evidence" in ctx.run["coach_verdict"]
+    assert "File existence does not establish who produced a file" in ctx.run["coach_verdict"]
 
 
 def test_none_mode_is_labelled_as_not_an_agent(tmp_path):

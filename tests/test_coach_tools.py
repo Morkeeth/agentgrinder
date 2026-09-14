@@ -171,7 +171,7 @@ def test_write_verdict_accepts_the_tools_numbers_and_matches_the_card(tmp_path):
     assert v["unverified_claims"] == [2] and v["missing_artifacts"] == [2]
     assert ctx.run["claims"] == 2 and ctx.run["claims_verified"] == 1 and ctx.run["artifacts_produced"] == 1
     run = attach(ctx, "test mode")
-    assert run["coach_verdict"].startswith("One of two")
+    assert run["coach_verdict"].startswith("1 of 2 claims had matching evidence")
     assert run["coach_plan"] == "Name the test in the claim\nCommit out.md"
     assert run["coach_numbers"]["claims_verified"] == 1
 
