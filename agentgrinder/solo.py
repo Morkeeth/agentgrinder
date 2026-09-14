@@ -435,7 +435,7 @@ def parse_solo(path: str, athlete: str = "you", pick: int = -1, gap: int = SITTI
                               kind=m["kind"], n=m["n"]) for f in rest for m in f["marks"]],
                   deadends=len([f for f in rest if f["deadend"]]),
                   later=len([f for f in rest if f["committed_later"]])),
-        series=series, bucket_s=bucket_s,
+        series=series, bucket_s=bucket_s, trace_basis="elapsed-agent-tool-calls",
         bash=len(s["bash"]),
         stretch=(dict(start=stretch["start"].isoformat(), end=stretch["end"].isoformat(),
                       wall_s=stretch["wall_s"], active_s=stretch["active_s"],
