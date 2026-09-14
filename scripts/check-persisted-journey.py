@@ -146,6 +146,7 @@ def main():
             page = casey_ctx.new_page()
             page.on("pageerror", lambda e: failures.append("casey " + str(e)))
             page.goto(base + "/?run=" + info["caseyRun"], wait_until="domcontentloaded")
+            page.locator(".run-learning > summary").click()
             page.locator("#run-experiment").wait_for()
             page.locator("#grind-experiment").get_by_text("test_draft_renders", exact=False).first.wait_for()
             page.locator("#grind-experiment .mode-banner").first.wait_for()
@@ -185,6 +186,7 @@ def main():
             page.set_viewport_size({"width": 1280, "height": 900})
             page.screenshot(path=str(OUT / "persist_casey_review_desktop.png"), full_page=True)
             page.goto(base + "/?run=" + info["caseyRun"], wait_until="domcontentloaded")
+            page.locator(".run-learning > summary").click()
             page.get_by_text("Add a moment", exact=False).click()
             page.get_by_label("Moment title").fill("TEST DATA the named check that was missing")
             page.get_by_label("What happened?").fill(
@@ -215,6 +217,7 @@ def main():
             other = riley_ctx.new_page()
             other.on("pageerror", lambda e: failures.append("riley " + str(e)))
             other.goto(base + "/?run=" + info["caseyRun"], wait_until="domcontentloaded")
+            other.locator(".run-learning > summary").click()
             other.get_by_text("Keep this practice on my account", exact=False).wait_for()
             other.get_by_label("What would you look for?").fill(
                 "check_claim returns verified on my own later sitting"
