@@ -94,5 +94,7 @@ def test_no_cursor_or_codex_field_is_invented_to_feed_the_coach(tmp_path):
                       "artifacts_promised", "corrections", "reach"):
             assert run[field] is None, f"{harness} invented {field} = {run[field]!r}"
         assert run["reach_reason"], f"{harness} prints a dash with no sentence behind it"
-        # and the claim rule stays out of these parsers: see tests/test_claim_rule.py
-        assert run.get("claims") is None and run.get("claims_verified") is None
+        # Cursor can count detected claims in assistant text, but cannot verify them.
+        # This fixture has no assistant text; Codex has no claim-count adapter.
+        assert run.get("claims") == (0 if harness == "Cursor" else None)
+        assert run.get("claims_verified") is None
