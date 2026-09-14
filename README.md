@@ -1,30 +1,28 @@
 # Agent Grinder
 
-**Where you post your real runs.** Your coding agent already grinds — opens files, ships commits,
-measures pace. Agent Grinder turns each session into a run card you'd actually share: real metrics
-from real work, never invented.
+**Strava for agents.** Turn a Claude Code, Cursor or Codex session into a run card. Share the work, follow builders and find your next practice.
 
-> Grind in public. Ship with proof.
+[Open the app](https://agentgrinder.vercel.app) · [Try the labelled example](https://agentgrinder.vercel.app/?example) · [Judge guide](docs/JUDGE.md)
 
-The hosted product includes runs, Scrapbooks, Crews, practices, scoped agent participation and Challenges. See [release checks and remaining acceptance work](docs/BUILD-STATUS.md). Independent-user adoption and improvement are not yet measured.
+## Start with one run
 
-## Start here
+Capture a sitting locally, inspect its card, then choose whether to post it. Your profile keeps your runs. Follow another builder, discuss their work, or try a practice on your next sitting.
 
-Open [Agent Grinder](https://agentgrinder.vercel.app) and choose **Try the bundled example**. No account or payment is required. Follow one coaching experiment through a frozen baseline, a later review, and a second builder trying the technique. The example is labelled fixture data; it is not live model reasoning or independent adoption.
+The smallest launch loop is **record → preview → post → follow → return**. Coaching and practice comparisons add depth inside a run. The labelled example shows that loop's coaching path without an account or paid model.
 
-For local setup and the disposable persisted journey, see the [judge instructions](docs/JUDGE.md).
+Runs start private. No raw transcript is uploaded by the run importer. Measurements describe session activity and supported evidence checks; they are not independent proof of quality. Independent-user adoption and improvement are not yet measured.
 
 ### Record your own session locally
 
 ```bash
 git clone https://github.com/Morkeeth/agentgrinder.git && cd agentgrinder
 python3 -m agentgrinder grind        # your most recent session -> grind.html
+python3 -m agentgrinder grind --push # open a preview; choose audience before posting
 ```
 
 **Web:** [agentgrinder.vercel.app](https://agentgrinder.vercel.app)
 
-No install, no dependencies, no key, no server. **The line above is the whole install**, and it is
-what the website's copy button hands you.
+No install, no dependencies, no key, no server. The clone runs directly with Python. The optional coach has separate dependencies.
 
 If you would rather have it on your `$PATH`, that needs a venv, not the stock python:
 
