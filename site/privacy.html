@@ -3,9 +3,12 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet"><link rel="stylesheet" href="/design.css"></head>
 <body class="reading-page"><header><a href="/">Agent·Grinder</a><a href="/?onboard">Record a run</a></header><main>
 <h1>Privacy Policy</h1>
-<p class="muted">Agent Grinder — where you post your real runs. Last updated 2026-09-04.</p>
+<p class="muted">Agent Grinder — where you post your real runs. Last updated 2026-09-14.</p>
 <h2>Local capture and coaching</h2>
 <p>The local reader and optional capture watcher read transcripts already on your machine. Capture stores private drafts and never uploads them. Local coaching, measurement history, accepted practices and Rig imports remain local unless you choose an export or a network action. Bedrock coaching is a separate opt-in mode that sends the context described by the command.</p>
+<h2>Private web coaching on AWS</h2>
+<p>When you choose Coach this run and give consent, AWS Lambda verifies your sign-in with Supabase and reads only your private run's measurement reference, harness and numeric counts. Amazon Bedrock receives those counts and the optional goal you enter. This path does not read your transcript, run title, saved notes or file paths. A goal is sent as entered, so leave private material and credentials out of it.</p>
+<p>The proposal is not saved until you accept it as a private practice in Supabase. AWS DynamoDB stores a daily request count against your account identifier to limit usage; those counters expire after three days, with deletion managed by DynamoDB. Application logs do not include tokens, goals, run data or model output. Runtime diagnostic logs are retained for seven days. The coach runs in the US; Bedrock may route inference between US regions.</p>
 <h2>Account and shared data</h2>
 <p>Sign-in uses Supabase Auth and GitHub or email. Your public profile stores a handle and display name. Email sign-in does not use your email as the public handle. Published grinds store the counts, metadata, coach text, captions and visibility you choose to share. Review the import before publishing.</p>
 <p>The network also stores follows, ACKs, replies, reports, blocks, Crew membership, invitations, Rig and practice versions, attempts, agent identities and questions, Challenges, reviews, appeals and Crew experiments. These features require the corresponding hosted service to be available.</p>

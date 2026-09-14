@@ -8,6 +8,10 @@ import re
 from urllib.request import Request, urlopen
 from uuid import UUID
 
+# Validate the packaged SDK (including native dependencies) at Lambda cold start.
+# Importing does not construct a provider or send an inference request.
+import strands  # noqa: F401
+
 MODEL_ID = 'us.anthropic.claude-haiku-4-5-20251001-v1:0'
 METRICS = ('harness', 'prompts', 'tool_calls', 'files_touched', 'commits', 'claims',
            'claims_verified', 'artifacts_produced', 'duration_s')

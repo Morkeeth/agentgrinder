@@ -6,6 +6,7 @@ Bedrock model, update its quota table and write its own logs only.
 import argparse
 import json
 import os
+import time
 from pathlib import Path
 
 import boto3
@@ -50,19 +51,31 @@ def deploy(bundle, region, public_key, supabase_url):
     config = dict(FunctionName=NAME, Runtime="python3.12", Role=role["Arn"],
                   Handler="coach_handler.handler", Timeout=120, MemorySize=512,
                   Environment={"Variables": {"SUPABASE_URL": supabase_url,
-                    "SUPABASE_ANON_KEY": public_key, "COACH_QUOTA_TABLE": NAME}},
-                  Architectures=["arm64"])
+                    "SUPABASE_ANON_KEY": public_key, "COACH_QUOTA_TABLE": NAME}})
     try:
         lam.get_function(FunctionName=NAME)
     except lam.exceptions.ResourceNotFoundException:
-        lam.create_function(**config, Code={"ZipFile": bundle.read_bytes()}, Publish=True)
+        for attempt in range(6):
+            try:
+                lam.create_function(**config, Architectures=["arm64"], Code={"ZipFile": bundle.read_bytes()}, Publish=True)
+                break
+            except lam.exceptions.InvalidParameterValueException as error:
+                if "cannot be assumed" not in str(error) or attempt == 5:
+                    raise
+                time.sleep(5)  # New IAM role propagation, not a retry of inference.
         lam.get_waiter("function_active_v2").wait(FunctionName=NAME)
     else:
         lam.update_function_code(FunctionName=NAME, ZipFile=bundle.read_bytes(), Publish=True)
         lam.get_waiter("function_updated_v2").wait(FunctionName=NAME)
         lam.update_function_configuration(**config)
         lam.get_waiter("function_updated_v2").wait(FunctionName=NAME)
-    lam.put_function_concurrency(FunctionName=NAME, ReservedConcurrentExecutions=2)
+    limits = lam.get_account_settings()["AccountLimit"]
+    if limits.get("UnreservedConcurrentExecutions", 0) >= 12:
+        lam.put_function_concurrency(FunctionName=NAME, ReservedConcurrentExecutions=2)
+    else:
+        # Small AWS accounts must retain ten unreserved slots. Atomic daily quotas
+        # still prevent concurrent callers from exceeding the inference allowance.
+        print("Using account concurrency limit; daily inference quotas remain enforced.")
     # Application authentication happens before metrics retrieval and quota reservation.
     cors = {"AllowOrigins": ["https://agentgrinder.vercel.app"], "AllowMethods": ["POST"],
             "AllowHeaders": ["authorization", "content-type"], "MaxAge": 300}
