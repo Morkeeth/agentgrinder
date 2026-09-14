@@ -4,6 +4,8 @@
 
 [Open the app](https://agentgrinder.vercel.app) · [Try the labelled example](https://agentgrinder.vercel.app/?example) · [Judge guide](docs/JUDGE.md) · [Launch guide and screenshot](docs/LAUNCH.md)
 
+[Live Bedrock evidence](docs/BEDROCK-LIVE-2026-09-14.md): Claude Haiku 4.5 executed the coach on the safe bundled fixture. Accepted counts matched the local run; this does not validate all generated prose or demonstrate real-user improvement.
+
 ## Start with one run
 
 Capture a sitting locally, inspect its card, then choose whether to post it. Your profile keeps your runs. Follow another builder, discuss their work, or try a practice on your next sitting.

@@ -25,6 +25,6 @@ The release homepage, onboarding, public feed, public run and labelled example w
 
 The reduced interface also passed a disposable two-account journey through coaching, saved practices, review and access revocation. This is a functional test, not adoption.
 
-Follow, discussion and ACKs exist, but this release pass did not reproduce social writes by two independent users. The sample is deterministic; live Bedrock execution remains unverified here. [Judge guide](JUDGE.md) explains the optional coach and persisted disposable tests.
+Follow, discussion and ACKs exist, but this release pass did not reproduce social writes by two independent users. The sample is deterministic; a separate [live Bedrock fixture run](BEDROCK-LIVE-2026-09-14.md) completed, with narrative limitations recorded. [Judge guide](JUDGE.md) explains the optional coach and persisted disposable tests.
 
 [Architecture](launch/architecture.svg). Run import does not upload raw transcripts. Optional Bedrock coaching has its own explicit provider-data boundary.

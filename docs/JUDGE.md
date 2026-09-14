@@ -43,7 +43,9 @@ Screenshots and the receipt are saved to a new temporary directory printed at st
 
 Two authenticated TEST DATA contexts hit the real `grinder_start_attempt` / `grinder_review_attempt` / `grinder_adopt_moment` RPCs. Coach → accept/edit on the same card → freeze own baseline → later run and review → deliberate share → second builder adopts onto **their** baseline → their outcome → revocation leaves owned work. Different harnesses with claim counts do not get a green comparable badge.
 
-7. **Live model (optional, your machine only):**
+7. **Recorded live model evidence:** Read [the September 14 Bedrock receipt](BEDROCK-LIVE-2026-09-14.md). The browser example remains deterministic.
+
+**Optional reproduction on your machine:**
 
 ```bash
 python3.12 -m venv .venv && .venv/bin/pip install -e ".[coach]"
@@ -63,4 +65,4 @@ Bring-your-own: `python3 -m agentgrinder grind` then `grind --push`. Import audi
 
 ## What this is not
 
-Independent real-world adoption or a hosted two-builder acceptance claim. A live Bedrock receipt remains pending. Private transcripts do not belong in Git or in the cloud preview. The disposable PGlite journey is TEST DATA, not live users.
+Independent real-world adoption or a hosted two-builder acceptance claim. [A live Bedrock run on the bundled fixture](BEDROCK-LIVE-2026-09-14.md) is now recorded. Its counts matched the local run; generated prose still needs review. Private transcripts do not belong in Git or in the cloud preview. The disposable PGlite journey is TEST DATA, not live users.
