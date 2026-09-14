@@ -199,7 +199,7 @@
         saveState({
           ...state,
           step: "frozen",
-          experiment: { title: f.title.value, instruction: f.instruction.value, expected: f.expected.value },
+          experiment: { ...exp, title: f.title.value, instruction: f.instruction.value, expected: f.expected.value },
         });
         view();
       };
