@@ -419,6 +419,8 @@ footer{max-width:1320px;margin:0 auto;padding:20px 24px 40px;color:var(--dim);fo
 <script src="/moments.js"></script>
 <script src="/example.js"></script>
 <script src="/forum.js"></script>
+<script src="/cloud-coach-config.js"></script>
+<script src="/cloud-coach.js"></script>
 <script>
 const SB_URL="https://kqxasvolwtrczusjhlli.supabase.co";
 const SB_KEY="sb_publishable_EkNFC4I6eB71igOrhLblCg_nDocZ483";
@@ -816,6 +818,7 @@ function coachModeBanner(r){
   const label=r.coach_mode||'';
   const kind=coachModeKind(label);
   if(!label && !kind) return '';
+  if(kind==='live' && /metrics-only/i.test(label)) return `<p class="mode-banner live">Live model · ${esc(label)}. Run measurements were sent to AWS; no transcript or file checks.</p>`;
   if(kind==='live') return `<p class="mode-banner live">Live model · ${esc(label)}. Claim lines left this machine.</p>`;
   if(kind==='demo') return `<p class="mode-banner demo">${esc(label)} · not autonomous reasoning.</p>`;
   return `<p class="mode-banner">${esc(label)}</p>`;
@@ -1327,7 +1330,7 @@ async function viewRun(id){
   frame(null,null);
   app.innerHTML=`<div class="head"><h2>A run</h2><span class="meta">${esc(r.visibility==='public'?'public':r.crew_shared?'Crew members':r.visibility==='private'||r.visibility==='anonymous'?'private':'link only')}</span></div>`
     +runCard(r,ad.mine.has(r.id),ad.counts[r.id]||acks.length,{picker:openAck,suggested,selected:preselect,showNext:false})
-    +`<section id="grind-experiment"></section><section id="grind-thread"></section><details class="run-learning"><summary>Moments worth sharing</summary><section id="grind-moments"></section></details><div class="head"><h2>ACKs</h2><span class="meta">${acks.length}</span></div><div class="panel">`+ackListHtml(acks)+`</div>`
+    +`<section id="grind-experiment"></section><section id="cloud-coach"></section><section id="grind-thread"></section><details class="run-learning"><summary>Moments worth sharing</summary><section id="grind-moments"></section></details><div class="head"><h2>ACKs</h2><span class="meta">${acks.length}</span></div><div class="panel">`+ackListHtml(acks)+`</div>`
     +`<div class="cta">${r.visibility==='public'||r.visibility==='link'?'<button id="run-copy-link">Copy run link</button>':''}<a class="act" href="/?share=1&run=${r.id}">Share card</a>
       <span class="hint"><a href="/?u=${encodeURIComponent((r.profiles||{}).github_handle||'')}">see the profile</a></span></div><section id="grind-feature"></section>`;
   if(ME?.id===r.profile_id){const compare=document.createElement('a');compare.href='/?progress&baseline='+r.id;compare.className='act';compare.textContent='Compare this run';app.querySelector('.cta').append(compare);}
@@ -1336,6 +1339,7 @@ async function viewRun(id){
   wireKudos(); if(openAck){ const card=$('card-'+id); if(card) wireAckPicker(card,r,preselect); }
   if(q.get('ack')) history.replaceState(null,'',`/?run=${id}`);
   await mountCoachExperiment(r, $('grind-experiment'));
+  GrinderCloudCoach.mount({run:r,slot:$('cloud-coach'),client:sb,me:ME,contract:GrinderContract,mountExperiment:(proposal,target)=>{ $('grind-experiment').replaceChildren(); return mountCoachExperiment(proposal,target); }});
   await GrinderMoments.mount({run:r,slot:$('grind-moments'),client:sb,me:()=>ME,status});
   await social.thread(id,$('grind-thread'));
   await social.askControl(r,$('grind-thread'));
