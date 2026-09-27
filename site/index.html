@@ -150,6 +150,13 @@ a.act{display:inline-block;text-decoration:none}
 .c-title,.title{font-size:14px;font-weight:500;padding:14px 16px 0}
 .sub{padding:4px 16px 0;font-size:13px;color:var(--soft)}
 .note{padding:8px 16px 0;font-size:14px}
+.result-lead{padding:16px 16px 4px;overflow-wrap:anywhere}
+.result-lead .kicker{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--dim);margin:0}
+.result-lead .outcome{font-size:22px;font-weight:500;line-height:1.35;margin:6px 0 10px}
+.result-lead .limit,.result-lead p{font-size:13px;color:var(--soft);margin:0 0 8px;line-height:1.45}
+.result-lead .duration{margin-top:12px;padding-top:12px;border-top:1px solid var(--rule)}
+.result-lead .duration span{display:block;font-size:11px;color:var(--dim)}
+.result-lead .duration strong{display:block;font-size:20px;font-weight:500;color:var(--ink);margin-top:2px}
 .grp{padding:14px 16px 0;font-size:11px;color:var(--dim)}
 .para{padding:6px 16px 0;font-size:14px;line-height:1.6}
 .plan{margin:6px 16px 0;padding-left:18px;font-size:13px;line-height:1.55;color:var(--soft)}
@@ -421,6 +428,7 @@ footer{max-width:1320px;margin:0 auto;padding:20px 24px 40px;color:var(--dim);fo
 <script src="/forum.js"></script>
 <script src="/cloud-coach-config.js"></script>
 <script src="/cloud-coach.js"></script>
+<script type="module" src="/result-lead.js"></script>
 <script>
 const SB_URL="https://kqxasvolwtrczusjhlli.supabase.co";
 const SB_KEY="sb_publishable_EkNFC4I6eB71igOrhLblCg_nDocZ483";
@@ -860,28 +868,35 @@ function coachBlock(r){
 }
 
 
+function resultLeadHtml(r){
+  const api=globalThis.GrinderResultLead; if(!api) return '';
+  const lead=api.guard(api.present(r,'view'),r);
+  return api.html(lead,esc);
+}
 function runCard(r,acked,count,opts={}){ const att=runAttribution(r),h=att.handle;
   const selfAck=ME&&ME.id===r.profile_id;
   const ackBtn=selfAck?'':`<button class="act kudo ${acked?'on':''}" data-run="${r.id}" data-to="${r.profile_id}">${acked?'ACKed':'ACK'}${count?' <span class="n num">'+count+'</span>':''}</button>`;
   const picker=opts.picker?ackPickerHtml(r,opts.suggested||suggestAckReasons(r),opts.selected||null):'';
-  const dm=r.duration_s?Math.round(r.duration_s/60):0;
   const whoLink=att.link?`<a href="${att.link}">${esc(att.name)}</a>`:`<span>${esc(att.name)}</span>`;
   const anonTag=att.ghost?'<span class="ghost-tag">anon</span>':'';
   const v=vibeForRun(r);
   const vibeChip=v?`<span class="vibe-chip" title="${esc(v[1])}">${esc(v[0].toLowerCase())}</span>`:'';
   const refereed=r.coach_verdict?'<span class="state" title="A client-supplied coach report; not independent server verification">Coach report</span>':'<span class="state off">No coach report</span>';
+  const lead=globalThis.GrinderResultLead?globalThis.GrinderResultLead.present(r,'view'):null;
+  const noteHtml=r.note&&!(lead&&lead.outcomeSource==='runs.note')?`<div class="note">${esc(r.note)}</div>`:'';
   return `<div class="card" id="card-${r.id}">
     <div class="runtop">${avatar(h,{rhythm:r.rhythm,ghost:att.ghost})}
       <div class="who">${whoLink}${anonTag}<small>${att.ghost?'metrics only ·':`@${esc(h)} ·`} <a href="/?run=${r.id}">${new Date(r.created_at).toLocaleDateString(undefined,{month:'short',day:'numeric'})}</a></small></div>${refereed}</div>
     <div class="title"><a href="/?run=${r.id}">${esc(r.title)}</a>${r.is_ship?' · ship':''}${vibeChip}</div>
+    ${resultLeadHtml(r)}
     ${r.source_actor_id?`<div class="sub">Agent contribution: <a href="/?agent=${encodeURIComponent(r.source_actor_id)}">${esc(r.agent_name||'agent')}</a> · authorised by the owner</div>`:''}
     <div class="sub">${esc(r.harness||'agent')}${r.project?' · '+esc(r.project):''}${(r.route&&r.route.length)?' · '+(new Set(r.route)).size+' regions':''}${r.files_touched?' · '+r.files_touched+' files':''}</div>
-    ${r.note?`<div class="note">${esc(r.note)}</div>`:''}
+    ${noteHtml}
     <div class="run-signature">${GrinderContract.trace(r)}<span class="meta">${esc(r.trace_basis==='elapsed-agent-tool-calls'?'Agent tool requests · elapsed time':r.trace_basis==='elapsed'?'Session rhythm · elapsed time':r.trace_basis==='position'?'Session rhythm · event order':'Session rhythm · time basis unknown')}</span></div>
     <div class="run-key-facts"><div><span>Typed turns</span><strong>${r.prompts??'Unknown'}</strong></div><div><span>Artifacts</span><strong>${r.artifacts_produced??'Unknown'}</strong></div><div><span>Commits</span><strong>${r.commits??'Unknown'}</strong></div></div>
     ${r.rig_revision?`<p class="meta">Rig revision · ${esc(String(r.rig_revision).slice(0,12))}</p>`:''}
     ${opts.showNext===false?'':coachNextPreview(r)}
-    <details class="run-evidence"><summary>Measurements and coach report</summary>${vptHtml(r)}${fiveRow(r)}${coachBlock(r)}${routeMap(r.route)}<p class="meta">Session time: ${r.duration_s==null?'Unknown':fmtDur(dm)} · ${r.tool_calls??'Unknown'} tool calls</p></details>
+    <details class="run-evidence"><summary>Measurements and coach report</summary>${vptHtml(r)}${fiveRow(r)}${coachBlock(r)}${routeMap(r.route)}<p class="meta">${r.tool_calls??'Unknown'} tool calls</p></details>
     <div class="foot"><span class="meta">${r.tool_calls??'—'} tool calls${selfAck?' · your grind':''}</span>
       <span class="acts">${ackBtn}<a class="act" href="/?run=${r.id}#grind-thread">Discuss</a><a class="act" href="/?share=1&run=${r.id}">Share</a></span></div>
     ${picker}</div>`; }
