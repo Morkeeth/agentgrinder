@@ -9,3 +9,11 @@ Before acting, record that you read this revision, exact session and exact rev: 
 
 ### ACKNOWLEDGED THIS REVISION: nobody yet
 <!-- STATE:end -->
+
+## Cursor Cloud specific instructions
+
+- Dependency install is `bash .cursor/install.sh` (Node lockfile plus a Python 3.12 `.venv` with the `dev` and `coach` extras). Use `.venv/bin/pytest` and `.venv/bin/agentgrinder` for tests and the Strands coach. `python3 -m agentgrinder` still runs the dependency-free reader.
+- The web app is the static `site/` directory. The `web` terminal serves it at http://127.0.0.1:8765/. The labelled walkthrough is `/?example`.
+- `npm run test:database` and `npm run test:journey` replay the hosted schema in disposable PGlite. They do not call production Supabase.
+- Coach mode defaults to local and keyless. Do not pass `--model bedrock`.
+

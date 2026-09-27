@@ -1,0 +1,17 @@
+{
+  "name": "Agent Grinder",
+  "install": "bash .cursor/install.sh",
+  "terminals": [
+    {
+      "name": "web",
+      "command": "python3 -m http.server 8765 --directory site",
+      "description": "Static Agent Grinder site. Open http://127.0.0.1:8765/?example for the labelled sample run."
+    }
+  ],
+  "ports": [
+    {
+      "name": "web",
+      "port": 8765
+    }
+  ]
+}
