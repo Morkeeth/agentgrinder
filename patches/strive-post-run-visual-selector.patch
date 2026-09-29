@@ -1,0 +1,1051 @@
+From 55cbcd93f8569b9daf970087268a33c227c76394 Mon Sep 17 00:00:00 2001
+From: Cursor Agent <cursoragent@cursor.com>
+Date: Tue, 29 Sep 2026 21:39:52 +0000
+Subject: [PATCH] Select one post-run visual from the recorded night packet
+
+A run card now keeps a single result, one named SVG, and at most three source-bound facts. The four-project night packet draws Fleet Relay. Series the capture does not store stay unmapped.
+---
+ agentgrinder/cli.py           |  16 +
+ agentgrinder/visual_select.py | 793 ++++++++++++++++++++++++++++++++++
+ tests/test_visual_select.py   | 195 +++++++++
+ 3 files changed, 1004 insertions(+)
+ create mode 100644 agentgrinder/visual_select.py
+ create mode 100644 tests/test_visual_select.py
+
+diff --git a/agentgrinder/cli.py b/agentgrinder/cli.py
+index 0f53d1c..a7b95e4 100644
+--- a/agentgrinder/cli.py
++++ b/agentgrinder/cli.py
+@@ -193,6 +193,10 @@ def main(argv=None) -> int:
+     c = sub.add_parser("card", help="render a run JSON to a card")
+     c.add_argument("run"); c.add_argument("-o", "--out", default="card.html")
+     c.add_argument("--no-open", action="store_true"); c.add_argument("--open", action="store_true", help="open the result in a browser (default: print the path or link, open nothing)")
++    vis = sub.add_parser("visual", help="select one post-run visual and write a private local card")
++    vis.add_argument("run", help="one run JSON packet; this command never publishes")
++    vis.add_argument("-o", "--out", default="visual.html")
++    vis.add_argument("--open", action="store_true", help="open the local card (default: write it only)")
+     g = sub.add_parser(
+         "grind",
+         aliases=["run"],
+@@ -388,6 +392,18 @@ def main(argv=None) -> int:
+     if args.cmd == "privacycheck":
+         from .privacy import check_files
+         return 1 if check_files(args.paths) else 0
++    if args.cmd == "visual":
++        from .visual_select import render_visual_card, select_visual
++        packet = json.loads(Path(args.run).read_text(encoding="utf-8"))
++        chosen = select_visual(packet)
++        out = Path(args.out)
++        out.write_text(render_visual_card(packet), encoding="utf-8")
++        print(f"  private visual card -> {out}")
++        print("  local only · not published")
++        print(f"  visual: {chosen.label}")
++        if args.open:
++            _BROWSER.open(out.resolve().as_uri())
++        return 0
+     if args.cmd == "flex":
+         from .flex import format_flex, local_flex
+         rows = local_flex()
+diff --git a/agentgrinder/visual_select.py b/agentgrinder/visual_select.py
+new file mode 100644
+index 0000000..53c1bd8
+--- /dev/null
++++ b/agentgrinder/visual_select.py
+@@ -0,0 +1,793 @@
++"""Choose one STRIVE post-run visual and draw it as deterministic SVG.
++
++This is not a dashboard. A run produces one result, one visual, and at most three
++source-bound facts. The first matching rule below wins. A later rule is not a
++second chart.
++
++1. Turning-Point Trail — ``failed_check_ids_before`` and ``passed_check_ids_after``
++   are both lists and their safe ids intersect.
++2. Fleet Relay — a valid ``code_route`` has at least two projects in its stops and
++   at least one forward handoff between different projects.
++3. Loopback Seismograph — ``check_outcomes`` is an ordered list of ``fail``/``pass``
++   with both a fail-to-pass and a pass-to-fail step.
++4. Code Topography — a valid ``code_route`` has stops in exactly one project.
++5. Project Terrain — ``route`` is a list of whole numbers with at least two stations
++   after consecutive repeats collapse.
++6. Activity River — ``ridge`` has 40 to 60 whole-number bins and ``ridge_basis`` is
++   ``wall-time``, ``call-index`` or ``turn-order``.
++7. Tool Constellation — ``tool_calls_by_category`` is a map of safe labels to whole
++   numbers, the total is positive, and it matches ``tool_calls`` when that total exists.
++8. Context Weather — at least two of ``web_searches``, ``context_reads``,
++   ``index_reads`` and ``memory_reads`` are whole numbers, and one of them is positive.
++9. Verification Ascent — ``claims`` and ``claims_verified`` are whole numbers,
++   ``claims`` is positive, and verified does not exceed claims.
++10. Proof Funnel — ``shipped`` and ``receipts`` both validate and both are non-empty.
++
++Anything else draws one flat baseline. That line is not a measurement.
++
++Fields captured today are the ones named above that ingest, the ridge contract or a
++validated code route already store. ``check_outcomes`` is not collected. Category
++maps, context-read counts, and ordered check events are not written by ingest.
++``route_legend`` stays off the card. Counts are not turned into rates.
++"""
++from __future__ import annotations
++
++import math
++from dataclasses import dataclass
++from html import escape
++
++from . import privacy
++from .code_route import validate_code_route
++from .contract import public_outcome
++from .outcome import outcome_of
++
++_BLUE = "#0047ff"
++_WASH = "#c4d2ff"
++_WEATHER = ("web_searches", "context_reads", "index_reads", "memory_reads")
++_RIDGE_BASIS = {
++    "wall-time": "equal wall-time bins",
++    "call-index": "capture call-order bins",
++    "turn-order": "capture turn-order bins",
++}
++_KINDS = ("edit", "commit", "check", "merge", "deploy", "artifact", "handoff", "finish")
++_ORDER = (
++    "turning-point-trail",
++    "fleet-relay",
++    "loopback-seismograph",
++    "code-topography",
++    "project-terrain",
++    "activity-river",
++    "tool-constellation",
++    "context-weather",
++    "verification-ascent",
++    "proof-funnel",
++)
++_LABELS = {
++    "turning-point-trail": "Turning-Point Trail",
++    "fleet-relay": "Fleet Relay",
++    "loopback-seismograph": "Loopback Seismograph",
++    "verification-ascent": "Verification Ascent",
++    "proof-funnel": "Proof Funnel",
++    "tool-constellation": "Tool Constellation",
++    "context-weather": "Context Weather",
++    "code-topography": "Code Topography",
++    "project-terrain": "Project Terrain",
++    "activity-river": "Activity River",
++    "unmapped": "Trace not mapped",
++}
++# Product gaps. These stay gaps even when a snapshot fallback can draw.
++_COLLECTORS = {
++    "turning-point-trail": "ordered check events with id, outcome and time",
++    "fleet-relay": "ordered cross-project handoffs when no code_route connectors exist",
++    "loopback-seismograph": "check_outcomes, an ordered fail/pass series",
++    "verification-ascent": "per-claim verification events over time",
++    "proof-funnel": "artifacts_promised is not measured",
++    "tool-constellation": "tool_calls_by_category is not written by ingest",
++    "context-weather": "web_searches, context_reads, index_reads and memory_reads are not written by ingest",
++    "code-topography": "a per-file change map; stop kinds are not file terrain",
++    "project-terrain": "route_legend is local-only and is not a public station name",
++    "activity-river": "none when ridge and ridge_basis are present",
++}
++
++
++@dataclass(frozen=True)
++class Fact:
++    text: str
++    source: str
++
++
++@dataclass(frozen=True)
++class VisualSelection:
++    visual_id: str
++    label: str
++    result: str
++    result_basis: str
++    facts: tuple[Fact, ...]
++    svg: str
++    basis: str
++    limitation: str
++    geometry: tuple
++
++    def __post_init__(self) -> None:
++        if len(self.facts) > 3:
++            raise ValueError("a post-run card carries at most three facts")
++
++
++@dataclass(frozen=True)
++class TraceRow:
++    visual_id: str
++    label: str
++    selected: bool
++    present: tuple[str, ...]
++    absent: tuple[str, ...]
++    collector: str
++
++
++def _n(value) -> int | None:
++    return value if type(value) is int and value >= 0 else None
++
++
++def _label(value) -> str:
++    if not isinstance(value, str):
++        return ""
++    text = " ".join(value.split())
++    if not text or len(text) > 80 or privacy.scan(text):
++        return ""
++    return text
++
++
++def _esc(value: str) -> str:
++    return escape(value, quote=True)
++
++
++def _ids(value) -> set[str] | None:
++    if not isinstance(value, list):
++        return None
++    found = set()
++    for item in value:
++        text = _label(item)
++        if text:
++            found.add(text)
++    return found
++
++
++def _route(run: dict) -> dict | None:
++    raw = run.get("code_route")
++    if not isinstance(raw, dict):
++        return None
++    try:
++        route = validate_code_route(raw)
++    except ValueError:
++        return None
++    if route.get("unavailable"):
++        return None
++    return route
++
++
++def _projects_in_stops(route: dict) -> list[dict]:
++    seen = []
++    known = {project["id"]: project for project in route["projects"]}
++    for stop in route["stops"]:
++        project = known[stop["project"]]
++        if project["id"] not in {item["id"] for item in seen}:
++            seen.append(project)
++    return seen
++
++
++def _handoff_pairs(route: dict) -> list[tuple[str, str]]:
++    order = {stop["id"]: index for index, stop in enumerate(route["stops"])}
++    project_of = {stop["id"]: stop["project"] for stop in route["stops"]}
++    pairs = []
++    for link in route["connectors"]:
++        if link["kind"] != "handoff":
++            continue
++        start, end = link["from"], link["to"]
++        if order[start] >= order[end] or project_of[start] == project_of[end]:
++            continue
++        pairs.append((project_of[start], project_of[end]))
++    return pairs
++
++
++def _matched(run: dict) -> tuple[set[str], set[str], set[str]] | None:
++    before = _ids(run.get("failed_check_ids_before"))
++    after = _ids(run.get("passed_check_ids_after"))
++    if before is None or after is None:
++        return None
++    matched = before & after
++    if not matched:
++        return None
++    return before, after, matched
++
++
++def _pulses(run: dict) -> tuple[str, ...] | None:
++    raw = run.get("check_outcomes")
++    if not isinstance(raw, list) or not 2 <= len(raw) <= 80:
++        return None
++    if any(item not in ("fail", "pass") for item in raw):
++        return None
++    rose = any(a == "fail" and b == "pass" for a, b in zip(raw, raw[1:]))
++    fell = any(a == "pass" and b == "fail" for a, b in zip(raw, raw[1:]))
++    if not (rose and fell):
++        return None
++    return tuple(raw)
++
++
++def _claims(run: dict) -> tuple[int, int] | None:
++    claims, verified = run.get("claims"), run.get("claims_verified")
++    if type(claims) is not int or type(verified) is not int:
++        return None
++    if claims <= 0 or verified < 0 or verified > claims:
++        return None
++    return claims, verified
++
++
++def _proof(run: dict) -> tuple[list[str], list[dict]] | None:
++    try:
++        declared = public_outcome(run)
++    except ValueError:
++        return None
++    shipped = [line for line in declared.get("shipped") or [] if isinstance(line, str) and line.strip()]
++    receipts = [item for item in declared.get("receipts") or []
++                if isinstance(item, dict) and isinstance(item.get("url"), str)]
++    if not shipped or not receipts:
++        return None
++    return shipped, receipts
++
++
++def _tools(run: dict) -> tuple[dict[str, int], int] | None:
++    raw = run.get("tool_calls_by_category")
++    if not isinstance(raw, dict) or not raw:
++        return None
++    clean: dict[str, int] = {}
++    for key, value in raw.items():
++        label = _label(str(key) if isinstance(key, str) else "").lower()
++        if not label or type(value) is not int or value < 0:
++            return None
++        clean[label] = clean.get(label, 0) + value
++    total = sum(clean.values())
++    declared = run.get("tool_calls")
++    if total <= 0 or (type(declared) is int and declared != total):
++        return None
++    return clean, total
++
++
++def _weather(run: dict) -> dict[str, int] | None:
++    present = {}
++    for key in _WEATHER:
++        if key not in run:
++            continue
++        value = run[key]
++        if type(value) is not int or value < 0:
++            return None
++        present[key] = value
++    if len(present) < 2 or not any(present.values()):
++        return None
++    return present
++
++
++def _terrain(run: dict) -> list[int] | None:
++    route = run.get("route")
++    if not isinstance(route, list) or not 1 <= len(route) <= 10000:
++        return None
++    if any(type(value) is not int or value < 0 for value in route):
++        return None
++    collapsed = [route[0]]
++    for value in route[1:]:
++        if value != collapsed[-1]:
++            collapsed.append(value)
++    if len(set(collapsed)) < 2:
++        return None
++    return collapsed
++
++
++def _ridge(run: dict) -> tuple[list[int], str] | None:
++    ridge = run.get("ridge")
++    if (not isinstance(ridge, list) or not 40 <= len(ridge) <= 60
++            or any(type(value) is not int or value < 0 for value in ridge)):
++        return None
++    basis = run.get("ridge_basis")
++    if basis not in _RIDGE_BASIS:
++        return None
++    return list(ridge), basis
++
++
++def _sample(values: list[int], limit: int = 48) -> list[int]:
++    if len(values) <= limit:
++        return values
++    return [values[index * (len(values) - 1) // (limit - 1)] for index in range(limit)]
++
++
++def _xs(count: int, left: float = 28, right: float = 292) -> list[float]:
++    if count <= 1:
++        return [160.0]
++    return [left + index * (right - left) / (count - 1) for index in range(count)]
++
++
++def _svg(title: str, desc: str, body: str) -> str:
++    return (
++        f'<svg class="run-visual" viewBox="0 0 320 96" role="img" '
++        f'aria-labelledby="visual-title visual-desc">'
++        f'<title id="visual-title">{_esc(title)}</title>'
++        f'<desc id="visual-desc">{_esc(desc)}</desc>'
++        f'{body}</svg>'
++    )
++
++
++def _line(points: list[tuple[float, float]]) -> str:
++    drawn = " ".join(f"{x:.1f},{y:.1f}" for x, y in points)
++    return (
++        f'<polyline points="{drawn}" fill="none" stroke="{_BLUE}" stroke-width="2.5" '
++        f'stroke-linecap="round" stroke-linejoin="round"/>'
++    )
++
++
++def _trail_svg(before: int, matched: int) -> str:
++    left = min(before, 8)
++    right = min(matched, 8)
++    left_dots = "".join(
++        f'<circle cx="78" cy="{18 + index * 8:.1f}" r="2.2" fill="{_BLUE}"/>'
++        for index in range(left)
++    )
++    right_dots = "".join(
++        f'<circle cx="242" cy="{18 + index * 8:.1f}" r="2.2" fill="{_BLUE}"/>'
++        for index in range(right)
++    )
++    body = (
++        f'<line x1="78" y1="48" x2="242" y2="48" stroke="{_BLUE}" stroke-width="2"/>'
++        f'{left_dots}{right_dots}'
++    )
++    return _svg(
++        "Turning-Point Trail",
++        "Two check snapshots. The drawing is not a timed trail.",
++        body,
++    )
++
++
++def _relay_svg(projects: list[dict], pairs: list[tuple[str, str]]) -> str:
++    ids = [project["id"] for project in projects]
++    xs = _xs(len(projects))
++    at = {project_id: x for project_id, x in zip(ids, xs)}
++    links = "".join(
++        f'<line x1="{at[start]:.1f}" y1="36" x2="{at[end]:.1f}" y2="36" '
++        f'stroke="{_BLUE}" stroke-width="2"/>'
++        for start, end in pairs if start in at and end in at
++    )
++    dots = []
++    for project, x in zip(projects, xs):
++        name = _label(project.get("label")) or ""
++        text = (
++            f'<text x="{x:.1f}" y="62" text-anchor="middle" fill="{_BLUE}" font-size="9">'
++            f'{_esc(name)}</text>'
++            if name else ""
++        )
++        dots.append(f'<circle cx="{x:.1f}" cy="36" r="5" fill="#fff" stroke="{_BLUE}" stroke-width="2"/>{text}')
++    return _svg("Fleet Relay", "Projects joined by recorded handoffs.", links + "".join(dots))
++
++
++def _pulse_svg(pulses: tuple[str, ...]) -> str:
++    xs = _xs(len(pulses), 20, 300)
++    points = [(x, 28.0 if pulse == "pass" else 68.0) for x, pulse in zip(xs, pulses)]
++    return _svg("Loopback Seismograph", "Ordered fail and pass outcomes.", _line(points))
++
++
++def _ascent_svg(claims: int, verified: int) -> str:
++    height = 56 * verified / claims
++    y = 78 - height
++    body = (
++        f'<line x1="24" y1="78" x2="296" y2="78" stroke="{_WASH}" stroke-width="1"/>'
++        f'<polyline points="36,78 150,78 150,{y:.1f} 284,{y:.1f}" fill="none" '
++        f'stroke="{_BLUE}" stroke-width="2.5" stroke-linejoin="round"/>'
++    )
++    return _svg("Verification Ascent", "Two claim counts. This is not a timed ascent.", body)
++
++
++def _funnel_svg(shipped: int, receipts: int) -> str:
++    peak = max(shipped, receipts, 1)
++    widths = (220 * shipped / peak, 220 * receipts / peak)
++    bars = []
++    for index, width in enumerate(widths):
++        y = 28 + index * 28
++        x = 160 - width / 2
++        bars.append(
++            f'<rect x="{x:.1f}" y="{y:.1f}" width="{width:.1f}" height="16" '
++            f'fill="#fff" stroke="{_BLUE}" stroke-width="2"/>'
++        )
++    return _svg("Proof Funnel", "Shipped lines and attached receipts. Equal counts stay equal.", "".join(bars))
++
++
++def _constellation_svg(categories: dict[str, int]) -> str:
++    labels = sorted(categories)
++    peak = max(categories.values())
++    dots = []
++    count = len(labels)
++    for index, label in enumerate(labels):
++        # Even placement on a circle, starting at the top. No randomness.
++        angle = -math.pi / 2 + index * 2 * math.pi / count
++        radius = 4 + 10 * categories[label] / peak
++        x = 160 + 28 * math.cos(angle)
++        y = 46 + 22 * math.sin(angle)
++        dots.append(
++            f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{radius:.1f}" fill="{_BLUE}"/>'
++        )
++    return _svg("Tool Constellation", "Recorded tool categories.", "".join(dots))
++
++
++def _weather_svg(present: dict[str, int]) -> str:
++    keys = [key for key in _WEATHER if key in present]
++    peak = max(present.values())
++    bars = []
++    for index, key in enumerate(keys):
++        height = 8 if peak == 0 else max(4, round(64 * present[key] / peak))
++        x = 36 + index * 70
++        y = 80 - height
++        bars.append(
++            f'<rect x="{x}" y="{y}" width="28" height="{height}" fill="#fff" stroke="{_BLUE}" stroke-width="2"/>'
++        )
++    return _svg("Context Weather", "Recorded search and read counts.", "".join(bars))
++
++
++def _topography_svg(stops: list[dict]) -> str:
++    xs = _xs(len(stops), 20, 300)
++    points = []
++    for stop, x in zip(stops, xs):
++        rank = _KINDS.index(stop["kind"])
++        points.append((x, 16 + rank * 8))
++    return _svg("Code Topography", "Stop kinds in route order. Not a file map.", _line(points))
++
++
++def _terrain_svg(collapsed: list[int]) -> str:
++    sampled = _sample(collapsed)
++    lanes = {value: index for index, value in enumerate(sorted(set(sampled)))}
++    ordinal = [lanes[value] for value in sampled]
++    peak = max(ordinal)
++    xs = _xs(len(ordinal), 16, 304)
++    points = []
++    for x, value in zip(xs, ordinal):
++        y = 72 if peak == 0 else 72 - (value / peak) * 48
++        points.append((x, y))
++    return _svg(
++        "Project Terrain",
++        "Numeric route stations. Vertical position is not a rank of quality.",
++        _line(points),
++    )
++
++
++def _river_svg(ridge: list[int], workers: list[int] | None, commits: list[int]) -> str:
++    peak = max(ridge) if ridge else 0
++    xs = _xs(len(ridge), 8, 312)
++    points = []
++    for x, value in zip(xs, ridge):
++        y = 78 if peak == 0 else 78 - (value / peak) * 58
++        points.append((x, y))
++    area = " ".join(f"{x:.1f},{y:.1f}" for x, y in points)
++    start = f"{points[0][0]:.1f},78"
++    end = f"{points[-1][0]:.1f},78"
++    body = (
++        f'<polygon points="{start} {area} {end}" fill="{_WASH}" stroke="none"/>'
++        + _line(points)
++    )
++    if workers and len(workers) == len(ridge) and any(workers):
++        worker_peak = max(workers)
++        worker_points = []
++        for x, value in zip(xs, workers):
++            y = 78 if worker_peak == 0 else 78 - (value / worker_peak) * 58
++            worker_points.append((x, y))
++        drawn = " ".join(f"{x:.1f},{y:.1f}" for x, y in worker_points)
++        body += (
++            f'<polyline points="{drawn}" fill="none" stroke="{_WASH}" stroke-width="1.5"/>'
++        )
++    for index in commits:
++        if 0 <= index < len(xs):
++            x = xs[index]
++            body += f'<line x1="{x:.1f}" y1="78" x2="{x:.1f}" y2="84" stroke="{_BLUE}" stroke-width="1.5"/>'
++    return _svg("Activity River", "Relative activity bins. Not quality, progress or authorship.", body)
++
++
++def _baseline_svg() -> str:
++    return _svg(
++        "Trace not mapped",
++        "No named visual had its source fields. This line is not a measurement.",
++        f'<line x1="16" y1="64" x2="304" y2="64" stroke="{_BLUE}" stroke-width="2"/>',
++    )
++
++
++def _workers(run: dict, ridge: list[int]) -> list[int] | None:
++    workers = run.get("worker_bins")
++    if (not isinstance(workers, list) or len(workers) != len(ridge)
++            or any(type(value) is not int or value < 0 for value in workers)):
++        return None
++    return list(workers)
++
++
++def _commit_indexes(run: dict, ridge: list[int]) -> list[int]:
++    commits = run.get("commit_bins")
++    if not isinstance(commits, list):
++        return []
++    return [value for value in commits if type(value) is int and 0 <= value < len(ridge)]
++
++
++def _count_facts(pairs: list[tuple[str, str]]) -> tuple[Fact, ...]:
++    facts = []
++    for text, source in pairs:
++        if text:
++            facts.append(Fact(text, source))
++        if len(facts) == 3:
++            break
++    return tuple(facts)
++
++
++def _selection(run: dict) -> VisualSelection:
++    outcome = outcome_of(run if isinstance(run, dict) else {})
++    run = run if isinstance(run, dict) else {}
++
++    matched = _matched(run)
++    if matched:
++        before, after, both = matched
++        return VisualSelection(
++            "turning-point-trail", _LABELS["turning-point-trail"], outcome.text, outcome.basis,
++            _count_facts([
++                (f"{len(both)} matching checks", "failed_check_ids_before ∩ passed_check_ids_after"),
++                (f"{len(before)} checks failed before", "failed_check_ids_before"),
++                (f"{len(after)} checks passed after", "passed_check_ids_after"),
++            ]),
++            _trail_svg(len(before), len(both)),
++            "set intersection of two check-id snapshots",
++            "Two snapshots. Ordered check events over time are not on this run.",
++            (len(before), len(after), len(both)),
++        )
++
++    route = _route(run)
++    if route:
++        projects = _projects_in_stops(route)
++        pairs = _handoff_pairs(route)
++        if len(projects) >= 2 and pairs:
++            return VisualSelection(
++                "fleet-relay", _LABELS["fleet-relay"], outcome.text, outcome.basis,
++                _count_facts([
++                    (f"{len(projects)} projects", "code_route.projects in stop order"),
++                    (f"{len(pairs)} handoffs", "code_route.connectors kind=handoff"),
++                    (f"{len(route['stops'])} stops", "code_route.stops"),
++                ]),
++                _relay_svg(projects, pairs),
++                "code_route projects joined by forward cross-project handoffs",
++                "A project count without a handoff is not a relay.",
++                tuple(project["id"] for project in projects) + tuple(pairs),
++            )
++
++    pulses = _pulses(run)
++    if pulses:
++        fails = sum(item == "fail" for item in pulses)
++        passes = sum(item == "pass" for item in pulses)
++        return VisualSelection(
++            "loopback-seismograph", _LABELS["loopback-seismograph"], outcome.text, outcome.basis,
++            _count_facts([
++                (f"{len(pulses)} outcomes", "check_outcomes"),
++                (f"{fails} fail", "check_outcomes"),
++                (f"{passes} pass", "check_outcomes"),
++            ]),
++            _pulse_svg(pulses),
++            "ordered check_outcomes with both directions of change",
++            "A retry count is not a seismograph.",
++            pulses,
++        )
++
++    if route and len(_projects_in_stops(route)) == 1 and len(route["stops"]) >= 2:
++        stops = route["stops"]
++        kinds = sorted({stop["kind"] for stop in stops})
++        project = _projects_in_stops(route)[0]
++        name = _label(project.get("label"))
++        return VisualSelection(
++            "code-topography", _LABELS["code-topography"], outcome.text, outcome.basis,
++            _count_facts([
++                (f"{len(stops)} stops", "code_route.stops"),
++                (f"{len(kinds)} kinds", "code_route.stops.kind"),
++                (name, "code_route.projects.label") if name else ("", ""),
++            ]),
++            _topography_svg(stops),
++            "stop kinds in one project, in route order",
++            "Stop kinds are not a per-file map.",
++            tuple(stop["kind"] for stop in stops),
++        )
++
++    terrain = _terrain(run)
++    if terrain:
++        sampled = _sample(terrain)
++        files = _n(run.get("files_touched"))
++        return VisualSelection(
++            "project-terrain", _LABELS["project-terrain"], outcome.text, outcome.basis,
++            _count_facts([
++                (f"{len(set(terrain))} stations", "route"),
++                (f"{len(sampled)} points", "route"),
++                (f"{files} files touched", "files_touched") if files is not None else ("", ""),
++            ]),
++            _terrain_svg(terrain),
++            "run.route with consecutive repeats collapsed; at most 48 evenly sampled points",
++            "Station height is not a quality rank. route_legend is not drawn.",
++            tuple(sampled),
++        )
++
++    ridge = _ridge(run)
++    if ridge:
++        values, basis = ridge
++        commits = _commit_indexes(run, values)
++        return VisualSelection(
++            "activity-river", _LABELS["activity-river"], outcome.text, outcome.basis,
++            _count_facts([
++                (f"{len(values)} bins", "ridge"),
++                (_RIDGE_BASIS[basis], "ridge_basis"),
++                (f"{len(commits)} commit marks", "commit_bins") if commits else ("", ""),
++            ]),
++            _river_svg(values, _workers(run, values), commits),
++            f"run.ridge · {_RIDGE_BASIS[basis]}",
++            "Relative activity only. It does not measure quality, progress or authorship.",
++            tuple(values),
++        )
++
++    tools = _tools(run)
++    if tools:
++        categories, total = tools
++        label, count = max(categories.items(), key=lambda item: (item[1], item[0]))
++        return VisualSelection(
++            "tool-constellation", _LABELS["tool-constellation"], outcome.text, outcome.basis,
++            _count_facts([
++                (f"{label} {count}", "tool_calls_by_category"),
++                (f"{total} calls", "tool_calls_by_category"),
++                (f"{len(categories)} categories", "tool_calls_by_category"),
++            ]),
++            _constellation_svg(categories),
++            "tool_calls_by_category; the sum matches tool_calls when that total is present",
++            "Category names come from the map. Ingest does not write this map.",
++            tuple(sorted(categories)),
++        )
++
++    weather = _weather(run)
++    if weather:
++        ranked = sorted(weather, key=lambda key: (-weather[key], _WEATHER.index(key)))
++        return VisualSelection(
++            "context-weather", _LABELS["context-weather"], outcome.text, outcome.basis,
++            _count_facts([(f"{weather[key]} {key}", key) for key in ranked]),
++            _weather_svg(weather),
++            "whole-number search and read counts present on the run",
++            "Ingest does not write these counts. A single count is not weather.",
++            tuple((key, weather[key]) for key in _WEATHER if key in weather),
++        )
++
++    claims = _claims(run)
++    if claims:
++        total, verified = claims
++        return VisualSelection(
++            "verification-ascent", _LABELS["verification-ascent"], outcome.text, outcome.basis,
++            _count_facts([
++                (f"{total} claims", "claims"),
++                (f"{verified} verified", "claims_verified"),
++            ]),
++            _ascent_svg(total, verified),
++            "claims_verified against claims",
++            "Two counts. Per-claim verification events over time are not on this run.",
++            (total, verified),
++        )
++
++    proof = _proof(run)
++    if proof:
++        shipped, receipts = proof
++        return VisualSelection(
++            "proof-funnel", _LABELS["proof-funnel"], outcome.text, outcome.basis,
++            _count_facts([
++                (f"{len(shipped)} shipped", "shipped"),
++                (f"{len(receipts)} receipts", "receipts"),
++            ]),
++            _funnel_svg(len(shipped), len(receipts)),
++            "validated shipped lines and receipt links",
++            "Bar width is the recorded count. Equal counts stay equal.",
++            (len(shipped), len(receipts)),
++        )
++
++    fallback = []
++    for key, source in (("commits", "commits"), ("files_touched", "files_touched"), ("tool_calls", "tool_calls")):
++        count = _n(run.get(key))
++        if count is not None and key in run:
++            fallback.append((f"{count} {key}", source))
++    return VisualSelection(
++        "unmapped", _LABELS["unmapped"], outcome.text, outcome.basis,
++        _count_facts(fallback),
++        _baseline_svg(),
++        "no named visual rule matched",
++        "The baseline is not a measurement.",
++        (),
++    )
++
++
++def select_visual(run: dict) -> VisualSelection:
++    """Return the one visual this run can support."""
++    return _selection(run)
++
++
++def _keys_for(visual_id: str) -> tuple[str, ...]:
++    return {
++        "turning-point-trail": ("failed_check_ids_before", "passed_check_ids_after"),
++        "fleet-relay": ("code_route",),
++        "loopback-seismograph": ("check_outcomes",),
++        "verification-ascent": ("claims", "claims_verified"),
++        "proof-funnel": ("shipped", "receipts"),
++        "tool-constellation": ("tool_calls_by_category",),
++        "context-weather": _WEATHER,
++        "code-topography": ("code_route",),
++        "project-terrain": ("route",),
++        "activity-river": ("ridge", "ridge_basis"),
++    }[visual_id]
++
++
++def trace_report(run: dict) -> tuple[TraceRow, ...]:
++    """Say which source fields this packet has, and which collector is still missing."""
++    run = run if isinstance(run, dict) else {}
++    selected = select_visual(run).visual_id
++    rows = []
++    for visual_id in _ORDER:
++        keys = _keys_for(visual_id)
++        present = tuple(key for key in keys if key in run and run.get(key) is not None)
++        absent = tuple(key for key in keys if key not in present)
++        rows.append(TraceRow(
++            visual_id, _LABELS[visual_id], visual_id == selected, present, absent,
++            _COLLECTORS[visual_id],
++        ))
++    return tuple(rows)
++
++
++def render_visual_card(run: dict) -> str:
++    """One private blue/white card. It does not publish, link out, or add a second visual."""
++    card = select_visual(run)
++    facts = "".join(
++        f'<li><strong>{_esc(fact.text)}</strong><span>{_esc(fact.source)}</span></li>'
++        for fact in card.facts
++    )
++    sources = "".join(
++        f'<dt>{_esc(fact.text)}</dt><dd>{_esc(fact.source)}</dd>' for fact in card.facts
++    )
++    html = f"""<!doctype html>
++<html lang="en"><head><meta charset="utf-8">
++<meta name="viewport" content="width=device-width,initial-scale=1">
++<meta name="robots" content="noindex,nofollow,noarchive">
++<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'">
++<title>Post-run visual · STRIVE</title>
++<style>
++:root{{--blue:#0047ff;--ink:#0a0a0a;--wash:#c4d2ff}}
++*{{box-sizing:border-box}}html,body{{margin:0;background:#fff;color:var(--ink);max-width:100%;overflow-x:hidden}}
++body{{font:15px/1.45 "IBM Plex Sans",system-ui,-apple-system,sans-serif;padding:0 14px 32px}}
++main{{width:100%;max-width:420px;margin:0 auto}}
++.brand{{min-height:44px;display:flex;align-items:center;color:var(--blue);font-weight:700;letter-spacing:.08em}}
++.private{{margin:0 0 8px;color:var(--blue);font-size:12px}}
++.card{{background:#fff;border:1px solid var(--blue)}}
++.result{{margin:0;padding:16px 16px 8px;font-size:24px;line-height:1.15;font-weight:600}}
++.visual{{margin:0;padding:0 12px 8px}}
++.visual figcaption{{color:var(--blue);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}}
++.run-visual{{display:block;width:100%;height:auto;background:#fff}}
++.facts{{list-style:none;margin:0;padding:0 16px 8px}}
++.facts li{{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-top:1px solid var(--wash)}}
++.facts strong{{font-weight:600}}.facts span{{color:var(--blue);font-size:12px;text-align:right}}
++.inspect{{display:block;margin:0 16px 16px;color:#fff;background:var(--blue);text-align:center;
++  text-decoration:none;font-weight:600;padding:10px 12px}}
++.sources{{margin:0;padding:0 16px 16px;border-top:1px solid var(--wash)}}
++.sources h2{{color:var(--blue);font-size:11px;letter-spacing:.08em;text-transform:uppercase}}
++.sources dl{{margin:0;font-size:13px}}.sources dt{{font-weight:600;margin-top:8px}}.sources dd{{margin:0}}
++a:focus-visible{{outline:2px solid var(--blue);outline-offset:2px}}
++</style></head><body><main>
++<div class="brand">STRIVE</div>
++<p class="private">Private visual · local only · not published</p>
++<article class="card" data-visual="{_esc(card.visual_id)}">
++<p class="result">{_esc(card.result)}</p>
++<figure class="visual"><figcaption>{_esc(card.label)}</figcaption>{card.svg}</figure>
++<ul class="facts">{facts}</ul>
++<a class="inspect" href="#inspect-run">Inspect run</a>
++<section class="sources" id="inspect-run">
++<h2>Sources</h2>
++<dl>
++<dt>Result</dt><dd>{_esc(card.result_basis)}</dd>
++<dt>Visual</dt><dd>{_esc(card.basis)}</dd>
++<dt>Limit</dt><dd>{_esc(card.limitation)}</dd>
++{sources}
++</dl>
++</section>
++</article>
++</main></body></html>"""
++    privacy.assert_clean(html, "post-run visual")
++    return html
+diff --git a/tests/test_visual_select.py b/tests/test_visual_select.py
+new file mode 100644
+index 0000000..bbc9fb7
+--- /dev/null
++++ b/tests/test_visual_select.py
+@@ -0,0 +1,195 @@
++"""The post-run visual selector is one rule list and one fixed night packet."""
++import json
++import subprocess
++import sys
++from pathlib import Path
++
++from agentgrinder.outcome import NOTHING_SHIPPED
++from agentgrinder.visual_select import render_visual_card, select_visual, trace_report
++
++ROOT = Path(__file__).resolve().parents[1]
++NIGHT = ROOT / "tests" / "fixtures" / "full-night-run-code-route.json"
++ORDER = (
++    "turning-point-trail",
++    "fleet-relay",
++    "loopback-seismograph",
++    "code-topography",
++    "project-terrain",
++    "activity-river",
++    "tool-constellation",
++    "context-weather",
++    "verification-ascent",
++    "proof-funnel",
++)
++
++
++def night():
++    return json.loads(NIGHT.read_text(encoding="utf-8"))
++
++
++def test_fixed_night_packet_selects_fleet_relay_and_nothing_else():
++    run = night()
++    card = select_visual(run)
++    assert card.visual_id == "fleet-relay"
++    assert card.label == "Fleet Relay"
++    assert card.result == "STRIVE draws a live four-project Code Route"
++    assert [fact.text for fact in card.facts] == ["4 projects", "3 handoffs", "9 stops"]
++    assert [fact.source for fact in card.facts] == [
++        "code_route.projects in stop order",
++        "code_route.connectors kind=handoff",
++        "code_route.stops",
++    ]
++    assert card.geometry[:4] == ("zup", "agentgrinder-public", "mountain-of-helicon", "fleet-ops")
++    assert card.geometry[4:] == (
++        ("zup", "agentgrinder-public"),
++        ("agentgrinder-public", "mountain-of-helicon"),
++        ("mountain-of-helicon", "fleet-ops"),
++    )
++    html = render_visual_card(run)
++    assert html == render_visual_card(json.loads(json.dumps(run)))
++    assert html.count("<svg") == 1
++    assert 'data-visual="fleet-relay"' in html
++    assert ">Inspect run<" in html
++    assert 'href="#inspect-run"' in html
++    assert "https://" not in html
++    assert run["artifact_url"] not in html
++    assert "#0047ff" in html and "background:#fff" in html
++    assert "score" not in html.lower()
++    report = {row.visual_id: row for row in trace_report(run)}
++    assert [row.visual_id for row in trace_report(run)] == list(ORDER)
++    assert report["fleet-relay"].selected and report["fleet-relay"].present == ("code_route",)
++    assert report["proof-funnel"].present == ("shipped", "receipts") and not report["proof-funnel"].selected
++    assert report["turning-point-trail"].absent == ("failed_check_ids_before", "passed_check_ids_after")
++    assert report["loopback-seismograph"].absent == ("check_outcomes",)
++    assert "check_outcomes" in report["loopback-seismograph"].collector
++    assert report["verification-ascent"].absent == ("claims", "claims_verified")
++    assert report["tool-constellation"].absent == ("tool_calls_by_category",)
++    assert report["context-weather"].absent == (
++        "web_searches", "context_reads", "index_reads", "memory_reads",
++    )
++    assert report["project-terrain"].absent == ("route",)
++    assert report["activity-river"].absent == ("ridge", "ridge_basis")
++
++
++def test_each_named_visual_has_one_exact_predicate():
++    trail = select_visual({
++        "failed_check_ids_before": ["mobile-card", "privacy"],
++        "passed_check_ids_after": ["privacy", "mobile-card"],
++    })
++    assert trail.visual_id == "turning-point-trail"
++    assert trail.geometry == (2, 2, 2)
++    assert "not on this run" in trail.limitation
++
++    pulses = select_visual({"check_outcomes": ["fail", "pass", "fail"]})
++    assert pulses.visual_id == "loopback-seismograph"
++    assert select_visual({"retries": 4, "failed_attempts": 4}).visual_id == "unmapped"
++
++    ascent = select_visual({"claims": 9, "claims_verified": 6})
++    assert ascent.visual_id == "verification-ascent"
++    assert ascent.geometry == (9, 6)
++    assert len(ascent.facts) == 2
++
++    funnel = select_visual({
++        "shipped": ["One result"],
++        "receipts": [{"label": "Proof", "url": "https://example.com/proof"}],
++    })
++    assert funnel.visual_id == "proof-funnel"
++    assert funnel.geometry == (1, 1)
++    assert "https://example.com/proof" not in render_visual_card({
++        "shipped": ["One result"],
++        "receipts": [{"label": "Proof", "url": "https://example.com/proof"}],
++    })
++
++    tools = select_visual({
++        "tool_calls": 100,
++        "tool_calls_by_category": {"files": 40, "shell": 29, "tests": 31},
++    })
++    assert tools.visual_id == "tool-constellation"
++    assert tools.facts[0].text == "files 40"
++    assert select_visual({
++        "tool_calls": 90,
++        "tool_calls_by_category": {"files": 40, "shell": 29},
++    }).visual_id == "unmapped"
++
++    weather = select_visual({"web_searches": 3, "context_reads": 8, "index_reads": 0})
++    assert weather.visual_id == "context-weather"
++    assert [fact.text for fact in weather.facts] == [
++        "8 context_reads", "3 web_searches", "0 index_reads",
++    ]
++    assert select_visual({"web_searches": 3}).visual_id == "unmapped"
++
++    route = {
++        "v": 1,
++        "projects": [{"id": "strive", "label": "strive", "basis": "measured"}],
++        "stops": [
++            {"id": "edit-1", "project": "strive", "kind": "edit", "label": "Edit card", "basis": "measured"},
++            {"id": "check-1", "project": "strive", "kind": "check", "label": "Checks passed", "basis": "measured"},
++        ],
++        "connectors": [],
++        "finish": {"stop": "check-1", "kind": "artifact", "label": "Card holds"},
++    }
++    topo = select_visual({
++        "code_route": route,
++        "shipped": ["One result"],
++        "receipts": [{"label": "Proof", "url": "https://example.com/proof"}],
++    })
++    assert topo.visual_id == "code-topography"
++    assert topo.geometry == ("edit", "check")
++
++    terrain = select_visual({"route": [8, 8, 3, 3, 8, 11], "route_legend": ["/Users/private/session"], "files_touched": 12})
++    assert terrain.visual_id == "project-terrain"
++    assert terrain.geometry == (8, 3, 8, 11)
++    assert "/Users/" not in render_visual_card({"route": [8, 8, 3, 11], "route_legend": ["/Users/private/session"]})
++
++    river = select_visual({
++        "ridge": [0, 4, 8, 2] * 12 + [1, 1],
++        "ridge_basis": "wall-time",
++        "commit_bins": [1, 4],
++    })
++    assert river.visual_id == "activity-river"
++    assert river.facts[1].text == "equal wall-time bins"
++    assert river.facts[2].text == "2 commit marks"
++
++
++def test_earlier_rules_keep_a_richer_packet_to_one_visual():
++    both = night()
++    both["failed_check_ids_before"] = ["privacy"]
++    both["passed_check_ids_after"] = ["privacy"]
++    both["ridge"] = [1] * 50
++    both["ridge_basis"] = "turn-order"
++    both["claims"] = 4
++    both["claims_verified"] = 2
++    assert select_visual(both).visual_id == "turning-point-trail"
++
++    no_handoff = night()
++    no_handoff["code_route"] = dict(no_handoff["code_route"])
++    no_handoff["code_route"]["connectors"] = []
++    assert select_visual(no_handoff).visual_id == "proof-funnel"
++
++
++def test_empty_run_uses_the_baseline_and_does_not_invent_a_result():
++    card = select_visual({})
++    assert card.visual_id == "unmapped"
++    assert card.result == NOTHING_SHIPPED
++    assert card.facts == ()
++    html = render_visual_card({})
++    assert html.count("<svg") == 1
++    assert "not a measurement" in html
++    assert ">Inspect run<" in html
++
++
++def test_visual_command_writes_a_local_card_and_does_not_open_or_publish(tmp_path, monkeypatch):
++    out = tmp_path / "visual.html"
++    opened = []
++    from agentgrinder import cli
++    monkeypatch.setattr(cli._BROWSER, "open", opened.append)
++    assert cli.main(["visual", str(NIGHT), "-o", str(out)]) == 0
++    html = out.read_text(encoding="utf-8")
++    assert "Fleet Relay" in html and "Inspect run" in html
++    assert opened == []
++    result = subprocess.run(
++        [sys.executable, "-m", "agentgrinder", "visual", str(NIGHT), "-o", str(out)],
++        cwd=ROOT, capture_output=True, text=True, check=True,
++    )
++    assert "not published" in result.stdout
++    assert "http" not in result.stdout
+-- 
+2.43.0
+
