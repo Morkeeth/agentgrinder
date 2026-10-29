@@ -1,5 +1,40 @@
 # Agent Grinder
 
+## TLDR
+
+Turn a recorded coding-agent session into a run card that can be kept private or shared.<br>
+For builders who want to show the requests, recorded work and result of a session.<br>
+Session capture and a published run are separate steps; review the record before sharing it.
+
+[Watch the narrated demo](https://youtu.be/0ku_ELsWcYI) · [Open the app](https://agentgrinder.vercel.app) · [Try the labelled example](https://agentgrinder.vercel.app/?example)
+
+## The problem and approach
+
+- Problem: work done with coding agents leaves no visible trace of what you typed and what actually shipped.
+- What it does: reads your latest local session, keeps only the turns you typed, asks git what shipped and draws a grind trace. Runs start private and no raw transcript is uploaded.
+
+## Review and pick up the work
+
+[Agent guide](AGENTS.md)
+
+Start with the linked source, setup and evidence. Recorded demos and sample data keep their original scope; use the repository instructions for a fresh run.
+
+## Recorded views
+
+These are retained repository captures, not a new live verification. Unless a date is given in the caption, the capture date is not documented. The interface may have changed since capture.
+
+![Landing page from the repository capture](docs/screens/01-landing.png)
+
+*Landing page from the repository capture.*
+
+![Recorded run card in the feed](docs/screens/02-feed-card.png)
+
+*Recorded run card in the feed.*
+
+![Profile view from the same captured interface](docs/screens/03-profile.png)
+
+*Profile view from the same captured interface.*
+
 **Strava for agents.** Turn a Claude Code, Cursor or Codex session into a run card. Share the work, follow builders and find your next practice.
 
 [Watch the narrated demo](https://youtu.be/0ku_ELsWcYI) · [AWS build story](https://builder.aws.com/content/3JK3d8e6Lz0CZXSk2k6hcfe7dSd/agents-for-humans-building-a-strava-for-agents)
@@ -63,17 +98,17 @@ python3 -m agentgrinder authorship            # who wrote every type:user record
 **A sitting, not a file.** A `.jsonl` transcript is a terminal that stays open; 151 of the 194
 transcripts on this machine that carry a human turn hold more than one sitting, and the median
 holds 3 (re-measured 31 Aug 06:4x over all 1,370 transcripts; a `171 … median 5` written earlier
-the same night no longer reproduces — `human_sittings` over `~/.claude/projects/*/*.jsonl`). A grind is a
-contiguous burst of work, ended by 30 minutes of total idle — the same rule at solo and fleet
+the same night no longer reproduces ;  `human_sittings` over `~/.claude/projects/*/*.jsonl`). A grind is a
+contiguous burst of work, ended by 30 minutes of total idle ;  the same rule at solo and fleet
 scale, so the two cards cannot disagree about where a grind begins.
 
-## The honesty rule — no ghost grinds
+## The honesty rule ;  no ghost grinds
 
 Every number names what it counted and over which population, or it prints an em-dash.
 
 - **A prompt is a keystroke.** `type: "user"` is not a person: on this machine, in one night-run
   window, 2,415 records carried it and 40 were typed by a human. The gate is Transcripto's
-  measured signal — `promptSource` typed or queued, dropping injected and sidechain records —
+  measured signal ;  `promptSource` typed or queued, dropping injected and sidechain records ; 
   vendored in `agentgrinder/authorship.py`, which sorts every record into five disjoint categories
   that **sum to the raw total**. The card prints the sum so you can check it.
 - **Shipping is git's word, never the transcript's.** Every edited file is in exactly one of four
@@ -81,39 +116,39 @@ Every number names what it counted and over which population, or it prints an em
   closed · nothing has committed it since · outside the repository or git-ignored, so git was
   never asked.
 - **A rank is a real rank.** "#12 of 625" is your place among every sitting on this machine. A
-  badge fires when **any one** of five measures — longest no-typing stretch, moving time, tool
-  calls, files changed, prompts typed — clears *that measure's* top-2% bar. Five bars, so the
+  badge fires when **any one** of five measures ;  longest no-typing stretch, moving time, tool
+  calls, files changed, prompts typed ;  clears *that measure's* top-2% bar. Five bars, so the
   badge is rarer than a coin flip but commoner than 2%: replayed over all 625 sittings on this
   machine it fires on **34 of them, 5.4%** (31 Aug; the replay is `history.badge` over
   `history.load()`, and the per-measure cut is `max(3, 2% of the population)`).
 
-## The numbers — verified output is the distance, prompts are the cost
+## The numbers ;  verified output is the distance, prompts are the cost
 
 The headline of every card is **verified per turn** = (verified claims + artifacts produced) ÷
 typed turns. Typed turns are the denominator: what the run *spent*. A card that headlines
-"47 prompts" celebrates the person who talked the most — the METR finding (developers believed
+"47 prompts" celebrates the person who talked the most ;  the METR finding (developers believed
 they were 20% faster and measured 19% slower). The rule, from the internal metric spec
 (`METRICS-AGENTIC-ENGINEERING-2026-09-02`, not in this repo): *a good agentic engineer turns the
-fewest human decisions into the most verified, delivered work — distance = verified output; prompts = cost.*
+fewest human decisions into the most verified, delivered work ;  distance = verified output; prompts = cost.*
 
 | Number | Role | Definition | Computed here? | If not: what it needs, and can you supply it today? |
 |---|---|---|---|---|
-| **Verified per turn** | **headline** | (verified claims + artifacts produced) ÷ typed turns | yes, when its three parts exist | — |
-| Typed turns | cost | human-authored turns (`authorship.py`: typed OR queued, drops isMeta / isSidechain / tool_result) | yes | — |
+| **Verified per turn** | **headline** | (verified claims + artifacts produced) ÷ typed turns | yes, when its three parts exist | ;  |
+| Typed turns | cost | human-authored turns (`authorship.py`: typed OR queued, drops isMeta / isSidechain / tool_result) | yes | ;  |
 | Verified-claims share | run number | of the agent's claims, the fraction with tool evidence in the same trace | **yes**, and calibrated (`claims.py`, rule below): the claim side reads precision 0.63, recall 0.66 on a held-out hand-labelled set | the evidence side has no label set yet, so the share carries one measured error and one unmeasured one |
-| Correction rate | run number | typed turns that correct the agent ÷ typed turns | **not measured yet** — prints `—` | every turn labelled as undoing the one before it. No harness records that, so nothing on your machine can supply it today |
-| Produced ÷ promised | run number | deliverables that exist at their path ÷ deliverables the run named | produced **v0**; promised **not measured yet**, prints `—` | a record of what the run said it would deliver. Nothing records it, so you cannot supply it today |
-| Reach | run number | did the output cross to a person who is not the author | **yes on all three harnesses** (`reach.py`): true, false, or `—` when the machine cannot tell | when it prints `—`, the hover names the fact that is missing for that session: no commit in the window, a working directory that is gone, a session run outside a git work tree, or nothing written inside one |
-| Moving time · pace · effort · segments · commits · cadence | cost group | unchanged from the v1 card | yes | — |
+| Correction rate | run number | typed turns that correct the agent ÷ typed turns | **not measured yet** ;  prints `; ` | every turn labelled as undoing the one before it. No harness records that, so nothing on your machine can supply it today |
+| Produced ÷ promised | run number | deliverables that exist at their path ÷ deliverables the run named | produced **v0**; promised **not measured yet**, prints `; ` | a record of what the run said it would deliver. Nothing records it, so you cannot supply it today |
+| Reach | run number | did the output cross to a person who is not the author | **yes on all three harnesses** (`reach.py`): true, false, or `; ` when the machine cannot tell | when it prints `; `, the hover names the fact that is missing for that session: no commit in the window, a working directory that is gone, a session run outside a git work tree, or nothing written inside one |
+| Moving time · pace · effort · segments · commits · cadence | cost group | unchanged from the v1 card | yes | ;  |
 
-A `—` is never blank: hover it and the tooltip says, in plain words, which fact is missing and
-whether you can supply it today. No number on a card is ever defaulted to zero, and no `—` points
+A `; ` is never blank: hover it and the tooltip says, in plain words, which fact is missing and
+whether you can supply it today. No number on a card is ever defaulted to zero, and no `; ` points
 at a tool you cannot install.
 
 **Reach** (`agentgrinder/reach.py`, 3 Sep 2026) is read from git on your own machine, and needs no
 network for the negative case:
 
-* **true** — a commit made inside the session window sits on a remote owned by neither you nor an
+* **true** ;  a commit made inside the session window sits on a remote owned by neither you nor an
   organisation you belong to, and the push landed while the window was open. Ownership comes from
   `git config remote.<name>.url` (not `git remote -v`, which prints URLs after any `insteadOf`
   rewrite), the push time from the remote-tracking ref's reflog, and your organisations from a
@@ -121,9 +156,9 @@ network for the negative case:
   run of this returned *yes* for a push to the author's own GitHub organisation, which was true
   about the string and false about the world, so an unfamiliar owner is now checked against your
   organisations before anything is claimed.
-* **false** — the window closed with commits that are on no remote at all, or only on a
+* **false** ;  the window closed with commits that are on no remote at all, or only on a
   directory of yours: the work never left this machine.
-* **`—`** — everything else, each with its own sentence on hover: no commit in the window, a push
+* **`; `** ;  everything else, each with its own sentence on hover: no commit in the window, a push
   that landed after the window closed, a remote nobody can attribute, no account name on this
   machine to compare an owner against, an unfamiliar owner with no signed-in `gh` to say whether
   it is an organisation of yours (that one you can supply today: `gh auth login`), or commits that
@@ -246,9 +281,9 @@ model and opens no internet socket; a policy that writes a wrong number is refus
 | **Grind** | one logged agent work session against a goal | an activity |
 | **The grind trace** | the drawing: where the work went, and how hard | the route + elevation |
 | **Rig** | your setup: model, harness, tools, MCPs, human gates | your gear |
-| **The Box** | the bounded workspace a grind runs in | — |
+| **The Box** | the bounded workspace a grind runs in | ;  |
 | **Ship** | a checked release that left the Box | a PR |
-| **ACK** | evidence-linked recognition — never a like | kudos |
+| **ACK** | evidence-linked recognition ;  never a like | kudos |
 | **Crew** | a human and their agents; also a group you grind with | a club |
 | **Scrapbook** | your public history of grinds, ships, failures and ACKs | your profile |
 
@@ -263,7 +298,7 @@ Retired, and not used here: Loop, Push, Builder's Diary, LOOPMAXXER, run/route/l
 | `grind` | one sitting → the grind card (`run` is kept as an alias; `--harness auto` picks freshest agent) |
 | `flex` | compare your real runs across Claude, Cursor, and Codex on this machine |
 | `share` | screenshot-ready share card with claim-your-handle stub (`--vibe` `--roast`) |
-| `vibe` · `roast` | meme label and honest shape roast — no streaks |
+| `vibe` · `roast` | meme label and honest shape roast ;  no streaks |
 | `rig` | share your stack with friends (`--share-names` opt-in) |
 | `heist` | rig heist card when someone ACKs your setup |
 | `login` · `grind --push` | GitHub onboard and publish flow |
@@ -277,11 +312,11 @@ Retired, and not used here: Loop, Push, Builder's Diary, LOOPMAXXER, run/route/l
 ## Privacy
 
 Local-first and dependency-free. `history` caches one small record per sitting in
-`~/.agentgrinder/history.json`: **counts and timestamps only** — never a line of a prompt, never a
+`~/.agentgrinder/history.json`: **counts and timestamps only** ;  never a line of a prompt, never a
 file path from inside a repository. Its *keys* are the transcript paths on this machine, and
 Claude Code encodes the working directory into those, so the file does name the directories you
 have worked in. It never leaves the machine, and nothing reads it but `agentgrinder history`.
-Delete it and the next run rebuilds it: **7.8s** over 1,370 transcripts here, 0.04s warm (measured 31 Aug 06:2x; a 6.8s figure written on 30 Aug had already been re-measured at 6.1s and was never corrected here — it is a timing, so it moves).
+Delete it and the next run rebuilds it: **7.8s** over 1,370 transcripts here, 0.04s warm (measured 31 Aug 06:2x; a 6.8s figure written on 30 Aug had already been re-measured at 6.1s and was never corrected here ;  it is a timing, so it moves).
 `nightrun --public` redacts repository and lane names while leaving every number and the shape
 unchanged. No auto-post, no auto-upload.
 
@@ -315,3 +350,7 @@ dependency, not copied code.
 MIT. See `LICENSE`.
 
 See [Bedrock in the product coaching path](docs/BEDROCK-PRODUCT-PATH.md) for model configuration, per-run request limits and the recorded refusal/acceptance outcome.
+
+## License and data boundaries
+
+Code terms: [LICENSE](LICENSE). Data, provider responses, media, fonts and other third-party assets may have separate terms. Repository access alone does not grant rights to those materials. 
