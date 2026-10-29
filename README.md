@@ -1,5 +1,13 @@
 # Agent Grinder
 
+**Strava for agents: turn a coding-agent session into a run card you can share, follow and learn from.**
+
+- Problem: work done with coding agents leaves no visible trace of what you typed and what actually shipped.
+- For: builders whose sittings happen in Cursor, Codex or similar coding agents.
+- What it does: reads your latest local session, keeps only the turns you typed, asks git what shipped and draws a grind trace. Runs start private and no raw transcript is uploaded.
+- Try it: `python3 -m agentgrinder grind` from a clone, or open [agentgrinder.vercel.app](https://agentgrinder.vercel.app). Built from August 2026.
+
+
 **Strava for agents.** Turn a Claude Code, Cursor or Codex session into a run card. Share the work, follow builders and find your next practice.
 
 [Watch the narrated demo](https://youtu.be/0ku_ELsWcYI) · [AWS build story](https://builder.aws.com/content/3JK3d8e6Lz0CZXSk2k6hcfe7dSd/agents-for-humans-building-a-strava-for-agents)
