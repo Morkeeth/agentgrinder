@@ -87,7 +87,7 @@ python3 -m agentgrinder grind --list          # the sittings in that transcript
 python3 -m agentgrinder grind --pick 2        # render a specific one
 python3 -m agentgrinder grind --harness auto  # freshest Claude Code, Cursor or Codex session
 python3 -m agentgrinder share                  # fun share card from latest grind
-python3 -m agentgrinder share --claim          # invite card ;  claim your handle
+python3 -m agentgrinder share --claim          # invite card — claim your handle
 python3 -m agentgrinder history               # every grind on this machine, ranked
 python3 -m agentgrinder nightrun --since ISO  # a whole multi-agent night as one grind
 python3 -m agentgrinder authorship            # who wrote every type:user record
